@@ -76,3 +76,13 @@ Ideas para después del MVP, guardadas el 2026-11-14. El criterio común: poner 
 
 - El **modelo bayesiano** (`docs/plan-experimental.md`) mide la dependencia entre satélites con tres listas. La idea 1 la mide con evidencia física. Si las dos coinciden, la subestimación queda cuantificada por dos caminos.
 - La idea 3 sirve para comprobar el modelo bayesiano antes de usarlo con datos reales.
+
+## 6. Chat con IA dentro de la app (después de publicar)
+
+Idea del 2026-11-14. `PROYECTO.md` lo deja fuera de alcance; se retoma solo cuando la web esté conectada a la API y publicada.
+
+- **Regla central:** el modelo nunca escribe cifras de memoria. Responde solo con datos que pide a la API mediante herramientas (`get_series`, `get_methodology`, `get_map`) y devuelve, además del texto, la especificación de un gráfico que la web dibuja con sus componentes.
+- **Honestidad en las instrucciones:** unidad *fire cell-days*, nunca "incendios" ni "hectáreas"; toda cifra con su rango; 2026 marcado como provisional; si la pregunta se sale de los datos, lo dice.
+- **Piezas:** ruta `POST /chat` en la API (cambia la regla de que la API solo sirve archivos), clave del modelo como secreto del servidor, límite de uso, y un panel en la web.
+- **Formato acotado:** cinco o seis preguntas de ejemplo como botones, con respuestas guardadas por si el modelo falla en vivo, más el campo libre.
+- **Riesgo:** no diferencia al proyecto (muchos equipos tendrán un chat) y agrega una dependencia que puede fallar en la demo.
