@@ -49,7 +49,7 @@ Una fila por región, año y mes. Alimenta el récord falso, el reloj del fuego 
 | `region`, `year`, `month` | — | Identificadores |
 | `raw_modis` | entero | Celdas-día vistas por MODIS (Terra y Aqua unidos) |
 | `raw_viirs` | entero o `null` | Celdas-día vistas por VIIRS. `null` antes de 2012 |
-| `raw_detections` | entero | Suma ingenua de detecciones de todos los sensores. Solo para mostrar el salto falso |
+| `raw_detections` | entero | Suma ingenua de detecciones de todos los sensores (Terra, Aqua, S-NPP, NOAA-20 desde 2018-04 y NOAA-21 desde 2023-03). Solo para mostrar el salto falso |
 | `estimated` | número | Fuego total estimado por captura y recaptura. **La cifra principal** |
 | `est_low`, `est_high` | número | Rango de incertidumbre de `estimated`, al 90 % |
 | `modis_equiv` | número | Celdas-día en escala **MODIS Aqua** (pieza 2). Sirve de comprobación. Ver la regla de abajo |
@@ -67,7 +67,7 @@ Una fila por región, año y mes. Alimenta el récord falso, el reloj del fuego 
 
 Los números del ejemplo son inventados.
 
-**2026:** la serie llega hasta el 2026-11-13. Desde agosto los datos son NRT y van marcados como `provisional` en `periods`. Del 2026-11-02 al 2026-11-13 no hay S-NPP: `estimated` usa NOAA-20 llevado a escala S-NPP (razón medida en enero–octubre de 2026); `raw_viirs` sigue siendo solo S-NPP. El último mes, si está incompleto, se compara con la misma ventana de días de 2003–2025 en `hist_median` y `anomaly_class`, y no se extrapola. `raw_detections` de 2026 incluye NOAA-20 y NOAA-21, porque es la suma ingenua de todos los sensores.
+**2026:** la serie llega hasta el 2026-11-13. Desde agosto los datos son NRT y van marcados como `provisional` en `periods`. Del 2026-11-02 al 2026-11-13 no hay S-NPP: `estimated` usa NOAA-20 llevado a escala S-NPP (razón medida en enero–octubre de 2026); `raw_viirs` sigue siendo solo S-NPP. El último mes, si está incompleto, se compara con la misma ventana de días de 2003–2025 en `hist_median` y `anomaly_class`, y no se extrapola. `raw_detections` incluye NOAA-20 desde 2018-04 y NOAA-21 desde 2023-03, porque es la suma ingenua de todos los sensores: además del salto de 2012 tiene saltos falsos en 2018 y 2023, y por eso `error_pct_naive` y la demo `forecast.raw_vs_corrected` del crudo crecen frente a una suma solo con Terra, Aqua y S-NPP. `estimated`, `raw_viirs` y `modis_equiv` no cambian.
 
 **Pronóstico (pieza 4):** las filas con `is_forecast: true` van después de las observadas y solo para meses posteriores al último observado. Tienen `source: "forecast"` y `raw_modis`, `raw_viirs`, `raw_detections` y `modis_equiv` en `null`. `estimated` es la mediana pronosticada y `est_low`/`est_high` su rango nominal del 90 %, que en el backtesting cubre cerca del 83 %. El origen es el último mes completo: un mes parcial nunca se usa como predictor. Si con esa anticipación el modelo no le gana a la climatología, la fila es la climatología, y `methodology.json` → `forecast.published[].method` lo dice. La fila `peru` se modela aparte y no es la suma de las regiones. El mapa no incluye meses pronosticados.
 
@@ -137,10 +137,14 @@ Una fila por celda, año y mes con actividad.
 | `raw_aqua` | entero | Días del mes con detección de Aqua en la celda |
 | `raw_modis` | entero | Días del mes con detección de Terra o Aqua (unión, sin duplicar) |
 | `raw_viirs` | entero o `null` | Días del mes con detección de VIIRS S-NPP. `null` antes de 2012 |
+| `raw_viirs_noaa20` | entero | Días del mes con detección de VIIRS NOAA-20, separado de S-NPP |
+| `raw_viirs_noaa21` | entero | Días del mes con detección de VIIRS NOAA-21, separado de S-NPP |
 | `estimated` | número | Parte de la estimación de la región y mes (`series.json`) que le toca a la celda. La suma de las celdas de una región da el `estimated` de la serie |
 | `size_ratio` | número o `null` | Razón VIIRS/MODIS de la celda (pieza 3, extra) |
 
 `raw_viirs` cuenta solo S-NPP, igual que en `series.json`, porque es el satélite con el que se calibró el método. Sumar NOAA-20 y NOAA-21 desde 2018 metería un salto falso nuevo: más satélites ven más celdas-día sin que haya más fuego. NOAA-20 y NOAA-21 solo se usan donde falta S-NPP (después del 2026-11-02), con su propia calibración.
+
+`raw_viirs_noaa20` y `raw_viirs_noaa21` exponen los conteos de esos satélites por separado para inspección y transparencia. No se suman a `raw_viirs` ni alteran la serie calibrada.
 
 `region` es una de las tres macrorregiones. Cada celda de 0,1° se asigna a la unidad departamental que cubre la mayor parte de su área y luego a su macrorregión. Callao cuenta como unidad departamental dentro de Costa.
 
@@ -152,10 +156,12 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 |---|---|---|
 | `GET /regions` | — | `regions.geojson` |
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
-| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `estimated` |
+| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.
+
+La API solo acepta `GET` y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés.
 
 ## 5. Datos de prueba
 

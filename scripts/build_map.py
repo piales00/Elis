@@ -13,8 +13,9 @@ OUTPUT = config.PROCESSED_DIR / 'map.parquet'
 SAMPLE_YEAR, SAMPLE_MONTH = 2024, 9
 SAMPLE = config.PROCESSED_DIR / f'map-sample-{SAMPLE_YEAR}-{SAMPLE_MONTH:02d}.json'
 COLUMNS = ('lat', 'lon', 'region', 'year', 'month', 'raw_terra', 'raw_aqua', 'raw_modis',
-           'raw_viirs', 'estimated', 'size_ratio')
-SAMPLE_FIELDS = ('lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs', 'estimated')
+           'raw_viirs', 'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated', 'size_ratio')
+SAMPLE_FIELDS = ('lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+                 'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated')
 COMPRESSION = 'zstd'
 CLIMATOLOGY_YEARS = (config.CALIBRATION_YEARS[0], config.TEST_YEARS[1])
 VALIDATION_YEARS = config.CALIBRATION_YEARS
@@ -39,6 +40,8 @@ def build(con):
             count(DISTINCT date) FILTER (WHERE sensor = 'aqua') AS raw_aqua,
             count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra')) AS raw_modis,
             count(DISTINCT date) FILTER (WHERE sensor = 'snpp') AS raw_viirs,
+            count(DISTINCT date) FILTER (WHERE sensor = 'noaa20') AS raw_viirs_noaa20,
+            count(DISTINCT date) FILTER (WHERE sensor = 'noaa21') AS raw_viirs_noaa21,
             count(DISTINCT date) FILTER (WHERE sensor = 'snpp' OR (sensor = 'noaa20' AND date > ?)) AS raw_viirs_reference,
             count(DISTINCT date) FILTER (WHERE sensor = ?) AS raw_seen_validation,
             count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra','snpp') OR (sensor = 'noaa20' AND date > ?)) AS raw_any
@@ -202,6 +205,8 @@ def main():
                 coalesce(w.raw_aqua, 0)::INTEGER AS raw_aqua,
                 coalesce(w.raw_modis, 0)::INTEGER AS raw_modis,
                 CASE WHEN (k.year, k.month) >= (?, ?) THEN coalesce(w.raw_viirs, 0)::INTEGER END AS raw_viirs,
+                coalesce(w.raw_viirs_noaa20, 0)::INTEGER AS raw_viirs_noaa20,
+                coalesce(w.raw_viirs_noaa21, 0)::INTEGER AS raw_viirs_noaa21,
                 CASE WHEN r.region IS NOT NULL THEN coalesce(w.raw_modis, 0) + r.unseen * coalesce(c.share, 0)
                      WHEN t.ref_total > 0 THEN coalesce(w.regional * w.ref_weight / t.ref_total, 0)
                      WHEN w.regional > 0 THEN w.regional * w.raw_any / t.any_total
@@ -228,7 +233,8 @@ def main():
                     SELECT *, ((units + (rank <= deficit)::INTEGER) / {scale})::DOUBLE AS estimated FROM ranked
                 )
                 SELECT {', '.join(COLUMNS)} FROM rounded
-                WHERE raw_modis > 0 OR coalesce(raw_viirs, 0) > 0 OR estimated > 0
+                WHERE raw_modis > 0 OR coalesce(raw_viirs, 0) > 0 OR raw_viirs_noaa20 > 0
+                    OR raw_viirs_noaa21 > 0 OR estimated > 0
                 ORDER BY year, month, region, lat, lon)
             TO ? (FORMAT PARQUET, COMPRESSION ?)
         ''', [str(OUTPUT), COMPRESSION])
