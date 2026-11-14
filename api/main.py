@@ -69,7 +69,7 @@ def get_map(
     path = PROCESSED_DIR / "map.parquet"
     if not path.is_file():
         raise HTTPException(status_code=503, detail="Aún no está disponible map.parquet.")
-    sql = "SELECT lat, lon, raw_terra, raw_aqua, raw_modis, raw_viirs_snpp, raw_viirs_noaa20, raw_viirs_noaa21, raw_viirs, estimated FROM read_parquet(?) WHERE year = ? AND month = ?"
+    sql = "SELECT lat, lon, raw_terra, raw_aqua, raw_modis, raw_viirs, estimated FROM read_parquet(?) WHERE year = ? AND month = ?"
     parameters: list[Any] = [str(path), year, month]
     if region is not None:
         sql += " AND region = ?"

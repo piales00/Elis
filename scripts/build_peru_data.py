@@ -17,9 +17,11 @@ from config import (
     BOUNDARY_SOURCE_FILE,
     BOUNDARY_SOURCE_NAME,
     BOUNDARY_SOURCE_URL,
+    BOUNDARY_COORD_DIGITS,
     BOUNDARY_SIMPLIFICATION_DEG,
     DEPARTMENT_DISPLAY_NAMES,
     GRID_DEG,
+    INTERIM_DIR,
     MACROREGION_DEPARTMENTS,
     MACROREGION_NAMES,
     MAX_YEAR,
@@ -96,6 +98,10 @@ def region_features(departments: list[dict]) -> dict:
             geometry.simplify(BOUNDARY_SIMPLIFICATION_DEG, preserve_topology=True)
             for geometry in source_geometries
         ]
+    display_geometries = [
+        shapely.transform(geometry, lambda coordinates: coordinates.round(BOUNDARY_COORD_DIGITS))
+        for geometry in display_geometries
+    ]
     display_by_id = {
         department["id"]: geometry
         for department, geometry in zip(departments, display_geometries)
@@ -105,7 +111,7 @@ def region_features(departments: list[dict]) -> dict:
         {
             "type": "Feature",
             "id": REGION_ID,
-            "properties": {"id": REGION_ID, "name": REGION_NAME, "level": "pais"},
+            "properties": {"id": REGION_ID, "name": REGION_NAME, "level": "country"},
             "geometry": mapping(peru_geometry),
         }
     ]
@@ -136,7 +142,7 @@ def region_features(departments: list[dict]) -> dict:
                 "properties": {
                     "id": department["id"],
                     "name": department["name"],
-                    "level": "departamento",
+                    "level": "department",
                     "macroregion": department["macroregion"],
                     "source_document": department["source_document"],
                 },
@@ -152,6 +158,7 @@ def region_features(departments: list[dict]) -> dict:
             "retrieved_at": datetime.now(timezone.utc).isoformat(),
             "boundary_note": "Límites censales referenciales; no sustituyen una delimitación legal.",
             "display_simplification_degrees": BOUNDARY_SIMPLIFICATION_DEG,
+            "display_coordinate_digits": BOUNDARY_COORD_DIGITS,
             "activity_filter_uses_unsimplified_boundaries": True,
             "macroregion_note": "Agrupación aproximada de departamentos completos aprobada por el equipo.",
             "macroregions": macroregion_metadata,
@@ -179,12 +186,8 @@ def classify_file(path: Path, row: dict[str, str]) -> str | None:
         if "AQUA" in satellite:
             return "aqua"
         return None
-    if "noaa20" in filename:
-        return "viirs_noaa20"
-    if "noaa21" in filename:
-        return "viirs_noaa21"
-    if filename.startswith("viirs-snpp"):
-        return "viirs_snpp"
+    if filename.startswith("viirs-") or "noaa20" in filename or "noaa21" in filename:
+        return "viirs"
     return None
 
 
@@ -204,7 +207,7 @@ def accepted_row(path: Path, row: dict[str, str]) -> str | None:
                 return None
         except (TypeError, ValueError):
             return None
-    elif sensor in {"viirs_snpp", "viirs_noaa20", "viirs_noaa21"}:
+    elif sensor == "viirs":
         if row.get("confidence", "").strip().lower() not in VIIRS_CONFIDENCE_ACCEPTED:
             return None
     return sensor
@@ -295,10 +298,10 @@ def write_observations(destination: Path, departments: list[dict]) -> tuple[int,
 
 
 def write_map(observations_file: Path) -> tuple[int, int]:
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    final_path = PROCESSED_DIR / "map.parquet"
+    INTERIM_DIR.mkdir(parents=True, exist_ok=True)
+    final_path = INTERIM_DIR / "map_t1_raw.parquet"
     observations = observations_file.resolve().as_posix().replace("'", "''")
-    with tempfile.TemporaryDirectory(prefix="firechronos_map_", dir=PROCESSED_DIR) as temporary:
+    with tempfile.TemporaryDirectory(prefix="firechronos_map_", dir=INTERIM_DIR) as temporary:
         temporary_path = (Path(temporary) / "map.parquet").resolve()
         destination = temporary_path.as_posix().replace("'", "''")
         sql = f"""
@@ -321,10 +324,7 @@ def write_map(observations_file: Path) -> tuple[int, int]:
                     count(DISTINCT acq_date) FILTER (WHERE sensor = 'terra') AS raw_terra,
                     count(DISTINCT acq_date) FILTER (WHERE sensor = 'aqua') AS raw_aqua,
                     count(DISTINCT acq_date) FILTER (WHERE sensor IN ('terra', 'aqua')) AS raw_modis,
-                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_snpp') AS raw_viirs_snpp,
-                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_noaa20') AS raw_viirs_noaa20,
-                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_noaa21') AS raw_viirs_noaa21,
-                    count(DISTINCT acq_date) FILTER (WHERE sensor IN ('viirs_snpp', 'viirs_noaa20', 'viirs_noaa21')) AS raw_viirs
+                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs') AS raw_viirs
                 FROM hits
                 GROUP BY gy, gx, region, year, month
             )
@@ -337,9 +337,6 @@ def write_map(observations_file: Path) -> tuple[int, int]:
                 raw_terra,
                 raw_aqua,
                 raw_modis,
-                raw_viirs_snpp,
-                raw_viirs_noaa20,
-                raw_viirs_noaa21,
                 raw_viirs,
                 CAST(NULL AS DOUBLE) AS estimated,
                 CAST(NULL AS DOUBLE) AS size_ratio
@@ -366,8 +363,8 @@ def main() -> None:
     print(f"Regiones: Perú, {len(MACROREGION_NAMES)} macrorregiones y {len(departments)} unidades departamentales.")
     print(f"Datos fuente: {len(sources)} archivos; observaciones filtradas: {raw_count}.")
     print(f"Observaciones por macrorregión: {region_counts}.")
-    print(f"Parquet: data/processed/map.parquet; {map_rows} celdas-mes en {years} años.")
-    print("estimated queda en null hasta que T2 entregue las estimaciones.")
+    print(f"Parquet: data/interim/map_t1_raw.parquet; {map_rows} celdas-mes en {years} años.")
+    print("data/processed/map.parquet lo genera scripts/build_map.py.")
 
 
 if __name__ == "__main__":

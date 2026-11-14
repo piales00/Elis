@@ -40,7 +40,8 @@ docs/              Documentación
 
 - **Datos y método:** Python 3 y DuckDB. Usar el entorno `.venv` (`python3 -m venv .venv && .venv/bin/pip install duckdb`).
 - **API:** FastAPI que sirve archivos ya calculados. No calcula nada pesado al recibir una petición.
-- **Web:** mapa con MapLibre y gráficos. Toda la interfaz en **inglés**.
+- **Backend:** Python (datos, método y API).
+- **Frontend:** React + Vite + Tailwind CSS, en JavaScript/JSX. Mapa con MapLibre GL JS y gráficos. Toda la interfaz en **inglés**.
 
 ## Reglas
 
