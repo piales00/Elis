@@ -179,8 +179,12 @@ def classify_file(path: Path, row: dict[str, str]) -> str | None:
         if "AQUA" in satellite:
             return "aqua"
         return None
-    if filename.startswith("viirs-") or "noaa20" in filename or "noaa21" in filename:
-        return "viirs"
+    if "noaa20" in filename:
+        return "viirs_noaa20"
+    if "noaa21" in filename:
+        return "viirs_noaa21"
+    if filename.startswith("viirs-snpp"):
+        return "viirs_snpp"
     return None
 
 
@@ -200,7 +204,7 @@ def accepted_row(path: Path, row: dict[str, str]) -> str | None:
                 return None
         except (TypeError, ValueError):
             return None
-    elif sensor == "viirs":
+    elif sensor in {"viirs_snpp", "viirs_noaa20", "viirs_noaa21"}:
         if row.get("confidence", "").strip().lower() not in VIIRS_CONFIDENCE_ACCEPTED:
             return None
     return sensor
@@ -317,7 +321,10 @@ def write_map(observations_file: Path) -> tuple[int, int]:
                     count(DISTINCT acq_date) FILTER (WHERE sensor = 'terra') AS raw_terra,
                     count(DISTINCT acq_date) FILTER (WHERE sensor = 'aqua') AS raw_aqua,
                     count(DISTINCT acq_date) FILTER (WHERE sensor IN ('terra', 'aqua')) AS raw_modis,
-                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs') AS raw_viirs
+                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_snpp') AS raw_viirs_snpp,
+                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_noaa20') AS raw_viirs_noaa20,
+                    count(DISTINCT acq_date) FILTER (WHERE sensor = 'viirs_noaa21') AS raw_viirs_noaa21,
+                    count(DISTINCT acq_date) FILTER (WHERE sensor IN ('viirs_snpp', 'viirs_noaa20', 'viirs_noaa21')) AS raw_viirs
                 FROM hits
                 GROUP BY gy, gx, region, year, month
             )
@@ -330,6 +337,9 @@ def write_map(observations_file: Path) -> tuple[int, int]:
                 raw_terra,
                 raw_aqua,
                 raw_modis,
+                raw_viirs_snpp,
+                raw_viirs_noaa20,
+                raw_viirs_noaa21,
                 raw_viirs,
                 CAST(NULL AS DOUBLE) AS estimated,
                 CAST(NULL AS DOUBLE) AS size_ratio

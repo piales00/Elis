@@ -116,11 +116,16 @@ Una fila por celda, año y mes con actividad.
 | `raw_terra` | entero | Celdas-día con detección observada por Terra |
 | `raw_aqua` | entero | Celdas-día con detección observada por Aqua |
 | `raw_modis` | entero | Celdas-día únicos observados por Terra o Aqua |
-| `raw_viirs` | entero | Celdas-día únicos observados por S-NPP, NOAA-20 o NOAA-21 |
+| `raw_viirs_snpp` | entero | Celdas-día únicos observados por VIIRS S-NPP |
+| `raw_viirs_noaa20` | entero | Celdas-día únicos observados por VIIRS NOAA-20 |
+| `raw_viirs_noaa21` | entero | Celdas-día únicos observados por VIIRS NOAA-21 |
+| `raw_viirs` | entero | Celdas-día únicos observados por cualquier plataforma VIIRS; unión sin duplicados de las tres anteriores |
 | `estimated` | número o `null` | Actividad estimada de la celda; `null` hasta que T2 entregue una estimación compatible |
 | `size_ratio` | número o `null` | Razón VIIRS/MODIS de la celda (pieza 3, extra) |
 
-`raw_terra` y `raw_aqua` cuentan días únicos por separado. `raw_modis` cuenta la unión de días vistos por Terra o Aqua, sin duplicar una celda-día que ambos sensores hayan visto. `raw_viirs` cuenta la unión de días vistos por S-NPP, NOAA-20 o NOAA-21, sin duplicados entre plataformas. Callao se incluye como unidad departamental en Perú y en la agrupación de Costa.
+Cobertura integrada por plataforma: Terra, noviembre de 2000–noviembre de 2026; Aqua, julio de 2002–noviembre de 2026; S-NPP, enero de 2012–noviembre de 2026; NOAA-20, abril de 2018–noviembre de 2026; NOAA-21, marzo de 2023–noviembre de 2026. La cobertura de 2026 incluye registros NRT provisionales en los meses más recientes.
+
+`raw_terra` y `raw_aqua` cuentan días únicos por separado. `raw_modis` cuenta la unión de días vistos por Terra o Aqua, sin duplicar una celda-día que ambos sensores hayan visto. Los campos `raw_viirs_snpp`, `raw_viirs_noaa20` y `raw_viirs_noaa21` cuentan cada plataforma por separado; `raw_viirs` cuenta la unión de días vistos por cualquier plataforma, sin duplicar una celda-día que más de un satélite haya visto. Callao se incluye como unidad departamental en Perú y en la agrupación de Costa.
 
 `region` en `map.parquet` es una de las tres macrorregiones. Cada celda de 0,1° se asigna a la unidad departamental que cubre la mayor parte de su área y luego a su macrorregión.
 
@@ -130,7 +135,7 @@ Una fila por celda, año y mes con actividad.
 |---|---|---|
 | `GET /regions` | — | `regions.geojson` |
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
-| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `estimated` |
+| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs_snpp`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `raw_viirs`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.
