@@ -135,8 +135,14 @@ def test_unseen_cells_follow_validation_decision(con, series):
                  for r in config.REGIONS)
     assert validation['applied'] == better
     modis_only = {(r['region'], r['year'], r['month']) for r in series if r['source'] == 'modis_only'}
-    unseen = con.execute('''SELECT region, year, month, count(*) FROM m
-        WHERE raw_modis = 0 AND coalesce(raw_viirs, 0) = 0 GROUP BY ALL''').fetchall()
+    bridged = {(r, y, m) for r, y, m in con.execute('SELECT region, year, month FROM read_parquet(?) WHERE noaa20_bridge',
+               [str(config.INTERIM_DIR / 'estimates.parquet')]).fetchall()}
+    noaa20_cells = set(con.execute('''SELECT DISTINCT round(lat, 2), round(lon, 2), year, month FROM read_parquet(?)
+        WHERE sensor = 'noaa20' AND date > ?''', [str(config.INTERIM_DIR / 'cells.parquet'), config.SNPP_END]).fetchall())
+    unseen_rows = con.execute('''SELECT region, year, month, lat, lon FROM m
+        WHERE raw_modis = 0 AND coalesce(raw_viirs, 0) = 0''').fetchall()
+    assert all((lat, lon, y, m) in noaa20_cells for r, y, m, lat, lon in unseen_rows if (r, y, m) in bridged)
+    unseen = {(r, y, m, None) for r, y, m, _, _ in unseen_rows if (r, y, m) not in bridged}
     if validation['applied']:
         assert unseen
         assert all((r, y, m) in modis_only for r, y, m, _ in unseen)

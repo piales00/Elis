@@ -39,14 +39,15 @@ def build(con):
             count(DISTINCT date) FILTER (WHERE sensor = 'aqua') AS raw_aqua,
             count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra')) AS raw_modis,
             count(DISTINCT date) FILTER (WHERE sensor = 'snpp') AS raw_viirs,
+            count(DISTINCT date) FILTER (WHERE sensor = 'snpp' OR (sensor = 'noaa20' AND date > ?)) AS raw_viirs_reference,
             count(DISTINCT date) FILTER (WHERE sensor = ?) AS raw_seen_validation,
-            count(DISTINCT date) AS raw_any
+            count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra','snpp') OR (sensor = 'noaa20' AND date > ?)) AS raw_any
         FROM cells GROUP BY cell_y, cell_x, region, year, month
-    ''', [VALIDATION_SEEN_SENSOR])
+    ''', [config.SNPP_END, VALIDATION_SEEN_SENSOR, config.SNPP_END])
     con.execute('''
         CREATE TEMP TABLE weighted AS
         SELECT b.*, s.estimated AS regional, s.source,
-            CASE WHEN s.source = 'modis_only' THEN b.raw_modis ELSE b.raw_viirs END AS ref_weight
+            CASE WHEN s.source = 'modis_only' THEN b.raw_modis ELSE b.raw_viirs_reference END AS ref_weight
         FROM base b JOIN series s USING (region, year, month)
     ''')
     con.execute('''

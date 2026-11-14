@@ -146,6 +146,7 @@ def test_local_solar_time_and_legacy_cell_columns(tmp_path, monkeypatch):
     import cells
 
     monkeypatch.setattr(config, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(config, "RAW_2026_DIR", tmp_path / "2026")
     monkeypatch.setattr(config, "INTERIM_DIR", tmp_path / "interim")
     def assign(con, table):
         con.execute(f"ALTER TABLE {table} ADD COLUMN region VARCHAR DEFAULT 'amazonia'")
@@ -248,3 +249,41 @@ def test_real_calibration_uses_simultaneous_available_days_only():
         for region, month, n1, n2, m, support in con.execute('SELECT region,month,n1,n2,m,pooled_months FROM read_parquet(?)', [str(config.INTERIM_DIR / 'detection_probs.parquet')]).fetchall():
             actual = con.execute('SELECT sum(n1),sum(n2),sum(m) FROM counts WHERE region=? AND month IN (SELECT unnest(?))', [region,support]).fetchone()
             assert actual == (n1,n2,m)
+
+
+def test_2026_sensors_processing_and_static_mask(tmp_path, monkeypatch):
+    import cells
+    import json
+
+    monkeypatch.setattr(config, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(config, "RAW_2026_DIR", tmp_path / "2026")
+    monkeypatch.setattr(config, "INTERIM_DIR", tmp_path / "interim")
+    monkeypatch.setattr(cells, "assign_regions",
+                        lambda con, table: con.execute(f"ALTER TABLE {table} ADD COLUMN region VARCHAR DEFAULT 'amazonia'"))
+    (tmp_path / "2026").mkdir()
+    annual = "satellite,latitude,longitude,acq_date,acq_time,frp,bright_ti4,scan,track,daynight,version,type,confidence\n"
+    static = [f"N,-12.05,-77.05,2015-0{m}-0{d},1830,5,330,.4,.4,D,2,2,n" for m in (1, 2, 3) for d in (1, 2)]
+    (tmp_path / "viirs-snpp_2015_Peru.csv").write_text(annual + "\n".join(static + [
+        "N,-12.05,-77.05,2015-04-01,1830,5,330,.4,.4,D,2,0,n",
+        "N,-5.05,-75.05,2015-04-01,1830,5,330,.4,.4,D,2,0,n"]) + "\n")
+    (tmp_path / "modis_2015_Peru.csv").write_text(annual.replace("bright_ti4", "brightness") +
+        "Aqua,-5.05,-75.05,2015-04-01,1830,5,330,1,1,D,61,0,80\n")
+    header = "latitude,longitude,brightness,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_t31,frp,daynight"
+    (tmp_path / "2026" / "viirs-snpp_2026_nrt.csv").write_text(header + "\n" +
+        "-12.05,-77.05,331,.4,.4,2026-08-01,1830,SNPP,VIIRS,n,2.0NRT,290,5,D\n" +
+        "-5.05,-75.05,332,.4,.4,2026-08-01,1830,SNPP,VIIRS,h,2.0NRT,290,5,D\n" +
+        "-5.05,-75.05,333,.4,.4,2026-11-02,1830,SNPP,VIIRS,h,2.0NRT,290,5,D\n")
+    (tmp_path / "2026" / "viirs-noaa20_2026_nrt.csv").write_text(header + "\n" +
+        "-5.05,-75.05,334,.4,.4,2026-11-05,1800,N20,VIIRS,n,2.0NRT,290,5,D\n" +
+        "-5.05,-75.05,334,.4,.4,2026-11-14,1800,N20,VIIRS,n,2.0NRT,290,5,D\n")
+    (tmp_path / "2026" / "viirs-noaa21_2026_archive.csv").write_text(header + ",type\n" +
+        "-5.05,-75.05,335,.4,.4,2026-03-01,1800,N21,VIIRS,n,2,290,5,D,0\n" +
+        "-5.05,-75.05,335,.4,.4,2026-03-02,1800,N21,VIIRS,n,2,290,5,D,3\n")
+    with duckdb.connect() as con:
+        cells.build_cells(con)
+        rows = con.execute("SELECT sensor, date::VARCHAR, processing, bright_max, cell_y FROM cells WHERE year = 2026 ORDER BY ALL").fetchall()
+    assert rows == [("noaa20", "2026-11-05", "nrt", 334.0, -51), ("noaa21", "2026-03-01", "sp", 335.0, -51),
+                    ("snpp", "2026-08-01", "nrt", 332.0, -51)]
+    report = json.loads((config.INTERIM_DIR / "static_mask_validation.json").read_text())
+    assert report["cells"] == {"viirs": 1}
+    assert {r["sensor"]: (r["nrt_detections"], r["nrt_removed"]) for r in report["nrt_removed"]}["snpp"] == (3, 1)
