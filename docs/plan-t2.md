@@ -293,3 +293,53 @@ Todas leen `data/interim/cells.parquet`. Ninguna modifica `config.py` ni los arc
 - La serie nacional no tiene un salto entre 2002 y 2003 ni entre 2022 y 2023 mayor que la variación entre años normales; se reporta la razón `estimated / n_snpp` por año (debe ser estable) y `estimated / n_aqua` en 2003–2022.
 - 2025 queda por debajo de 2024.
 - Las 13 pruebas siguen pasando; se agregan pruebas del puente y de la clasificación de días simultáneos.
+
+## Ola 3 — Integración (versión final tras la Ola 2.5) · `gpt-6-astra`
+
+Reemplaza a la Ola 3 de arriba donde se contradigan.
+
+### Rangos con error estructural
+Los rangos de la Ola 2.5 (1–3 %) solo miden la incertidumbre de calibración. El rango final suma el error medido entre sensores:
+
+| Período | Error estructural que se agrega |
+|---|---|
+| Solo VIIRS o ambos (2012 en adelante) | Ninguno: es la escala de referencia. El rango es el *bootstrap* |
+| Solo Aqua (2002-07 a 2011) | Residuos de log(estimado con Aqua / estimado con VIIRS) en `TEST_YEARS`, por región × mes |
+| Solo Terra (2000-11 a 2002-06) | Residuos de la prueba hacia atrás de Terra (`terra_backcast`), por región × mes |
+
+- Cada réplica *bootstrap* se multiplica por exp(un residuo sorteado de su región), con `SEED`. Los percentiles de `CI_LEVEL` salen de esas réplicas combinadas.
+- La fila `peru` suma las réplicas regionales, usando el mismo año de residuo para las tres regiones, para conservar la correlación.
+- Las réplicas finales se guardan en `data/interim/series_replicates.parquet`.
+
+### 3a. `scripts/build_series.py` → `data/processed/series.json`
+- Las columnas son exactamente las de `series.json` en el contrato, en ese orden.
+- `estimated` sale de `estimates.parquet` (Ola 2.5), y `est_low`/`est_high` del rango con error estructural.
+- `raw_modis` es la unión de celdas-día de Terra y Aqua. `raw_viirs` son las de S-NPP, o `null` antes de 2012-01. `raw_detections` es la suma de `n_detections` de todos los sensores.
+- `modis_equiv` sigue la regla del contrato: Aqua real; Terra × r antes de `AQUA_START`; emulador si no hay MODIS.
+- `hist_median` y `anomaly_class` se calculan con `estimated` en `HISTORY_YEARS`, usando `ANOMALY_PERCENTILES`.
+- `is_forecast = false`.
+- Los números se redondean a 1 decimal. Los meses anteriores a 2000-11 no existen; los meses sin datos no se inventan.
+
+### 3b. `scripts/validate.py` → `data/processed/methodology.json`
+- `params`: `grid_deg`, `calibration_years`, `test_years`, `simultaneous_max_minutes` y `ci_level`.
+- `detection`: una fila por región × mes con los nombres del contrato (`n_modis` = Aqua, `n_viirs`, `n_both`, `p_modis`, `p_viirs`), sacados de la calibración con pasadas simultáneas.
+- `validation`: una fila por región y otra para `peru`.
+  - `error_pct_method`: MAPE anual del estimado solo con Aqua frente al estimado con VIIRS, en `TEST_YEARS`.
+  - `error_pct_naive`: MAPE anual de la suma ingenua (`raw_detections`) frente a `estimated`, en `TEST_YEARS`. Muestra cuánto se equivoca quien suma sin corregir.
+  - `mapbiomas_corr`: correlación de Pearson anual 2001–2025 entre `estimated` y el área quemada de MapBiomas (`data/interim/mapbiomas.parquet`), si el archivo existe; si no, `null`.
+- `emulator`: con el esquema del contrato, desde `emulator_metrics.json`.
+- `periods`: la lista de períodos con su fuente y su confianza:
+  `[{"from": "2000-11", "to": "2002-06", "source": "terra_bridge", "confidence": "low"}, ...]`. Se marca `low` hasta `LOW_CONFIDENCE_UNTIL`.
+- `findings`: los números que usará "How we calculate it", con nombres en inglés:
+  - la coincidencia y N/S-NPP por tramo de diferencia de hora en calibración;
+  - el sesgo de Chapman ante dependencia, sacado de las pruebas (unos −29 %);
+  - el error de 2025 del emulador frente a Aqua real (deriva);
+  - la hora local mediana de paso de Aqua por año (2013–2025).
+
+### 3c. `tests/test_outputs.py`
+- Valida que los dos JSON cumplen el contrato: nombres, tipos, valores permitidos de `source` y `anomaly_class`, `est_low ≤ estimated ≤ est_high`, una sola fila por región × año × mes, y que `peru` es la suma de las regiones en `raw_*`.
+
+**Criterios de aceptación**
+- `.venv/bin/pytest -q` pasa completo.
+- El rango anual de 2003–2011 es más ancho que el de 2013–2022, y el de 2000–2002 más ancho todavía.
+- El informe incluye la serie anual nacional (estimated, rango y source) y la tabla `validation`.
