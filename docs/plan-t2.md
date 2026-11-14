@@ -416,3 +416,34 @@ Resultados en `data/interim/map_validation.json`.
 - La regla nueva supera a la actual en la correlación de la validación; si no, se informa y no se aplica.
 - Menos del 0,1 % de las celdas supera 31.
 - `map.parquet` sigue pesando menos de 10 MB.
+
+## Tarea 4i — Regiones reales por departamentos (reemplaza la entrega de T1)
+
+**Entrega:** `data/processed/regions.geojson` definitivo, sin `provisional`, y todo el flujo regenerado con esas regiones.
+
+### Fuente de los límites
+- Departamentos (ADM1) de Perú desde **geoBoundaries** (licencia abierta, CC BY 4.0), versión gbOpen. Se descarga con `scripts/fetch_departments.py` a `data/external/boundaries/` (no se sube).
+- Si geoBoundaries no responde, se usa GADM nivel 1 y se declara.
+- Se simplifica la geometría para que el archivo final pese menos de 2 MB, sin dejar huecos ni solapes entre departamentos vecinos (simplificación topológica).
+
+### Departamentos → macrorregiones
+- El contrato pide agrupar departamentos completos.
+- La asignación no se elige a mano: cada departamento va a la macrorregión con la que comparte **más área** según los polígonos provisionales de `regions.py`. Se publica la tabla con el porcentaje de cada departamento en cada macrorregión.
+- Callao se une a Lima para la asignación, pero conserva su propia `Feature`.
+
+### `scripts/export_regions.py` (se reemplaza la versión provisional)
+- Una `Feature` por departamento: `id` en minúsculas y sin tildes (`madre_de_dios`), `name` con tildes (`Madre de Dios`), `level = "departamento"` y propiedad extra `macro`.
+- Una `Feature` por macrorregión (`level = "macro"`, `id` = `amazonia`, `sierra` o `costa`), unión de sus departamentos.
+- Una `Feature` para el país (`id = "peru"`, `level = "pais"`).
+
+### Regenerar todo
+En este orden: `cells.py` (con `--all-types` también), `capture_recapture.py`, `modis_emulator.py`, `build_series.py`, `validate.py`, `build_map.py`, `pytest`.
+
+### Informe obligatorio
+- Tabla de asignación departamento → macro con los porcentajes de área.
+- Cambio en celdas-día por región y sensor frente a las regiones provisionales.
+- Cambio en `p_aqua` y `p_viirs` por región, en la serie anual por región y en la tabla `validation`.
+- Si algún resultado empeora mucho (por ejemplo, el error de una región sube más de 5 puntos), se informa, sin ajustar nada para esconderlo.
+
+### Límite que se declara
+Los departamentos no siguen las regiones naturales: Cusco, Puno, Junín o Ayacucho tienen partes de selva y de sierra. Agrupar departamentos completos mezcla regímenes de fuego dentro de una macrorregión.
