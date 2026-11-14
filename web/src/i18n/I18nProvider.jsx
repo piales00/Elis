@@ -40,7 +40,7 @@ export function I18nProvider({ children }) {
       }
       return text;
     };
-    const formatNumber = (n) => new Intl.NumberFormat(locale).format(n);
+    const formatNumber = (n, options) => new Intl.NumberFormat(locale, options).format(n);
     const languageName = (code) => dictionaries[code]["lang.name"];
     return { locale, setLocale, t, formatNumber, languageName };
   }, [locale, setLocale]);
