@@ -30,7 +30,7 @@ def build(con):
     con.execute('CREATE TEMP TABLE series (region VARCHAR, year INTEGER, month INTEGER, estimated DOUBLE, source VARCHAR)')
     con.executemany('INSERT INTO series VALUES (?,?,?,?,?)',
                     [(r['region'], r['year'], r['month'], r['estimated'], r['source'])
-                     for r in series if r['region'] in config.REGIONS])
+                     for r in series if r['region'] in config.REGIONS and not r['is_forecast']])
     load_table(con, 'cells')
     con.execute('''
         CREATE TEMP TABLE base AS
@@ -245,7 +245,7 @@ def main():
             'FROM read_parquet(?) GROUP BY 1,2,3', [str(OUTPUT)]).fetchall()}
         maxima = [0.0, 0.0, 0.0]
         for r in series:
-            if r['region'] not in config.REGIONS:
+            if r['region'] not in config.REGIONS or r['is_forecast']:
                 continue
             got = sums.get((r['region'], r['year'], r['month']), (0, 0, 0))
             for i, want in enumerate((r['estimated'], r['raw_modis'], r['raw_viirs'] or 0)):
