@@ -103,6 +103,8 @@ Alimenta "Cómo lo calculamos".
 - `p_modis`, `p_viirs`: fracción del fuego total que ve cada sensor (de 0 a 1).
 - `error_pct_method`: error medio en los años de prueba. `error_pct_naive`: el mismo error sin corregir, para comparar.
 - `mapbiomas_corr`: qué tan parecida es nuestra serie anual a la de área quemada de MapBiomas (de −1 a 1). Vale `null` mientras no se haga la comparación.
+- `periods`: tramos de la serie con la fuente usada (`terra_bridge`, `aqua`, `viirs`) y su confianza (`low` o `normal`). 2000-11 a 2002-06 es de confianza baja.
+- `findings`: cifras para la pantalla "How we calculate it" (efecto de la hora de paso, sesgo de Chapman, deriva de Aqua). Su forma la fija `scripts/validate.py`.
 - `emulator`: resultados del emulador MODIS (pieza 2) en los años de prueba. `auc` mide si distingue bien qué celdas ve MODIS y cuáles no (de 0,5 a 1). `brier` es el error de sus probabilidades (cuanto más bajo, mejor). `monthly_error_pct` es el error medio del total mensual frente al Aqua real, y `monthly_error_pct_fixed_ratio` es el mismo error con un factor fijo, para comparar.
 
 ### `map.parquet` — solo lo lee la API
