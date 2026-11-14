@@ -55,3 +55,8 @@ El repositorio incluye skills para Claude Code en `.claude/skills/`, como copias
 | `video-use` | Editar el video del pitch | Copiada de la configuración local (sin `.venv`) |
 | `pptx` | Crear o editar la presentación en PowerPoint | Copiada de la configuración local (Anthropic) |
 | `code-review` | Revisión de código antes de mezclar un PR | Copiada de la configuración local |
+
+## Equipo y datos
+
+- [Reparto del equipo y puntos de control](docs/equipo.md)
+- [Contrato de datos](docs/contrato-datos.md): parámetros del método, archivos y API
