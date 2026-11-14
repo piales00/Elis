@@ -20,6 +20,7 @@ from config import (
     BOUNDARY_SIMPLIFICATION_DEG,
     DEPARTMENT_DISPLAY_NAMES,
     GRID_DEG,
+    INTERIM_DIR,
     MACROREGION_DEPARTMENTS,
     MACROREGION_NAMES,
     MAX_YEAR,
@@ -291,10 +292,10 @@ def write_observations(destination: Path, departments: list[dict]) -> tuple[int,
 
 
 def write_map(observations_file: Path) -> tuple[int, int]:
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    final_path = PROCESSED_DIR / "map.parquet"
+    INTERIM_DIR.mkdir(parents=True, exist_ok=True)
+    final_path = INTERIM_DIR / "map_t1_raw.parquet"
     observations = observations_file.resolve().as_posix().replace("'", "''")
-    with tempfile.TemporaryDirectory(prefix="firechronos_map_", dir=PROCESSED_DIR) as temporary:
+    with tempfile.TemporaryDirectory(prefix="firechronos_map_", dir=INTERIM_DIR) as temporary:
         temporary_path = (Path(temporary) / "map.parquet").resolve()
         destination = temporary_path.as_posix().replace("'", "''")
         sql = f"""
@@ -356,8 +357,8 @@ def main() -> None:
     print(f"Regiones: Perú, {len(MACROREGION_NAMES)} macrorregiones y {len(departments)} unidades departamentales.")
     print(f"Datos fuente: {len(sources)} archivos; observaciones filtradas: {raw_count}.")
     print(f"Observaciones por macrorregión: {region_counts}.")
-    print(f"Parquet: data/processed/map.parquet; {map_rows} celdas-mes en {years} años.")
-    print("estimated queda en null hasta que T2 entregue las estimaciones.")
+    print(f"Parquet: data/interim/map_t1_raw.parquet; {map_rows} celdas-mes en {years} años.")
+    print("data/processed/map.parquet lo genera scripts/build_map.py.")
 
 
 if __name__ == "__main__":

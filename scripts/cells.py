@@ -71,7 +71,7 @@ def build_cells(con, all_types=False):
     """).fetchone()
     outside_pct = 100 * outside / total if total else 0
     print(
-        f"Outside Peru (unassigned cell centers): {outside:,}/{total:,} "
+        f"Outside Peru (cells without department overlap): {outside:,}/{total:,} "
         f"filtered detections ({outside_pct:.4f}%)"
     )
     con.execute("DELETE FROM cells WHERE region IS NULL")
