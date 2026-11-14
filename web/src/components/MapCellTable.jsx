@@ -24,6 +24,8 @@ export default function MapCellTable({ cells, metric }) {
               <th scope="col" className={th}>{t("metric.raw_terra")}</th>
               <th scope="col" className={th}>{t("metric.raw_aqua")}</th>
               <th scope="col" className={th}>{t("metric.raw_viirs")}</th>
+              <th scope="col" className={th}>{t("metric.raw_viirs_noaa20")}</th>
+              <th scope="col" className={th}>{t("metric.raw_viirs_noaa21")}</th>
             </tr>
           </thead>
           <tbody>
@@ -36,6 +38,8 @@ export default function MapCellTable({ cells, metric }) {
                 <td className="border-b border-line px-2.5 py-1 text-right">{num(c.raw_terra)}</td>
                 <td className="border-b border-line px-2.5 py-1 text-right">{num(c.raw_aqua)}</td>
                 <td className="border-b border-line px-2.5 py-1 text-right">{num(c.raw_viirs)}</td>
+                <td className="border-b border-line px-2.5 py-1 text-right">{num(c.raw_viirs_noaa20)}</td>
+                <td className="border-b border-line px-2.5 py-1 text-right">{num(c.raw_viirs_noaa21)}</td>
               </tr>
             ))}
           </tbody>

@@ -20,6 +20,8 @@ export function cellsToGeoJSON(cells, metric) {
         raw_terra: c.raw_terra,
         raw_aqua: c.raw_aqua,
         raw_viirs: c.raw_viirs,
+        raw_viirs_noaa20: c.raw_viirs_noaa20,
+        raw_viirs_noaa21: c.raw_viirs_noaa21,
       },
       geometry: {
         type: "Polygon",

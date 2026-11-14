@@ -135,7 +135,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         lon: coordLabel(tt, p.lon, "E", "W"),
       });
       node.append(title);
-      for (const key of ["estimated", "raw_modis", "raw_terra", "raw_aqua", "raw_viirs"]) {
+      for (const key of ["estimated", "raw_modis", "raw_terra", "raw_aqua", "raw_viirs", "raw_viirs_noaa20", "raw_viirs_noaa21"]) {
         const row = document.createElement("div");
         const raw = p[key];
         row.textContent = `${tt(`metric.${key}`)}: ${raw === null || raw === undefined || raw === "null" ? tt("series.na") : fmt(raw)}`;

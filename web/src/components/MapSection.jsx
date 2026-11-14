@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { periodState } from "../lib/period.js";
 import { computeBreaks } from "../lib/mapStyle.js";
-import { beforeCoverage, sensorFor } from "../content/sensors.js";
+import { beforeCoverage, DEFAULT_SUB, gapNoteKey, sensorFor } from "../content/sensors.js";
 import TimeBar from "./TimeBar.jsx";
 import MapLegend from "./MapLegend.jsx";
 import MapCellTable from "./MapCellTable.jsx";
@@ -17,9 +17,10 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
   const [sub, setSub] = useState("all");
 
   const sensor = sensorFor(group, sub);
+  const gapKey = gapNoteKey(group, sensor, period.year, period.month);
   const metric = sensor.field;
   const state = periodState(series, period.year, period.month);
-  const noCoverage = sensor.supported && beforeCoverage(sensor, period.year, period.month);
+  const noCoverage = beforeCoverage(sensor, period.year, period.month);
   const ready = map.status === "ready";
   const fieldMissing = ready && map.cells.length > 0 && !(metric in map.cells[0]);
   const allNull = ready && map.cells.length > 0 && !fieldMissing && !map.cells.some((c) => c[metric] !== null && c[metric] !== undefined);
@@ -54,10 +55,16 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
         sub={sub}
         onGroupChange={(g) => {
           setGroup(g);
-          setSub("all");
+          setSub(DEFAULT_SUB[g]);
         }}
         onSubChange={setSub}
       />
+
+      {gapKey && (
+        <p role="note" className="m-0 rounded-lg border border-dashed border-forecast bg-surface p-3 text-sm">
+          {t(gapKey)}
+        </p>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="relative">
