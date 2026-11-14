@@ -136,3 +136,136 @@ def test_classify_matches_series_rule():
     assert forecast.classify(thresholds[1], reference) == 'normal'
     assert forecast.classify(thresholds[2], reference) == 'high'
     assert forecast.classify(thresholds[2] + 1, reference) == 'very_high'
+
+
+import forecast_v2
+
+
+@pytest.fixture(scope='module')
+def outlook():
+    return json.loads((config.PROCESSED_DIR / 'forecast.json').read_text())
+
+
+def test_outlook_regions_schema(outlook):
+    regions = {r['region']: r for r in outlook['regions']}
+    features = json.loads((config.PROCESSED_DIR / 'regions.geojson').read_text())['features']
+    assert set(regions) == {f['properties']['id'] for f in features}
+    assert outlook['classes'] == list(forecast_v2.CLASSES)
+    assert outlook['class_percentiles'] == list(config.ANOMALY_PERCENTILES)
+    assert outlook['origin'] < outlook['excluded_partial_month']
+    for entry in regions.values():
+        if entry['level'] == 'department':
+            active = entry['season_median_2003_2025'] >= config.FORECAST_DEPARTMENT_MIN_SEASON
+            assert entry['active'] == active
+        else:
+            assert entry['active']
+        if not entry['active']:
+            assert entry['published'] is False and entry['method'] is None and 'median' not in entry
+            continue
+        assert entry['published'] and entry['method'] in ('model', 'climatology')
+        assert entry['target_year'] == outlook['target_year'] and entry['lead'] == outlook['lead']
+        assert 0 <= entry['low'] <= entry['median'] <= entry['high']
+        assert sum(entry['probabilities'].values()) == pytest.approx(1, abs=0.005)
+        assert list(entry['probabilities']) == outlook['classes']
+        assert [s['lead'] for s in entry['skill_by_lead']] == list(config.FORECAST_SEASON_LEADS)
+
+
+def test_outlook_method_follows_backtest_skill(outlook):
+    rows = {(r['region'], r['variant'], r['lead']): r for r in outlook['backtest']['rows']}
+    for entry in outlook['regions']:
+        if not entry['published']:
+            continue
+        skill = rows[(entry['region'], outlook['variant'], outlook['lead'])]
+        assert entry['method'] == ('model' if forecast_v2.has_skill(skill) else 'climatology')
+        if entry['method'] == 'climatology':
+            assert entry['median'] == entry['hist_median']
+            assert entry['probabilities'] == outlook['climatology_probabilities']
+            assert 'predictors' not in entry
+    metrics = outlook['metrics']
+    departments = [r for r in outlook['regions'] if r['level'] == 'department']
+    assert metrics['departments_published'] == sum(r['published'] for r in departments)
+    assert len(metrics['departments_model']) + len(metrics['departments_climatology']) == metrics['departments_published']
+
+
+def test_outlook_backtest_rows(outlook):
+    rows = outlook['backtest']['rows']
+    assert outlook['backtest']['years'] == list(config.HISTORY_YEARS)
+    variants = {*config.FORECAST_VARIANT_GROUPS, forecast_v2.SELECTED_IN_CV}
+    for unit in (config.NATIONAL, *config.REGIONS):
+        assert {(r['variant'], r['lead']) for r in rows if r['region'] == unit} == {
+            (v, l) for v in variants for l in config.FORECAST_SEASON_LEADS}
+    for row in rows:
+        assert row['n'] == config.HISTORY_YEARS[1] - config.HISTORY_YEARS[0] + 1
+        assert 0 <= row['coverage_model'] <= 1 and row['rps_model'] >= 0
+        assert row['rpss'] == pytest.approx(1 - row['rps_model'] / row['rps_climatology'], abs=1e-3)
+        assert sum(row['chosen'].values()) == row['n']
+
+
+def test_department_sums_match_macroregions(outlook, outputs):
+    series, method = outputs
+    observed = forecast.split_series(series)
+    partial = forecast.partial_month(method)
+    fire = forecast_v2.series_fire(observed, partial)
+    frame = pd.read_parquet(forecast_v2.MAP_PATH)
+    cells = forecast_v2.cell_departments(frame)
+    assert set(cells['department']) <= {f['properties']['id'] for f in forecast_v2.department_features()}
+    departments = forecast_v2.department_fire(frame, cells, set(fire[config.NATIONAL]), partial)
+    macro_of = {f['properties']['id']: f['properties']['macroregion'] for f in forecast_v2.department_features()}
+    check = forecast_v2.check_sums({r: fire[r] for r in config.REGIONS}, departments, macro_of)
+    assert check['max_rel_diff'] < 1e-4
+    assert outlook['departments_check']['max_rel_diff'] == check['max_rel_diff']
+
+
+def synthetic_frame(seed=0):
+    rng = np.random.default_rng(seed)
+    years = np.arange(config.HISTORY_YEARS[0], config.FORECAST_OOS_YEAR + 1)
+    fire = rng.normal(size=len(years))
+    frame = pd.DataFrame(dict(year=years, origin_year=years, origin=[f'{y}-07' for y in years], fire=fire,
+                              oni=rng.normal(size=len(years)), icen=rng.normal(size=len(years)),
+                              **{f'spi{s}': rng.normal(size=len(years)) for s in config.FORECAST_DROUGHT_WINDOWS}))
+    frame['value'] = np.exp(7 + 0.5 * fire + rng.normal(scale=0.3, size=len(years)))
+    return frame
+
+
+def test_test_year_is_not_used_for_selection_or_fit():
+    candidates = forecast_v2.variant_candidates()[forecast_v2.SELECTED_IN_CV]
+    frame = synthetic_frame()
+    year = 2010
+    changed = frame.copy()
+    changed.loc[changed['year'] == year, 'value'] *= 50
+    changed.loc[changed['year'] == config.FORECAST_OOS_YEAR, 'value'] *= 50
+    a = forecast_v2.evaluate(frame, candidates, {})
+    b = forecast_v2.evaluate(changed, candidates, {})
+    row_a, row_b = a[a['year'] == year].iloc[0], b[b['year'] == year].iloc[0]
+    assert row_a['model'] == pytest.approx(row_b['model']) and row_a['chosen'] == row_b['chosen']
+    assert a['year'].max() == config.HISTORY_YEARS[1]
+
+
+def test_loo_residuals_match_explicit_refits():
+    frame = synthetic_frame(1)
+    frame['origin_year'] = frame['year'] - 1
+    columns = ('fire', 'oni')
+    residuals, alpha = forecast_v2.loo_residuals(frame, columns)
+    x, y = frame[list(columns)].to_numpy(), forecast_v2.log_value(frame['value'])
+    for i, year in enumerate(frame['year']):
+        keep = forecast_v2.usable(frame, year).to_numpy()
+        expected = y[i] - forecast_v2.ridge(x[keep], y[keep], alpha)(x[i:i + 1])[0]
+        assert residuals[i] == pytest.approx(expected)
+
+
+def test_rps_and_climatology_probabilities():
+    assert sum(forecast_v2.CLIMATOLOGY_PROBS) == pytest.approx(1)
+    assert forecast_v2.rps(np.array([0, 1, 0, 0.0]), 'normal') == 0
+    assert forecast_v2.rps(np.array([1, 0, 0, 0.0]), 'very_high') == pytest.approx(3)
+    probs = forecast_v2.class_probabilities(np.log(1000 + config.FORECAST_LOG_OFFSET), 0.3, np.arange(500, 1500))
+    assert probs.sum() == pytest.approx(1) and np.argmax(probs) == 1
+
+
+def test_season_outlook_in_methodology(outlook, outputs):
+    _, method = outputs
+    info = method['forecast']['season_outlook']
+    assert info['file'] == 'forecast.json'
+    assert (info['variant'], info['origin'], info['target_year'], info['lead']) == (
+        outlook['variant'], outlook['origin'], outlook['target_year'], outlook['lead'])
+    expected = {r['region']: r['method'] for r in outlook['regions'] if r['level'] != 'department'}
+    assert {r['region']: r['method'] for r in info['published']} == expected
