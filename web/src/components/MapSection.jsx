@@ -10,6 +10,7 @@ import { isMock } from "../data/client.js";
 import SensorSelector from "./SensorSelector.jsx";
 import ImageryControls from "./imagery/ImageryControls.jsx";
 import ImageryLegend from "./imagery/ImageryLegend.jsx";
+import RegionPanel from "./imagery/RegionPanel.jsx";
 import { useImageryView } from "./imagery/useImageryView.js";
 import { FIRST_YEAR, LAST_YEAR } from "../config.js";
 
@@ -124,6 +125,18 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
             }}
             onSubChange={setSub}
           />}
+          <RegionPanel
+            regionLabel={regionLabel}
+            periodLabel={periodLabel}
+            series={series}
+            period={period}
+            cell={img.cell}
+            onClearCell={img.clearCell}
+            detections={img.detections}
+            dateLabel={img.dateLabel}
+            showingImagery={img.view === "imagery"}
+            onShowImagery={img.showImagery}
+          />
           <div className="card-soft p-4 text-xs text-muted">
             <ul className="m-0 grid list-none gap-2 p-0">
               <li className="flex items-center gap-3">
