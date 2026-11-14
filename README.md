@@ -1,6 +1,6 @@
 # FireChronos Perú
 
-Calendario histórico comparable del fuego en Perú (2000–2026), construido a partir de las detecciones de MODIS y VIIRS de NASA FIRMS.
+Calendario histórico comparable del fuego en Perú (2000–2025), construido a partir de las detecciones de MODIS y VIIRS de NASA FIRMS.
 
 Proyecto del equipo Log N + 1 para NASA Space Apps 2026, reto *Harmonization of MODIS and VIIRS Hot Spots*.
 
@@ -12,13 +12,15 @@ Detalle completo en [PROYECTO.md](PROYECTO.md). Antecedentes y fuentes en [docs/
 
 ## Datos
 
-Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al repositorio. Para descargarlos:
+Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al repositorio. Descarga los límites referenciales del país y los archivos públicos de MODIS y VIIRS S-NPP:
 
-```bash
-mkdir -p data/raw && cd data/raw
-for y in $(seq 2000 2025); do curl -sO https://firms.modaps.eosdis.nasa.gov/data/country/modis/$y/modis_${y}_Peru.csv; done
-for y in $(seq 2012 2025); do curl -sO https://firms.modaps.eosdis.nasa.gov/data/country/viirs-snpp/$y/viirs-snpp_${y}_Peru.csv; done
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe scripts/download_peru_sources.py
+.\.venv\Scripts\python.exe scripts/build_peru_data.py
 ```
+
+El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. El alcance actual llega hasta 2025. Si llegan a tiempo los CSV de NOAA-20/21 de 2026 solicitados a FIRMS, se podrán guardar en `data/raw/` como `viirs-noaa20_2026_Peru.csv` y `viirs-noaa21_2026_Peru.csv`, ampliar `MAX_YEAR` a 2026 en `scripts/config.py` y volver a ejecutar el generador. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
 
 ## Exploración
 
@@ -28,6 +30,17 @@ python3 -m venv .venv && .venv/bin/pip install duckdb
 ```
 
 `scripts/recaptura.py` es un borrador de la estimación por captura y recaptura; todavía no se ha ejecutado ni validado.
+
+## API
+
+Instala las dependencias y ejecuta la API localmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn api.main:app --reload
+```
+
+La documentación interactiva está en `http://127.0.0.1:8000/docs`. La API sirve los archivos de `data/processed/`; `/regions`, `/series`, `/map` y `/methodology` indicarán que los datos aún no están disponibles mientras falten esos archivos.
 
 ## Cómo trabajamos con Git
 
