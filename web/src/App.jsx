@@ -17,6 +17,7 @@ import HowWeCalculated from "./components/HowWeCalculated.jsx";
 import Coverage2026 from "./components/Coverage2026.jsx";
 import SeriesTable from "./components/SeriesTable.jsx";
 import DataSummary from "./components/DataSummary.jsx";
+import RawVsCorrected from "./components/imagery/RawVsCorrected.jsx";
 
 export default function App() {
   const { t } = useI18n();
@@ -48,6 +49,7 @@ export default function App() {
       <main>
         <Section id="false-record" eyebrow={t("record.eyebrow")} title={t("record.title")} lede={t("record.lede")}>
           <FalseRecordChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
+          <RawVsCorrected methodology={methodology} region={region} regionLabel={t(`region.${region}`)} />
         </Section>
 
         <Section id="map" eyebrow={t("map.eyebrow")} title={t("map.title")} lede={t("map.lede")}>
