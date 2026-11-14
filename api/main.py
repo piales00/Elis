@@ -13,7 +13,7 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()]
 
 app = FastAPI(
-    title="FireChronos Perú API",
+    title="FireChronos Peru API",
     description="Comparable fire-activity calendar for Peru (2000-2026), in fire cell-days.",
     version="0.1.0",
 )
@@ -75,7 +75,7 @@ def get_map(
         raise HTTPException(status_code=503, detail="map.parquet is not available yet.")
     sql = "SELECT lat, lon, raw_terra, raw_aqua, raw_modis, raw_viirs, raw_viirs_noaa20, raw_viirs_noaa21, estimated FROM read_parquet(?) WHERE year = ? AND month = ?"
     parameters: list[Any] = [str(path), year, month]
-    if region is not None:
+    if region is not None and region != "peru":
         sql += " AND region = ?"
         parameters.append(region)
     sql += " ORDER BY lat, lon"
