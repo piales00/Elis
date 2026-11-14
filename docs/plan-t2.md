@@ -399,7 +399,7 @@ Antes de 2012 el mapa solo puede poner fuego donde MODIS lo vio. Los fuegos pequ
 **Problema:** antes de 2012, `estimated` de la región se reparte solo entre las celdas donde MODIS vio fuego. Como Aqua ve cerca del 14 %, cada día visto recibe unas 7 veces su valor y el 2,7 % de las celdas supera 31 (máximo 159).
 
 **Regla nueva** para los meses con `source = modis_only`, por región y mes:
-- **Parte vista:** `seen = raw_modis_region / p_modis_efectivo`, repartida entre las celdas según sus días MODIS. En la práctica: cada celda recibe `raw_modis_celda`. *(Ajuste: la parte vista son los días que MODIS vio, sin escalar.)*
+- **Parte vista:** cada celda recibe sus propios días MODIS del mes (`raw_modis_celda`), sin escalar.
 - **Parte no vista:** `unseen = estimated_region − Σ raw_modis_celda`, repartida según la **climatología VIIRS** de esa región y mes del año: la fracción de las celdas-día de S-NPP de `CALIBRATION_YEARS` y `TEST_YEARS` (2013–2024) que cayó en cada celda.
 - `estimated_celda = raw_modis_celda + unseen × clim_celda`. Las celdas sin fuego MODIS ese mes pero con climatología positiva **también entran al mapa** (con `raw_modis = 0` y `raw_viirs = null`).
 - Si `unseen < 0` (raro), se usa la regla actual para ese mes y se registra.
