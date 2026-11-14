@@ -116,9 +116,11 @@ Una fila por celda, año y mes con actividad.
 | `lat`, `lon` | número | Centro de la celda |
 | `region` | texto | Macrorregión de la celda |
 | `year`, `month` | entero | — |
-| `raw_modis`, `raw_viirs` | entero | Días con detección en el mes, por sensor |
-| `estimated` | número | Actividad estimada de la celda |
+| `raw_modis`, `raw_viirs` | entero o `null` | Días con detección en el mes, por sensor. `raw_modis` une Terra y Aqua. `raw_viirs` es `null` antes de 2012 |
+| `estimated` | número | Parte de la estimación de la región y mes (`series.json`) que le toca a la celda. La suma de las celdas de una región da el `estimated` de la serie |
 | `size_ratio` | número o `null` | Razón VIIRS/MODIS de la celda (pieza 3, extra) |
+
+Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibración. Antes de 2012 el mapa solo ubica fuego donde MODIS lo vio.
 
 ## 4. API
 

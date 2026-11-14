@@ -343,3 +343,43 @@ Los rangos de la Ola 2.5 (1–3 %) solo miden la incertidumbre de calibración. 
 - `.venv/bin/pytest -q` pasa completo.
 - El rango anual de 2003–2011 es más ancho que el de 2013–2022, y el de 2000–2002 más ancho todavía.
 - El informe incluye la serie anual nacional (estimated, rango y source) y la tabla `validation`.
+
+## Tarea 4d — Estimado por celda para el mapa (versión final)
+
+**Entrega:** `data/processed/map.parquet`, con las columnas exactas del contrato, y `data/processed/map-sample-2024-09.json` para que la web pruebe sin la API. Lo genera T2 porque la columna `estimated` necesita la calibración; T1 y T3 solo lo leen.
+
+### Idea
+La estimación se calcula por región y mes (`series.json`). El mapa **reparte** esa cifra entre las celdas de la región según dónde vio fuego el sensor que se usó ese mes. No es una estimación independiente por celda.
+
+### `scripts/build_map.py`
+1. Lee `data/interim/cells.parquet` y `data/processed/series.json`.
+2. Una fila por celda × año × mes con al menos una celda-día de cualquier sensor:
+   - `lat`, `lon`: centro de la celda. `region`: la macrorregión de la celda.
+   - `raw_modis`: días del mes con detección de Terra o Aqua (unión de fechas).
+   - `raw_viirs`: días del mes con detección de S-NPP; `null` en los meses anteriores a `VIIRS_START`.
+3. `estimated` por celda:
+   - Peso de la celda = sus días del sensor de referencia del mes. Si el `source` del mes en `series.json` es `both` o `viirs_only`, el sensor de referencia es S-NPP; si es `modis_only`, es MODIS (`raw_modis`).
+   - `estimated` = `estimated` de la región y mes en `series.json` × peso de la celda / suma de pesos de la región.
+   - Si la suma de pesos de la región es cero y `estimated` regional es mayor que cero, se usa como peso la unión de días de todos los sensores y se registra el caso.
+   - Las celdas con peso cero quedan con `estimated = 0` (el otro sensor vio fuego, el de referencia no).
+4. `size_ratio`: `null` en todas las filas (pieza 3, se hace después).
+5. Redondeo: `estimated` a 2 decimales, `lat` y `lon` a 2 decimales.
+6. Orden: `year, month, region, lat, lon`. Compresión zstd.
+7. `map-sample-2024-09.json`: lista de objetos con `lat, lon, raw_modis, raw_viirs, estimated` para septiembre de 2024, igual que la respuesta de `GET /map`.
+8. Imprime: filas totales, tamaño del archivo, filas por año, y la diferencia máxima entre la suma de celdas y `series.json` por región y mes.
+
+### `tests/test_map.py`
+- Columnas, tipos y orden del contrato; `region` solo toma las tres macrorregiones.
+- Clave única (`lat`, `lon`, `year`, `month`).
+- Los centros caen en la cuadrícula de `GRID_DEG`.
+- `estimated ≥ 0`; `raw_modis` y `raw_viirs` entre 0 y los días del mes; `raw_viirs` es `null` antes de `VIIRS_START` y nunca después.
+- Para cada región y mes, la suma de `estimated` de las celdas coincide con `series.json` con una tolerancia de 0,5 % o 1 unidad.
+- La suma de `raw_viirs` y de la unión MODIS por región y mes coincide con `raw_viirs` y `raw_modis` de `series.json`.
+
+### Criterios de aceptación
+- `.venv/bin/pytest -q` pasa completo (las 34 pruebas anteriores más las nuevas).
+- `map.parquet` pesa menos de 10 MB.
+- No se modifica ningún archivo existente fuera de los dos nuevos.
+
+### Límite que se declara
+Antes de 2012 el mapa solo puede poner fuego donde MODIS lo vio. Los fuegos pequeños que MODIS no ve están en el total de la región, pero el mapa los reparte entre las celdas con fuegos grandes. El mapa anterior a 2012 muestra bien **cuánto** y aproximadamente **dónde**.
