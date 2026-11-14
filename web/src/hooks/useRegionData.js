@@ -7,7 +7,8 @@ export function useRegions() {
   useEffect(() => {
     let cancelled = false;
     getRegions()
-      .then((regions) => {
+      .then((geo) => {
+        const regions = { ...geo, features: geo.features.filter((f) => f.properties.level !== "department") };
         if (!cancelled) setState({ status: "ready", error: null, regions });
       })
       .catch((error) => {

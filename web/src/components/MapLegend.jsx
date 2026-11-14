@@ -1,13 +1,14 @@
 import { useI18n } from "../i18n/I18nProvider.jsx";
-import { CELL_BREAKS, CELL_COLORS, CELL_OUTLINE_WIDTHS } from "../lib/mapStyle.js";
+import { CELL_COLORS, CELL_OUTLINE_WIDTHS } from "../lib/mapStyle.js";
 import { isMock } from "../data/client.js";
 
-export default function MapLegend({ metric }) {
+export default function MapLegend({ metric, breaks }) {
   const { t, formatNumber } = useI18n();
+  const fmt = (v) => formatNumber(v, { maximumFractionDigits: 1 });
   const labels = [
-    `< ${formatNumber(CELL_BREAKS[0])}`,
-    ...CELL_BREAKS.slice(0, -1).map((b, i) => `${formatNumber(b)}–${formatNumber(CELL_BREAKS[i + 1])}`),
-    t("map.legend.last", { from: formatNumber(CELL_BREAKS[CELL_BREAKS.length - 1]) }),
+    `< ${fmt(breaks[0])}`,
+    ...breaks.slice(0, -1).map((b, i) => `${fmt(b)}–${fmt(breaks[i + 1])}`),
+    t("map.legend.last", { from: fmt(breaks[breaks.length - 1]) }),
   ];
   return (
     <div className="rounded-xl border border-line bg-surface p-4 text-sm">

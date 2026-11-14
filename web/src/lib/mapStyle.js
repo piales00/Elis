@@ -9,14 +9,16 @@ export function baseStyle(dark) {
 export function cellsToGeoJSON(cells, metric) {
   return {
     type: "FeatureCollection",
-    features: cells.map((c) => ({
+    features: cells.filter((c) => c[metric] !== null && c[metric] !== undefined).map((c) => ({
       type: "Feature",
       properties: {
-        v: c[metric] ?? 0,
+        v: c[metric],
         lat: c.lat,
         lon: c.lon,
         estimated: c.estimated,
         raw_modis: c.raw_modis,
+        raw_terra: c.raw_terra,
+        raw_aqua: c.raw_aqua,
         raw_viirs: c.raw_viirs,
       },
       geometry: {
@@ -40,20 +42,30 @@ export function featureBounds(feature) {
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const ring of feature.geometry.coordinates) {
-    for (const [lon, lat] of ring) {
-      minX = Math.min(minX, lon);
-      maxX = Math.max(maxX, lon);
-      minY = Math.min(minY, lat);
-      maxY = Math.max(maxY, lat);
+  const visit = (node) => {
+    if (typeof node[0] === "number") {
+      minX = Math.min(minX, node[0]);
+      maxX = Math.max(maxX, node[0]);
+      minY = Math.min(minY, node[1]);
+      maxY = Math.max(maxY, node[1]);
+      return;
     }
-  }
+    node.forEach(visit);
+  };
+  visit(feature.geometry.coordinates);
   return [
     [minX, minY],
     [maxX, maxY],
   ];
 }
 
-export function stepExpression(values) {
-  return ["step", ["get", "v"], values[0], CELL_BREAKS[0], values[1], CELL_BREAKS[1], values[2], CELL_BREAKS[2], values[3], CELL_BREAKS[3], values[4]];
+export function computeBreaks(cells, metric) {
+  let max = 0;
+  for (const c of cells) if (typeof c[metric] === "number" && c[metric] > max) max = c[metric];
+  const top = Math.max(5, Math.ceil(max / 5) * 5);
+  return [1, 2, 3, 4].map((i) => Math.round((top * i * 10) / 5) / 10);
+}
+
+export function stepExpression(values, breaks = CELL_BREAKS) {
+  return ["step", ["get", "v"], values[0], breaks[0], values[1], breaks[1], values[2], breaks[2], values[3], breaks[3], values[4]];
 }

@@ -1,18 +1,32 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { periodState } from "../lib/period.js";
+import { computeBreaks } from "../lib/mapStyle.js";
+import { beforeCoverage, sensorFor } from "../content/sensors.js";
 import TimeBar from "./TimeBar.jsx";
-const MapView = lazy(() => import("./MapView.jsx"));
 import MapLegend from "./MapLegend.jsx";
 import MapCellTable from "./MapCellTable.jsx";
+import SensorSelector from "./SensorSelector.jsx";
 
-const METRICS = ["estimated", "raw_modis", "raw_viirs"];
+const MapView = lazy(() => import("./MapView.jsx"));
+const NONE = [];
 
 export default function MapSection({ regions, region, onRegionSelect, series, seriesLoading, period, onPeriodChange, map }) {
   const { t } = useI18n();
-  const [metric, setMetric] = useState("estimated");
+  const [group, setGroup] = useState("estimated");
+  const [sub, setSub] = useState("all");
 
+  const sensor = sensorFor(group, sub);
+  const metric = sensor.field;
   const state = periodState(series, period.year, period.month);
+  const noCoverage = sensor.supported && beforeCoverage(sensor, period.year, period.month);
+  const ready = map.status === "ready";
+  const fieldMissing = ready && map.cells.length > 0 && !(metric in map.cells[0]);
+  const allNull = ready && map.cells.length > 0 && !fieldMissing && !map.cells.some((c) => c[metric] !== null && c[metric] !== undefined);
+
+  const sensorName = t(sensor.id === "all" ? `sensor.group.${group}` : sensor.labelKey);
+  const since = sensor.since ? (sensor.since.month === 1 ? String(sensor.since.year) : `${t(`month.${sensor.since.month}`)} ${sensor.since.year}`) : "";
+
   let message = null;
   let isError = false;
   if (seriesLoading || map.status === "loading") message = t("status.loading");
@@ -22,41 +36,41 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
   else if (map.status === "error") {
     message = t("status.error", { message: map.error?.message ?? String(map.error) });
     isError = true;
-  } else if (map.status === "ready" && map.cells.length === 0) message = t("map.status.empty");
+  } else if (noCoverage) message = t("map.status.noCoverage", { sensor: sensorName, since });
+  else if (ready && map.cells.length === 0) message = t("map.status.empty");
+  else if (fieldMissing) message = t("map.status.fieldMissing", { sensor: sensorName });
+  else if (allNull) message = t("map.status.noCoverage", { sensor: sensorName, since });
 
-  const cells = state === "observed" && map.status === "ready" ? map.cells : [];
+  const cells = state === "observed" && ready && !noCoverage && !fieldMissing && !allNull ? map.cells : NONE;
+  const breaks = useMemo(() => computeBreaks(cells, metric), [cells, metric]);
   const periodLabel = `${t(`month.${period.month}`)} ${period.year}`;
 
   return (
     <div className="grid gap-4">
       <TimeBar period={period} series={series} loading={seriesLoading} onChange={onPeriodChange} />
 
-      <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
-        <legend className="float-left mr-3 p-0 text-sm text-muted">{t("map.metric.label")}</legend>
-        {METRICS.map((m) => (
-          <label
-            key={m}
-            className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-est ${
-              metric === m ? "border-fg bg-fg font-semibold text-bg" : "border-line bg-surface hover:bg-bg"
-            }`}
-          >
-            <input type="radio" name="metric" value={m} checked={metric === m} onChange={() => setMetric(m)} className="sr-only" />
-            {t(`metric.${m}`)}
-          </label>
-        ))}
-      </fieldset>
+      <SensorSelector
+        group={group}
+        sub={sub}
+        onGroupChange={(g) => {
+          setGroup(g);
+          setSub("all");
+        }}
+        onSubChange={setSub}
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="relative">
           <Suspense fallback={<p className="m-0 text-muted">{t("status.loading")}</p>}>
-          <MapView
-            regions={regions}
-            cells={cells}
-            metric={metric}
-            region={region}
-            onRegionSelect={onRegionSelect}
-            ariaLabel={t("map.aria", { period: periodLabel })}
-          />
+            <MapView
+              regions={regions}
+              cells={cells}
+              metric={metric}
+              breaks={breaks}
+              region={region}
+              onRegionSelect={onRegionSelect}
+              ariaLabel={t("map.aria", { period: periodLabel })}
+            />
           </Suspense>
           {message && (
             <p
@@ -69,7 +83,7 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
             </p>
           )}
         </div>
-        <MapLegend metric={metric} />
+        <MapLegend metric={metric} breaks={breaks} />
       </div>
 
       <MapCellTable cells={cells} metric={metric} />

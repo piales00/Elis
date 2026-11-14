@@ -47,8 +47,9 @@ function Marker({ shape, x, y, color, hollow }) {
   return <circle cx={x} cy={y} r="4" style={style} />;
 }
 
-function Series({ rows, pick, x, y, color, shape, withBand }) {
+function Series({ rows, pick, x, y, color, shape, withBand, dense }) {
   const runs = buildRuns(rows, pick);
+  const isolated = new Set(runs.filter((run) => run.rows.length === 1).map((run) => run.rows[0].idx));
   return (
     <g>
       {runs.map((run) => {
@@ -78,6 +79,7 @@ function Series({ rows, pick, x, y, color, shape, withBand }) {
       })}
       {rows.map((r) => {
         if (pick(r) === null || pick(r) === undefined) return null;
+        if (dense && !r.is_forecast && !isolated.has(r.idx)) return null;
         return (
           <g key={r.idx}>
             {withBand && (
@@ -253,6 +255,7 @@ export default function FalseRecordChart({ series, region, period, onSelectPerio
   const rawMax = niceMax(Math.max(0, ...observed.map((r) => r.raw_detections)));
   const cellsMax = niceMax(Math.max(0, ...rows.map((r) => r.est_high), ...observed.map((r) => Math.max(r.raw_modis, r.raw_viirs ?? 0))));
   const periodIdx = monthIndex(period.year, period.month);
+  const dense = rows.length > 96;
 
   const active = hover ?? rows[Math.min(focusPos, rows.length - 1)];
   const showCursor = hover !== null;
@@ -320,15 +323,15 @@ export default function FalseRecordChart({ series, region, period, onSelectPerio
           <>
             <PanelTitle title={t("chart.panelRaw.title")} sub={t("chart.panelRaw.sub")} />
             <Frame width={width} ml={ml} yMax={rawMax} x={x} periodIdx={periodIdx} cursorIdx={showCursor ? active.idx : null} showEra>
-              {(y) => <Series rows={observed} pick={(r) => r.raw_detections} x={x} y={y} color="var(--c-raw)" shape="triangle" />}
+              {(y) => <Series rows={observed} pick={(r) => r.raw_detections} x={x} y={y} color="var(--c-raw)" shape="triangle" dense={dense} />}
             </Frame>
             <PanelTitle title={t("chart.panelCells.title")} sub={t("chart.panelCells.sub")} />
             <Frame width={width} ml={ml} yMax={cellsMax} x={x} periodIdx={periodIdx} cursorIdx={showCursor ? active.idx : null}>
               {(y) => (
                 <>
-                  <Series rows={observed} pick={(r) => r.raw_modis} x={x} y={y} color="var(--c-modis)" shape="circle" />
-                  <Series rows={observed} pick={(r) => r.raw_viirs} x={x} y={y} color="var(--c-viirs)" shape="square" />
-                  <Series rows={rows} pick={(r) => r.estimated} x={x} y={y} color="var(--c-est)" shape="diamond" withBand />
+                  <Series rows={observed} pick={(r) => r.raw_modis} x={x} y={y} color="var(--c-modis)" shape="circle" dense={dense} />
+                  <Series rows={observed} pick={(r) => r.raw_viirs} x={x} y={y} color="var(--c-viirs)" shape="square" dense={dense} />
+                  <Series rows={rows} pick={(r) => r.estimated} x={x} y={y} color="var(--c-est)" shape="diamond" withBand dense={dense} />
                 </>
               )}
             </Frame>

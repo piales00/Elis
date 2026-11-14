@@ -20,7 +20,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, region, onRegionSelect, ariaLabel }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, ariaLabel }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -135,9 +135,10 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
         lon: coordLabel(tt, p.lon, "E", "W"),
       });
       node.append(title);
-      for (const key of ["estimated", "raw_modis", "raw_viirs"]) {
+      for (const key of ["estimated", "raw_modis", "raw_terra", "raw_aqua", "raw_viirs"]) {
         const row = document.createElement("div");
-        row.textContent = `${tt(`metric.${key}`)}: ${fmt(p[key])}`;
+        const raw = p[key];
+        row.textContent = `${tt(`metric.${key}`)}: ${raw === null || raw === undefined || raw === "null" ? tt("series.na") : fmt(raw)}`;
         node.append(row);
       }
       popupRef.current.setLngLat(e.lngLat).setDOMContent(node).addTo(map);
@@ -182,6 +183,13 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
     if (!ready || !map) return;
     map.getSource("cells").setData(cells ? cellsToGeoJSON(cells, metric) : EMPTY);
   }, [ready, cells, metric]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !breaks) return;
+    map.setPaintProperty("cells-fill", "fill-color", stepExpression(CELL_COLORS, breaks));
+    map.setPaintProperty("cells-outline", "line-width", stepExpression(CELL_OUTLINE_WIDTHS, breaks));
+  }, [ready, breaks]);
 
   useEffect(() => {
     const map = mapRef.current;

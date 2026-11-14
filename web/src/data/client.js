@@ -33,8 +33,20 @@ function inRing(lon, lat, ring) {
   return inside;
 }
 
+const LEVEL_ALIASES = { pais: "country", departamento: "department" };
+
+function normalizeRegions(geo) {
+  return {
+    ...geo,
+    features: geo.features.map((f) => ({
+      ...f,
+      properties: { ...f.properties, level: LEVEL_ALIASES[f.properties.level] ?? f.properties.level },
+    })),
+  };
+}
+
 export async function getRegions() {
-  return getJson(isMock ? regionsUrl : `${API_BASE}/regions`);
+  return normalizeRegions(await getJson(isMock ? regionsUrl : `${API_BASE}/regions`));
 }
 
 export async function getSeries({ region, from, to }) {
@@ -51,7 +63,7 @@ export async function getSeries({ region, from, to }) {
 
 export async function getMap({ year, month, region }) {
   if (year === undefined || month === undefined) throw new Error("year and month are required");
-  if (!isMock) return getJson(`${API_BASE}/map${query({ year, month, region })}`);
+  if (!isMock) return getJson(`${API_BASE}/map${query({ year, month, region: region === "peru" ? undefined : region })}`);
   if (year !== 2024 || month !== 9) throw new NoDataError(`No mock map for ${year}-${month}`);
   const cells = await getJson(mapUrl);
   if (!region || region === "peru") return cells;
