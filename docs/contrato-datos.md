@@ -158,10 +158,11 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
 | `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
+| `POST /chat` | Cuerpo JSON: `messages` (lista de `{role, content}`), `region` (opcional), `locale` (opcional) | `text/event-stream` con eventos `text`, `tool`, `chart`, `notice`, `done` y `error` (ver `docs/plan-chat-ia.md`) |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.
 
-La API solo acepta `GET` y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés.
+La API acepta `GET` en las rutas de datos y `POST` únicamente en `/chat`, y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés. Si `CHAT_ENABLED` no es `1` o falta `ANTHROPIC_API_KEY`, `POST /chat` responde `503`.
 
 ## 5. Datos de prueba
 
