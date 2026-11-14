@@ -12,13 +12,15 @@ Detalle completo en [PROYECTO.md](PROYECTO.md). Antecedentes y fuentes en [docs/
 
 ## Datos
 
-Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al repositorio. Para descargarlos:
+Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al repositorio. Descarga los límites referenciales del país y los archivos públicos de MODIS y VIIRS S-NPP:
 
-```bash
-mkdir -p data/raw && cd data/raw
-for y in $(seq 2000 2025); do curl -sO https://firms.modaps.eosdis.nasa.gov/data/country/modis/$y/modis_${y}_Peru.csv; done
-for y in $(seq 2012 2025); do curl -sO https://firms.modaps.eosdis.nasa.gov/data/country/viirs-snpp/$y/viirs-snpp_${y}_Peru.csv; done
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe scripts/download_peru_sources.py
+.\.venv\Scripts\python.exe scripts/build_peru_data.py
 ```
+
+El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. La entrega 2026 de FIRMS incluye MODIS Terra/Aqua (estándar hasta agosto; NRT desde septiembre hasta el 13 de noviembre), VIIRS NOAA-20 (J1) y NOAA-21 (J2) (estándar hasta julio; NRT desde agosto hasta el 13 y 14 de noviembre), y VIIRS S-NPP (estándar hasta julio; NRT desde agosto hasta el 1 de noviembre). En los CSV estándar se conserva el filtro `type=0`; los NRT no incluyen esa columna y se filtran con los umbrales de confianza de cada instrumento. NASA reemplaza los datos NRT por estándar cuando están listos, así que los meses NRT son provisionales. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
 
 ## Exploración
 
@@ -28,6 +30,17 @@ python3 -m venv .venv && .venv/bin/pip install duckdb
 ```
 
 `scripts/recaptura.py` es un borrador de la estimación por captura y recaptura; todavía no se ha ejecutado ni validado.
+
+## API
+
+Instala las dependencias y ejecuta la API localmente:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn api.main:app --reload
+```
+
+La documentación interactiva está en `http://127.0.0.1:8000/docs`. La API sirve los archivos de `data/processed/`; `/regions`, `/series`, `/map` y `/methodology` indicarán que los datos aún no están disponibles mientras falten esos archivos.
 
 ## Cómo trabajamos con Git
 
