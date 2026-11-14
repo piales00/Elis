@@ -32,7 +32,7 @@ def con():
 @pytest.fixture(scope='module')
 def series():
     rows = json.loads((config.PROCESSED_DIR / 'series.json').read_text())
-    return [r for r in rows if r['region'] in config.REGIONS]
+    return [r for r in rows if r['region'] in config.REGIONS and not r['is_forecast']]
 
 
 def test_columns_types_and_order(con):

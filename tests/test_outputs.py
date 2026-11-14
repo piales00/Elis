@@ -19,8 +19,9 @@ FIELDS = ('region', 'year', 'month', 'raw_modis', 'raw_viirs', 'raw_detections',
 
 @pytest.fixture(scope='module')
 def outputs():
-    return [json.loads((config.PROCESSED_DIR / name).read_text())
-            for name in ('series.json', 'methodology.json')]
+    series, method = [json.loads((config.PROCESSED_DIR / name).read_text())
+                      for name in ('series.json', 'methodology.json')]
+    return [r for r in series if not r['is_forecast']], method
 
 
 def number(value):
@@ -78,7 +79,7 @@ def test_national_raw_totals_and_estimate_origin(outputs):
 
 def test_methodology_contract(outputs):
     _, method = outputs
-    assert set(method) == {'params','detection','validation','emulator','periods','findings'}
+    assert set(method) == {'params','detection','validation','emulator','periods','findings','forecast'}
     assert method['params'] == dict(grid_deg=config.GRID_DEG,calibration_years=list(config.CALIBRATION_YEARS),
         test_years=list(config.TEST_YEARS),simultaneous_max_minutes=config.SIMULTANEOUS_MAX_MINUTES,ci_level=config.CI_LEVEL)
     assert len(method['detection']) == (len(config.REGIONS)+1)*12

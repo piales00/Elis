@@ -102,7 +102,8 @@ def test_methodology(client):
 
 
 def test_series_reaches_last_data_month(client):
-    rows = client.get('/series', params={'region': config.NATIONAL, 'from': config.LAST_DATA_DATE.year}).json()
+    rows = [r for r in client.get('/series', params={'region': config.NATIONAL, 'from': config.LAST_DATA_DATE.year}).json()
+            if not r['is_forecast']]
     assert (rows[-1]['year'], rows[-1]['month']) == (config.LAST_DATA_DATE.year, config.LAST_DATA_DATE.month)
     assert client.get('/map', params={'year': config.LAST_DATA_DATE.year, 'month': config.LAST_DATA_DATE.month}).json()
 
