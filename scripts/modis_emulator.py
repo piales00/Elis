@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from time import perf_counter
 
 import duckdb
@@ -57,6 +58,7 @@ def prepare(con):
     con.execute("CREATE TABLE excluded (start_date DATE, end_date DATE)")
     intervals = [interval for source in (config.OUTAGES, config.DEGRADED)
                  for sensor in ("aqua", "snpp") for interval in source.get(sensor, [])]
+    intervals.append((config.SNPP_END + timedelta(days=1), config.LAST_DATA_DATE))
     if intervals:
         con.executemany("INSERT INTO excluded VALUES (?, ?)", intervals)
     con.execute("""
@@ -246,7 +248,8 @@ def main():
                 "calibration_decision": "ECE on held-out calibration years from the core-year model; if below threshold, refit on all calibration years. Test diagnostics never select a model.",
                 "defaults": "Unspecified scikit-learn defaults; native categorical region in HistGradientBoosting; equal-width reliability bins; permutation importance uses negative Brier score.",
                 "uncertainty": "Point predictions for emulator validation; reliability bins and permutation standard deviations are diagnostics, not confidence intervals for totals.",
-                "regions": "Inherited from cells.parquet; provisional if generated without official polygons.",
+                "regions": "Inherited from cells.parquet: macroregions built from whole departments (INEI reference boundaries), each 0.1 degree cell assigned by largest department area.",
+                "sensors": "S-NPP and Aqua only; days after SNPP_END are excluded from joint availability, so the last month only covers its jointly observed days.",
             },
             "rates": con.execute("SELECT * FROM rates ORDER BY region, month").df().to_dict(orient="records"),
         }

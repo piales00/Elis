@@ -17,6 +17,7 @@ from config import (
     BOUNDARY_SOURCE_FILE,
     BOUNDARY_SOURCE_NAME,
     BOUNDARY_SOURCE_URL,
+    BOUNDARY_COORD_DIGITS,
     BOUNDARY_SIMPLIFICATION_DEG,
     DEPARTMENT_DISPLAY_NAMES,
     GRID_DEG,
@@ -97,6 +98,10 @@ def region_features(departments: list[dict]) -> dict:
             geometry.simplify(BOUNDARY_SIMPLIFICATION_DEG, preserve_topology=True)
             for geometry in source_geometries
         ]
+    display_geometries = [
+        shapely.transform(geometry, lambda coordinates: coordinates.round(BOUNDARY_COORD_DIGITS))
+        for geometry in display_geometries
+    ]
     display_by_id = {
         department["id"]: geometry
         for department, geometry in zip(departments, display_geometries)
@@ -106,7 +111,7 @@ def region_features(departments: list[dict]) -> dict:
         {
             "type": "Feature",
             "id": REGION_ID,
-            "properties": {"id": REGION_ID, "name": REGION_NAME, "level": "pais"},
+            "properties": {"id": REGION_ID, "name": REGION_NAME, "level": "country"},
             "geometry": mapping(peru_geometry),
         }
     ]
@@ -137,7 +142,7 @@ def region_features(departments: list[dict]) -> dict:
                 "properties": {
                     "id": department["id"],
                     "name": department["name"],
-                    "level": "departamento",
+                    "level": "department",
                     "macroregion": department["macroregion"],
                     "source_document": department["source_document"],
                 },
@@ -153,6 +158,7 @@ def region_features(departments: list[dict]) -> dict:
             "retrieved_at": datetime.now(timezone.utc).isoformat(),
             "boundary_note": "Límites censales referenciales; no sustituyen una delimitación legal.",
             "display_simplification_degrees": BOUNDARY_SIMPLIFICATION_DEG,
+            "display_coordinate_digits": BOUNDARY_COORD_DIGITS,
             "activity_filter_uses_unsimplified_boundaries": True,
             "macroregion_note": "Agrupación aproximada de departamentos completos aprobada por el equipo.",
             "macroregions": macroregion_metadata,

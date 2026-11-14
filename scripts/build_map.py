@@ -13,8 +13,9 @@ OUTPUT = config.PROCESSED_DIR / 'map.parquet'
 SAMPLE_YEAR, SAMPLE_MONTH = 2024, 9
 SAMPLE = config.PROCESSED_DIR / f'map-sample-{SAMPLE_YEAR}-{SAMPLE_MONTH:02d}.json'
 COLUMNS = ('lat', 'lon', 'region', 'year', 'month', 'raw_terra', 'raw_aqua', 'raw_modis',
-           'raw_viirs', 'estimated', 'size_ratio')
-SAMPLE_FIELDS = ('lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs', 'estimated')
+           'raw_viirs', 'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated', 'size_ratio')
+SAMPLE_FIELDS = ('lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+                 'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated')
 COMPRESSION = 'zstd'
 CLIMATOLOGY_YEARS = (config.CALIBRATION_YEARS[0], config.TEST_YEARS[1])
 VALIDATION_YEARS = config.CALIBRATION_YEARS
@@ -30,7 +31,7 @@ def build(con):
     con.execute('CREATE TEMP TABLE series (region VARCHAR, year INTEGER, month INTEGER, estimated DOUBLE, source VARCHAR)')
     con.executemany('INSERT INTO series VALUES (?,?,?,?,?)',
                     [(r['region'], r['year'], r['month'], r['estimated'], r['source'])
-                     for r in series if r['region'] in config.REGIONS])
+                     for r in series if r['region'] in config.REGIONS and not r['is_forecast']])
     load_table(con, 'cells')
     con.execute('''
         CREATE TEMP TABLE base AS
@@ -39,14 +40,17 @@ def build(con):
             count(DISTINCT date) FILTER (WHERE sensor = 'aqua') AS raw_aqua,
             count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra')) AS raw_modis,
             count(DISTINCT date) FILTER (WHERE sensor = 'snpp') AS raw_viirs,
+            count(DISTINCT date) FILTER (WHERE sensor = 'noaa20') AS raw_viirs_noaa20,
+            count(DISTINCT date) FILTER (WHERE sensor = 'noaa21') AS raw_viirs_noaa21,
+            count(DISTINCT date) FILTER (WHERE sensor = 'snpp' OR (sensor = 'noaa20' AND date > ?)) AS raw_viirs_reference,
             count(DISTINCT date) FILTER (WHERE sensor = ?) AS raw_seen_validation,
-            count(DISTINCT date) AS raw_any
+            count(DISTINCT date) FILTER (WHERE sensor IN ('aqua','terra','snpp') OR (sensor = 'noaa20' AND date > ?)) AS raw_any
         FROM cells GROUP BY cell_y, cell_x, region, year, month
-    ''', [VALIDATION_SEEN_SENSOR])
+    ''', [config.SNPP_END, VALIDATION_SEEN_SENSOR, config.SNPP_END])
     con.execute('''
         CREATE TEMP TABLE weighted AS
         SELECT b.*, s.estimated AS regional, s.source,
-            CASE WHEN s.source = 'modis_only' THEN b.raw_modis ELSE b.raw_viirs END AS ref_weight
+            CASE WHEN s.source = 'modis_only' THEN b.raw_modis ELSE b.raw_viirs_reference END AS ref_weight
         FROM base b JOIN series s USING (region, year, month)
     ''')
     con.execute('''
@@ -201,6 +205,8 @@ def main():
                 coalesce(w.raw_aqua, 0)::INTEGER AS raw_aqua,
                 coalesce(w.raw_modis, 0)::INTEGER AS raw_modis,
                 CASE WHEN (k.year, k.month) >= (?, ?) THEN coalesce(w.raw_viirs, 0)::INTEGER END AS raw_viirs,
+                coalesce(w.raw_viirs_noaa20, 0)::INTEGER AS raw_viirs_noaa20,
+                coalesce(w.raw_viirs_noaa21, 0)::INTEGER AS raw_viirs_noaa21,
                 CASE WHEN r.region IS NOT NULL THEN coalesce(w.raw_modis, 0) + r.unseen * coalesce(c.share, 0)
                      WHEN t.ref_total > 0 THEN coalesce(w.regional * w.ref_weight / t.ref_total, 0)
                      WHEN w.regional > 0 THEN w.regional * w.raw_any / t.any_total
@@ -227,7 +233,8 @@ def main():
                     SELECT *, ((units + (rank <= deficit)::INTEGER) / {scale})::DOUBLE AS estimated FROM ranked
                 )
                 SELECT {', '.join(COLUMNS)} FROM rounded
-                WHERE raw_modis > 0 OR coalesce(raw_viirs, 0) > 0 OR estimated > 0
+                WHERE raw_modis > 0 OR coalesce(raw_viirs, 0) > 0 OR raw_viirs_noaa20 > 0
+                    OR raw_viirs_noaa21 > 0 OR estimated > 0
                 ORDER BY year, month, region, lat, lon)
             TO ? (FORMAT PARQUET, COMPRESSION ?)
         ''', [str(OUTPUT), COMPRESSION])
@@ -244,7 +251,7 @@ def main():
             'FROM read_parquet(?) GROUP BY 1,2,3', [str(OUTPUT)]).fetchall()}
         maxima = [0.0, 0.0, 0.0]
         for r in series:
-            if r['region'] not in config.REGIONS:
+            if r['region'] not in config.REGIONS or r['is_forecast']:
                 continue
             got = sums.get((r['region'], r['year'], r['month']), (0, 0, 0))
             for i, want in enumerate((r['estimated'], r['raw_modis'], r['raw_viirs'] or 0)):

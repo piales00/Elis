@@ -88,6 +88,7 @@ if __name__ == "__main__":
                 bool_or(sensor = 'aqua') AS aqua,
                 bool_or(sensor = 'terra') AS terra,
                 bool_or(sensor = 'snpp') AS snpp,
+                bool_or(sensor = 'noaa20') AS noaa20,
                 max(frp_max) FILTER (WHERE sensor = 'aqua') AS aqua_frp,
                 max(frp_max) FILTER (WHERE sensor = 'terra') AS terra_frp,
                 max(frp_max) FILTER (WHERE sensor = 'snpp') AS snpp_frp
@@ -154,11 +155,14 @@ if __name__ == "__main__":
     if not alltypes_path.exists():
         raise FileNotFoundError("Run .venv/bin/python scripts/cells.py --all-types first.")
     pivot(cells_path, "cells")
-    bounds = dict((sensor, (start, end)) for sensor, start, end in con.execute(
-        "SELECT sensor, min(date), max(date) FROM read_parquet(?) GROUP BY sensor", [str(cells_path)]
+    bounds = dict((sensor, (start, min(end, config.LAST_DATA_DATE))) for sensor, start, end in con.execute(
+        "SELECT sensor, min(date), max(date) FROM read_parquet(?) WHERE sensor IN ('aqua','terra','snpp','noaa20') GROUP BY sensor",
+        [str(cells_path)]
     ).fetchall())
     bounds["aqua"] = (config.AQUA_START, bounds["aqua"][1])
-    bounds["snpp"] = (config.VIIRS_START, bounds["snpp"][1])
+    bounds["snpp"] = (config.VIIRS_START, min(bounds["snpp"][1], config.SNPP_END))
+    if "noaa20" in bounds:
+        bounds["noaa20"] = (config.SNPP_END + timedelta(days=1), bounds["noaa20"][1])
     availability = []
     day = min(start for start, _ in bounds.values())
     last_day = max(end for _, end in bounds.values())
@@ -167,9 +171,11 @@ if __name__ == "__main__":
             sensor: start <= day <= end and not excluded(sensor, day)
             for sensor, (start, end) in bounds.items()
         }
+        flags.setdefault("noaa20", False)
         mode = (
             "both" if flags["aqua"] and flags["snpp"] else
-            "aqua" if flags["aqua"] else "snpp" if flags["snpp"] else
+            "snpp" if flags["snpp"] else "noaa20" if flags["noaa20"] else
+            "aqua" if flags["aqua"] else
             "terra" if flags["terra"] else "unavailable"
         )
         availability.append(dict(
@@ -207,29 +213,33 @@ if __name__ == "__main__":
         for i in range(config.BOOTSTRAP_N)
     ]
     write_table("detection_probability_replicates.parquet", probability_draws)
-    con.execute("""
-        CREATE TEMP TABLE segment_counts AS
-        WITH counts AS (
-            SELECT c.region, c.year, c.month, a.mode,
-                count(*) FILTER (WHERE c.aqua AND a.aqua_available)::BIGINT AS n_aqua,
-                count(*) FILTER (WHERE c.snpp AND a.snpp_available)::BIGINT AS n_snpp,
-                count(*) FILTER (WHERE c.terra AND a.terra_available)::BIGINT AS n_terra,
-                count(*) FILTER (WHERE c.aqua AND c.snpp
-                    AND a.aqua_available AND a.snpp_available)::BIGINT AS m
-            FROM cells c JOIN availability a USING (date)
-            GROUP BY c.region, c.year, c.month, a.mode
-        ), segments AS (
-            SELECT year, month, mode, count(*) AS days,
-                count(*) FILTER (WHERE excluded) AS excluded_days
-            FROM availability GROUP BY year, month, mode
-        )
-        SELECT r.region, s.*, coalesce(c.n_aqua, 0) AS n_aqua,
-            coalesce(c.n_snpp, 0) AS n_snpp, coalesce(c.n_terra, 0) AS n_terra,
-            coalesce(c.m, 0) AS m
-        FROM segments s CROSS JOIN (SELECT unnest(?) AS region) r
-        LEFT JOIN counts c USING (region, year, month, mode)
-        ORDER BY region, year, month, mode
-    """, [list(config.REGIONS)])
+    def segment_counts(window=None):
+        month_filter, day_limit = window or (0, 0)
+        return con.execute("""
+            WITH days AS (
+                SELECT * FROM availability WHERE (? = 0 OR (month = ? AND day(date) <= ?))
+            ), counts AS (
+                SELECT c.region, c.year, c.month, a.mode,
+                    count(*) FILTER (WHERE c.aqua AND a.aqua_available)::BIGINT AS n_aqua,
+                    count(*) FILTER (WHERE c.snpp AND a.snpp_available)::BIGINT AS n_snpp,
+                    count(*) FILTER (WHERE c.terra AND a.terra_available)::BIGINT AS n_terra,
+                    count(*) FILTER (WHERE c.aqua AND c.snpp
+                        AND a.aqua_available AND a.snpp_available)::BIGINT AS m,
+                    count(*) FILTER (WHERE c.noaa20 AND a.noaa20_available)::BIGINT AS n_noaa20
+                FROM cells c JOIN days a USING (date)
+                GROUP BY c.region, c.year, c.month, a.mode
+            ), segments AS (
+                SELECT year, month, mode, count(*) AS days,
+                    count(*) FILTER (WHERE excluded) AS excluded_days
+                FROM days GROUP BY year, month, mode
+            )
+            SELECT r.region, s.*, coalesce(c.n_aqua, 0) AS n_aqua,
+                coalesce(c.n_snpp, 0) AS n_snpp, coalesce(c.n_terra, 0) AS n_terra,
+                coalesce(c.m, 0) AS m, coalesce(c.n_noaa20, 0) AS n_noaa20
+            FROM segments s CROSS JOIN (SELECT unnest(?) AS region) r
+            LEFT JOIN counts c USING (region, year, month, mode)
+            ORDER BY region, year, month, mode
+        """, [month_filter, month_filter, day_limit, list(config.REGIONS)]).fetchall()
 
     def fit_bridge(interval, with_bootstrap=True):
         bridge_years = list(range(interval[0], interval[1] + 1))
@@ -264,36 +274,66 @@ if __name__ == "__main__":
         for (r, m), values in bridge_draws.items() for i, value in enumerate(values)
     ])
 
-    estimates, replicas, segments = {}, {}, []
-    for region, year, month, mode, days, excluded_days, na, nv, nt, m in con.sql(
-        "SELECT * FROM segment_counts ORDER BY region, year, month, mode"
-    ).fetchall():
-        if mode == "unavailable":
-            raise ValueError(f"No available sensor for {year}-{month}; missing days cannot be zero-filled.")
-        key = (region, year, month)
+    ratio_year, ratio_months = config.SNPP_END.year, list(range(1, config.SNPP_END.month))
+    ratio_counts = {(r, mo): (nv, nn) for r, mo, nv, nn in con.execute("""
+        SELECT c.region, c.month, count(*) FILTER (WHERE c.snpp), count(*) FILTER (WHERE c.noaa20)
+        FROM cells c JOIN availability a USING (date)
+        WHERE a.snpp_available AND c.year = ? AND c.month IN (SELECT unnest(?))
+        GROUP BY c.region, c.month
+    """, [ratio_year, ratio_months]).fetchall()}
+    month_sample = rng.integers(len(ratio_months), size=(config.BOOTSTRAP_N, len(ratio_months)))
+    noaa20_ratio, noaa20_draws = [], {}
+    for region in config.REGIONS:
+        monthly = np.array([ratio_counts.get((region, mo), (0, 0)) for mo in ratio_months], dtype=float)
+        if np.any(monthly[:, 1] == 0):
+            raise ValueError(f"NOAA-20 ratio month without NOAA-20 cell-days: {region}")
+        ratios = monthly[:, 0] / monthly[:, 1]
+        boot = monthly[month_sample].sum(axis=1)
+        noaa20_draws[region] = boot[:, 0] / boot[:, 1]
+        lo, hi = np.quantile(noaa20_draws[region], tails)
+        noaa20_ratio.append(dict(region=region, year=ratio_year, months=ratio_months,
+            n_snpp=int(monthly[:, 0].sum()), n_noaa20=int(monthly[:, 1].sum()),
+            ratio=float(monthly[:, 0].sum() / monthly[:, 1].sum()), ratio_low=float(lo), ratio_high=float(hi),
+            monthly_ratio=[float(v) for v in ratios], cv=float(ratios.std(ddof=1) / ratios.mean())))
+    noaa20_stable = all(r["cv"] <= config.N20_RATIO_MAX_CV for r in noaa20_ratio)
+    noaa20_index = {r["region"]: r for r in noaa20_ratio}
+    write_table("noaa20_ratio.parquet", noaa20_ratio)
+
+    def project(region, year, month, mode, na, nv, nt, nn):
         probability = record_index[(region, month, "aqua_snpp")]
         p1, p2 = distributions[(region, month, "aqua")]
+        if mode in ("both", "snpp"):
+            source = "both" if mode == "both" and year < config.DRIFT_START_YEAR else "viirs_only"
+            return nv / probability["p2"], nv / p2, source
+        if mode == "noaa20":
+            return nn * noaa20_index[region]["ratio"] / probability["p2"], nn * noaa20_draws[region] / p2, "viirs_only"
+        if mode == "aqua":
+            return na / probability["p1"], na / p1, "modis_only"
+        return (nt * bridge[(region, month)]["ratio"] / probability["p1"],
+                nt * bridge_draws[(region, month)] / p1, "modis_only")
+
+    following = config.LAST_DATA_DATE + timedelta(days=1)
+    partial = config.LAST_DATA_DATE if following.month == config.LAST_DATA_DATE.month else None
+    segment_rows = segment_counts()
+    dropped_months = set() if noaa20_stable else {(y, mo) for _, y, mo, mode, *_ in segment_rows if mode == "noaa20"}
+    estimates, replicas, segments = {}, {}, []
+    for region, year, month, mode, days, excluded_days, na, nv, nt, m, nn in segment_rows:
+        if mode == "unavailable":
+            raise ValueError(f"No available sensor for {year}-{month}; missing days cannot be zero-filled.")
+        if (year, month) in dropped_months:
+            continue
+        key = (region, year, month)
+        probability = record_index[(region, month, "aqua_snpp")]
         n1, n2 = na, nv
         direct = chapman(na, nv, m) if mode == "both" else None
         from_aqua = na / probability["p1"] if mode == "both" else None
-        if mode in ("both", "snpp"):
-            estimate = nv / probability["p2"]
-            draws = nv / p2
-            source = "both" if mode == "both" and year < config.DRIFT_START_YEAR else "viirs_only"
-        elif mode == "aqua":
-            estimate = na / probability["p1"]
-            draws = na / p1
-            source = "modis_only"
-        else:
-            estimate = nt * bridge[(region, month)]["ratio"] / probability["p1"]
-            draws = nt * bridge_draws[(region, month)] / p1
-            source = "modis_only"
+        estimate, draws, source = project(region, year, month, mode, na, nv, nt, nn)
         low, high = np.quantile(draws, tails)
         low, high = min(float(low), estimate), max(float(high), estimate)
-        observed = na + nv - m if mode == "both" else {"aqua": na, "snpp": nv, "terra": nt}[mode]
+        observed = na + nv - m if mode == "both" else {"aqua": na, "snpp": nv, "terra": nt, "noaa20": nn}[mode]
         segments.append(dict(region=region, year=year, month=month, mode=mode,
                              days=days, excluded_days=excluded_days, n1=n1, n2=n2, m=m,
-                             n_terra=nt, source=source, chapman_direct=direct, estimated_from_aqua=from_aqua,
+                             n_terra=nt, n_noaa20=nn, source=source, chapman_direct=direct, estimated_from_aqua=from_aqua,
                              observed_union=observed, estimated=estimate, est_low=float(low), est_high=float(high)))
         if key not in estimates:
             estimates[key] = dict(region=region, year=year, month=month, estimated=0.0,
@@ -301,12 +341,14 @@ if __name__ == "__main__":
                                   n1=0, n2=0, m=0, observed_union=0, excluded_days=0,
                                   availability_adjusted=False, mixed_availability=False,
                                   orbit_drift=year >= config.DRIFT_START_YEAR, segment_count=0,
-                                  chapman_direct=None, estimated_from_aqua=None)
+                                  chapman_direct=None, estimated_from_aqua=None, n_noaa20=0,
+                                  noaa20_bridge=False,
+                                  partial_through=partial if partial and (year, month) == (partial.year, partial.month) else None)
             replicas[key] = np.zeros(config.BOOTSTRAP_N)
         row = estimates[key]
         for field, value in (("estimated", estimate), ("est_low", low), ("est_high", high),
                              ("n1", n1), ("n2", n2), ("m", m), ("observed_union", observed),
-                             ("excluded_days", excluded_days)):
+                             ("excluded_days", excluded_days), ("n_noaa20", nn)):
             row[field] += value
         for field, value in (("chapman_direct", direct), ("estimated_from_aqua", from_aqua)):
             if value is not None:
@@ -314,6 +356,7 @@ if __name__ == "__main__":
         row["segment_count"] += 1
         row["availability_adjusted"] |= excluded_days > 0
         row["mixed_availability"] = row["segment_count"] > 1
+        row["noaa20_bridge"] |= mode == "noaa20"
         if source != row["source"]:
             row["source"] = "viirs_only" if year >= config.DRIFT_START_YEAR else "both"
         replicas[key] += draws
@@ -343,6 +386,18 @@ if __name__ == "__main__":
         for (region, year, month), draws in replicas.items()
         for i, value in enumerate(draws)
     ])
+    window_rows = []
+    if partial is not None:
+        window = {}
+        for region, year, month, mode, days, excluded_days, na, nv, nt, m, nn in segment_counts((partial.month, partial.day)):
+            if (year, month) in dropped_months:
+                continue
+            window[(region, year)] = window.get((region, year), 0.0) + project(region, year, month, mode, na, nv, nt, nn)[0]
+        for year in sorted({y for _, y in window}):
+            window[(config.NATIONAL, year)] = sum(window[(r, year)] for r in config.REGIONS)
+        window_rows = [dict(region=r, year=y, month=partial.month, through_day=partial.day, estimated=v)
+                       for (r, y), v in sorted(window.items())]
+        write_table("partial_window_estimates.parquet", window_rows)
 
     pivot(alltypes_path, "cells_alltypes")
     alltype_records, _ = calibrate("cells_alltypes")
@@ -507,14 +562,30 @@ if __name__ == "__main__":
         national_annual.append(dict(year=year, estimated=estimate, est_low=min(float(lo), estimate),
             est_high=max(float(hi), estimate), source=sorted({r["source"] for r in selected}),
             n_aqua=na, n_snpp=nv, estimated_over_snpp=estimate / nv if nv else None,
-            estimated_over_aqua=estimate / na if na else None))
+            estimated_over_aqua=estimate / na if na else None,
+            partial_through=str(partial) if partial and year == partial.year else None))
+    comparable_months = list(range(1, config.SNPP_END.month))
+    year_to_date = []
+    for year in range(config.VIIRS_START.year, config.SNPP_END.year + 1):
+        estimate = sum(row["estimated"] for (r, y, mo), row in estimates.items()
+                       if r == config.NATIONAL and y == year and mo in comparable_months)
+        draws = np.sum([v for (r, y, mo), v in replicas.items()
+                        if r == config.NATIONAL and y == year and mo in comparable_months], axis=0)
+        lo, hi = np.quantile(draws, tails)
+        nv = con.execute("SELECT count(*) FROM read_parquet(?) WHERE sensor = 'snpp' AND year = ? AND month IN (SELECT unnest(?))",
+                         [str(cells_path), year, comparable_months]).fetchone()[0]
+        year_to_date.append(dict(year=year, months=[comparable_months[0], comparable_months[-1]], estimated=estimate,
+                                 est_low=min(float(lo), estimate), est_high=max(float(hi), estimate),
+                                 n_snpp=nv, estimated_over_snpp=estimate / nv if nv else None))
     sensitivity = dict(
         calibration_years=config.CALIBRATION_YEARS, ci_level=config.CI_LEVEL,
         bootstrap_n=config.BOOTSTRAP_N, seed=config.SEED,
         unit="fire-active cell-days at the afternoon and corresponding nighttime overpasses",
         methods={
             "calibration": "Simultaneous regional daytime overpasses and paired availability; adjacent months then full region for sparse recaptures. Shared year bootstrap across regions and months.",
-            "availability": "Daily segments select S-NPP, otherwise Aqua, otherwise bridged Terra. Mixed months retain source viirs_only after drift onset, with segment sources recording exceptions.",
+            "availability": "Daily segments select S-NPP, otherwise NOAA-20 scaled to S-NPP after the end of S-NPP, otherwise Aqua, otherwise bridged Terra. Mixed months retain source viirs_only after drift onset, with segment sources recording exceptions.",
+            "noaa20_bridge": "After SNPP_END, NOAA-20 cell-days are scaled by the regional S-NPP/NOAA-20 ratio of cell-days on S-NPP-available days of the comparable months, bootstrapped by month, then divided by p_viirs. Used only if every regional monthly-ratio CV is at most N20_RATIO_MAX_CV.",
+            "partial_month": "The last month ends at LAST_DATA_DATE; it is never extrapolated. partial_window_estimates.parquet applies the same daily rules to the same day window in every year for like-for-like comparison.",
             "intervals": "Quantiles of summed aligned projection replicates. Terra bridge year resamples are independent of detection calibration years. Ranges quantify calibration uncertainty, not structural bias or count noise. No observed-union bound: afternoon activity is a different estimand.",
             "angle_control": "Calibration-frozen terciles of regional daily median S-NPP scan_mean among daytime cell-days. Same regional exposure assigned to all capture histories, retaining Aqua-only cells. Proxy control, not exact local viewing angle; observational comparisons cannot establish causality.",
             "diagnostic_bins": "Multiples of SIMULTANEOUS_MAX_MINUTES; left closed, right open, final bin includes 60 minutes. Empty bins are null. Coincidence=m/n_aqua; Chapman pooled nationally within bin.",
@@ -532,7 +603,9 @@ if __name__ == "__main__":
         terra_backcast_test_years=config.TERRA_BACKCAST_TEST_YEARS,
         pooling=[r for r in records if r["pooled"] != "none"],
         frp=frp_results, type_sensitivity=type_comparison, test_diagnostics=diagnostics,
-        national_annual=national_annual,
+        national_annual=national_annual, year_to_date=year_to_date,
+        noaa20_ratio=noaa20_ratio, noaa20_ratio_max_cv=config.N20_RATIO_MAX_CV, noaa20_included=noaa20_stable,
+        partial_through=str(partial) if partial else None, partial_window=window_rows,
     )
     annual_index = {r["year"]: r for r in national_annual}
     transition_years = (config.AQUA_START.year + 1, config.DRIFT_START_YEAR)
@@ -551,13 +624,20 @@ if __name__ == "__main__":
                         if config.CALIBRATION_YEARS[0] <= r["year"] <= config.CALIBRATION_YEARS[1]]
     ratio_min, ratio_max = min(reference_ratios), max(reference_ratios)
     outside = [r["year"] for r in national_annual if r["estimated_over_snpp"] is not None
-               and not ratio_min <= r["estimated_over_snpp"] <= ratio_max]
+               and r["year"] <= config.HISTORY_YEARS[1] and not ratio_min <= r["estimated_over_snpp"] <= ratio_max]
     acceptance.append(dict(criterion="annual_snpp_ratio_within_calibration_range", passed=not outside,
                            reference_min=ratio_min, reference_max=ratio_max, outside_years=outside))
-    y = last_day.year
+    y = config.HISTORY_YEARS[1]
     acceptance.append(dict(criterion=f"{y}_below_{y-1}",
         passed=annual_index[y]["estimated"] < annual_index[y-1]["estimated"],
         change_pct=100 * (annual_index[y]["estimated"] / annual_index[y-1]["estimated"] - 1)))
+    ytd_reference = [r["estimated_over_snpp"] for r in year_to_date
+                     if config.CALIBRATION_YEARS[0] <= r["year"] <= config.HISTORY_YEARS[1]]
+    ytd_last = year_to_date[-1]
+    acceptance.append(dict(criterion=f"{ytd_last['year']}_year_to_date_snpp_ratio_within_reference_range",
+        passed=min(ytd_reference) <= ytd_last["estimated_over_snpp"] <= max(ytd_reference),
+        value=ytd_last["estimated_over_snpp"], reference_min=min(ytd_reference), reference_max=max(ytd_reference),
+        reference_years=[config.CALIBRATION_YEARS[0], config.HISTORY_YEARS[1]], months=ytd_last["months"]))
     sensitivity["acceptance"] = acceptance
     sensitivity["methods"]["acceptance"] = (
         "No numerical normal-variation or stability tolerances were specified. Descriptive empirical checks: "
@@ -574,5 +654,8 @@ if __name__ == "__main__":
         values = [100 * np.mean([r[p] for r in rows]) for p in ("p1", "p2") for rows in (before, after)]
         print(region, *[round(v, 3) for v in values], sep="\t")
     print(f"Calibration strata: {len(records)}; pooled: {len(sensitivity['pooling'])}")
+    for row in noaa20_ratio:
+        print(f"NOAA-20 ratio {row['region']}: {row['ratio']:.4f} [{row['ratio_low']:.4f}, {row['ratio_high']:.4f}] CV {row['cv']:.4f}")
+    print(f"NOAA-20 bridge included: {noaa20_stable}; partial through: {partial}")
     print(f"Estimates: {len(estimates)}; elapsed: {perf_counter() - started:.3f} seconds")
     con.close()

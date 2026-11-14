@@ -12,8 +12,9 @@ from build_series import connect
 
 
 COLUMNS = ['lat', 'lon', 'region', 'year', 'month', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
-           'estimated', 'size_ratio']
-SAMPLE_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs', 'estimated']
+           'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated', 'size_ratio']
+SAMPLE_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+                 'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated']
 MAX_CELL_DAYS = 31
 MAX_ABOVE_PCT = 0.1
 REL_TOLERANCE = 0.005
@@ -31,7 +32,7 @@ def con():
 @pytest.fixture(scope='module')
 def series():
     rows = json.loads((config.PROCESSED_DIR / 'series.json').read_text())
-    return [r for r in rows if r['region'] in config.REGIONS]
+    return [r for r in rows if r['region'] in config.REGIONS and not r['is_forecast']]
 
 
 def test_columns_types_and_order(con):
@@ -40,7 +41,8 @@ def test_columns_types_and_order(con):
     types = {d[0]: d[1] for d in described}
     assert types['lat'] == types['lon'] == types['estimated'] == 'DOUBLE'
     assert types['region'] == 'VARCHAR'
-    for name in ('year', 'month', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs'):
+    for name in ('year', 'month', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+                 'raw_viirs_noaa20', 'raw_viirs_noaa21'):
         assert types[name] == 'INTEGER'
     assert con.execute('SELECT count(*) FROM m WHERE size_ratio IS NOT NULL').fetchone()[0] == 0
     ordered = con.execute('''SELECT count(*) FROM (SELECT year, month, region, lat, lon,
@@ -67,8 +69,9 @@ def test_centers_on_grid(con):
 def test_value_ranges(con):
     assert con.execute('SELECT count(*) FROM m WHERE estimated < 0 OR estimated IS NULL').fetchone()[0] == 0
     start = (config.VIIRS_START.year, config.VIIRS_START.month)
-    rows = con.execute('SELECT DISTINCT year, month, raw_terra, raw_aqua, raw_modis, raw_viirs FROM m').fetchall()
-    for year, month, terra, aqua, modis, viirs in rows:
+    rows = con.execute('''SELECT DISTINCT year, month, raw_terra, raw_aqua, raw_modis, raw_viirs,
+        raw_viirs_noaa20, raw_viirs_noaa21 FROM m''').fetchall()
+    for year, month, terra, aqua, modis, viirs, noaa20, noaa21 in rows:
         days = calendar.monthrange(year, month)[1]
         assert 0 <= terra <= days and 0 <= aqua <= days
         assert max(terra, aqua) <= modis <= min(days, terra + aqua)
@@ -78,6 +81,7 @@ def test_value_ranges(con):
             assert viirs is None
         else:
             assert viirs is not None and 0 <= viirs <= days
+        assert 0 <= noaa20 <= days and 0 <= noaa21 <= days
 
 
 def test_estimated_matches_series(con, series):
@@ -125,7 +129,7 @@ def test_raw_aqua_matches_modis_equiv(con, series):
 
 def test_every_row_has_activity_or_estimate(con):
     assert con.execute('''SELECT count(*) FROM m WHERE raw_modis = 0 AND coalesce(raw_viirs, 0) = 0
-        AND estimated <= 0''').fetchone()[0] == 0
+        AND raw_viirs_noaa20 = 0 AND raw_viirs_noaa21 = 0 AND estimated <= 0''').fetchone()[0] == 0
 
 
 def test_unseen_cells_follow_validation_decision(con, series):
@@ -135,8 +139,15 @@ def test_unseen_cells_follow_validation_decision(con, series):
                  for r in config.REGIONS)
     assert validation['applied'] == better
     modis_only = {(r['region'], r['year'], r['month']) for r in series if r['source'] == 'modis_only'}
-    unseen = con.execute('''SELECT region, year, month, count(*) FROM m
-        WHERE raw_modis = 0 AND coalesce(raw_viirs, 0) = 0 GROUP BY ALL''').fetchall()
+    bridged = {(r, y, m) for r, y, m in con.execute('SELECT region, year, month FROM read_parquet(?) WHERE noaa20_bridge',
+               [str(config.INTERIM_DIR / 'estimates.parquet')]).fetchall()}
+    noaa20_cells = set(con.execute('''SELECT DISTINCT round(lat, 2), round(lon, 2), year, month FROM read_parquet(?)
+        WHERE sensor = 'noaa20' AND date > ?''', [str(config.INTERIM_DIR / 'cells.parquet'), config.SNPP_END]).fetchall())
+    unseen_rows = con.execute('''SELECT region, year, month, lat, lon FROM m
+        WHERE raw_modis = 0 AND coalesce(raw_viirs, 0) = 0
+            AND raw_viirs_noaa20 = 0 AND raw_viirs_noaa21 = 0''').fetchall()
+    assert all((lat, lon, y, m) in noaa20_cells for r, y, m, lat, lon in unseen_rows if (r, y, m) in bridged)
+    unseen = {(r, y, m, None) for r, y, m, _, _ in unseen_rows if (r, y, m) not in bridged}
     if validation['applied']:
         assert unseen
         assert all((r, y, m) in modis_only for r, y, m, _ in unseen)

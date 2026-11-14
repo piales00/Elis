@@ -39,6 +39,11 @@ OUTAGES = {
         (date(2022, 7, 27), date(2022, 8, 10)),
         (date(2024, 5, 30), date(2024, 6, 3)),
         (date(2024, 7, 10), date(2024, 7, 15)),
+        (date(2026, 3, 10), date(2026, 3, 12)),
+        (date(2026, 4, 28), date(2026, 4, 30)),
+        (date(2026, 6, 1), date(2026, 6, 2)),
+        (date(2026, 7, 11), date(2026, 7, 16)),
+        (date(2026, 8, 3), date(2026, 8, 3)),
     ],
     "terra": [],
 }
@@ -61,10 +66,18 @@ TERRA_BACKCAST_TEST_YEARS = (2003, 2006)
 TERRA_BACKCAST_TRAIN_YEARS = (2007, 2011)
 STRUCTURAL_ERROR_SOURCE = {"aqua": "aqua_vs_viirs_test", "terra": "terra_backcast"}
 LOW_CONFIDENCE_UNTIL = date(2002, 12, 31)
+RAW_2026_DIR = RAW_DIR / "2026"
+STATIC_MIN_SHARE = 0.5
+STATIC_MIN_DETECTIONS = 5
+STATIC_MASK_YEARS = (2012, 2025)
+STATIC_VALIDATION_YEARS = (2024, 2025)
+N20_RATIO_MAX_CV = 0.25
+SNPP_END = date(2026, 11, 1)
+LAST_DATA_DATE = date(2026, 11, 13)
 PROJECT_ROOT = RAW_DIR.parents[1]
 REGION_ID = "peru"
-REGION_NAME = "Perú"
-MACROREGION_NAMES = {"amazonia": "Amazonía", "sierra": "Sierra", "costa": "Costa"}
+REGION_NAME = "Peru"
+MACROREGION_NAMES = {"amazonia": "Amazon", "sierra": "Andes", "costa": "Coast"}
 MACROREGION_DEPARTMENTS = {
     "amazonia": {"AMAZONAS", "LORETO", "MADRE DE DIOS", "SAN MARTIN", "UCAYALI"},
     "sierra": {
@@ -87,9 +100,11 @@ DEPARTMENT_DISPLAY_NAMES = {
     "APURIMAC": "Apurímac",
     "HUANUCO": "Huánuco",
     "JUNIN": "Junín",
+    "MADRE DE DIOS": "Madre de Dios",
     "SAN MARTIN": "San Martín",
 }
-BOUNDARY_SIMPLIFICATION_DEG = 0.001
+BOUNDARY_SIMPLIFICATION_DEG = 0.005
+BOUNDARY_COORD_DIGITS = 4
 MIN_YEAR = 2000
 MAX_YEAR = 2026
 MODIS_CONFIDENCE_MIN = 30
@@ -105,3 +120,22 @@ BOUNDARY_SOURCE_URL = (
 )
 BOUNDARY_SOURCE_NAME = "INEI, límites censales referenciales publicados en el servicio de SERFOR"
 BOUNDARY_SOURCE_FILE = RAW_DIR / "departamentos_peru_fuente.geojson"
+EXTERNAL_DIR = RAW_DIR.parent / "external"
+POWER_DIR = EXTERNAL_DIR / "power"
+POWER_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
+POWER_COMMUNITY = "AG"
+POWER_PARAMETERS = ("PRECTOTCORR", "T2M")
+POWER_YEARS = (2000, 2026)
+POWER_GRID_DEG = 1.5
+POWER_MIN_POINTS = 4
+FORECAST_LEADS = (1, 2, 3)
+FORECAST_FIRE_WINDOW = 3
+FORECAST_CLIMATE_WINDOW = 3
+FORECAST_CLIMATE_LAG = 1
+FORECAST_LOG_OFFSET = 1.0
+FORECAST_RIDGE_ALPHAS = (0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0)
+FORECAST_SEASON_MONTHS = (8, 9, 10)
+FORECAST_SEASON_ORIGIN = 7
+FORECAST_OOS_YEAR = 2026
+FORECAST_DEMO_TRAIN_YEARS = (2003, 2011)
+FORECAST_DEMO_TEST_YEARS = (2013, 2025)

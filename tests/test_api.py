@@ -13,7 +13,8 @@ import config
 from api.main import app
 
 
-MAP_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs', 'estimated']
+MAP_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+              'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated']
 
 
 @pytest.fixture(scope='module')
@@ -83,14 +84,28 @@ def test_methodology(client):
     assert response.status_code == 200
     body = response.json()
     assert {'params', 'detection', 'validation', 'emulator'} <= set(body)
-    assert {r['region'] for r in body['detection']} == set(config.REGIONS)
+    assert {r['region'] for r in body['detection']} == {*config.REGIONS, config.NATIONAL}
     filtered = client.get('/methodology', params={'region': 'sierra'}).json()
     assert filtered['detection'] and all(r['region'] == 'sierra' for r in filtered['detection'])
     assert len(filtered['detection']) == 12
     assert [r['region'] for r in filtered['validation']] == ['sierra']
     assert filtered['emulator'] == body['emulator']
     national = client.get('/methodology', params={'region': config.NATIONAL}).json()
-    assert national['detection'] == [] and [r['region'] for r in national['validation']] == [config.NATIONAL]
+    assert [r['region'] for r in national['validation']] == [config.NATIONAL]
+    assert len(national['detection']) == 12 and all(r['region'] == config.NATIONAL for r in national['detection'])
+    for month in range(1, 13):
+        regional = [r for r in body['detection'] if r['month'] == month and r['region'] in config.REGIONS]
+        row = next(r for r in national['detection'] if r['month'] == month)
+        for name in ('n_modis', 'n_viirs', 'n_both'):
+            assert row[name] == sum(r[name] for r in regional)
+        assert 0 < row['p_modis'] < row['p_viirs'] < 1
+
+
+def test_series_reaches_last_data_month(client):
+    rows = [r for r in client.get('/series', params={'region': config.NATIONAL, 'from': config.LAST_DATA_DATE.year}).json()
+            if not r['is_forecast']]
+    assert (rows[-1]['year'], rows[-1]['month']) == (config.LAST_DATA_DATE.year, config.LAST_DATA_DATE.month)
+    assert client.get('/map', params={'year': config.LAST_DATA_DATE.year, 'month': config.LAST_DATA_DATE.month}).json()
 
 
 @pytest.mark.parametrize('path, params', [
@@ -111,3 +126,22 @@ def test_validation_errors(client, path, params):
     response = client.get(path, params=params)
     assert response.status_code == 422
     assert 'detail' in response.json()
+
+
+def test_cors_allows_get_from_any_origin_by_default(client):
+    response = client.get('/regions', headers={'Origin': 'https://example.org'})
+    assert response.headers['access-control-allow-origin'] == '*'
+    preflight = client.options('/series', headers={'Origin': 'https://example.org', 'Access-Control-Request-Method': 'GET'})
+    assert preflight.status_code == 200
+    blocked = client.options('/series', headers={'Origin': 'https://example.org', 'Access-Control-Request-Method': 'POST'})
+    assert blocked.status_code == 400
+
+
+def test_error_messages_in_english(client, monkeypatch, tmp_path):
+    response = client.get('/series', params={'region': 'amazonia', 'from': 2024, 'to': 2020})
+    assert response.json()['detail'] == 'The start year cannot be later than the end year.'
+    import api.main
+    monkeypatch.setattr(api.main, 'PROCESSED_DIR', tmp_path)
+    assert client.get('/series', params={'region': 'peru'}).json()['detail'] == 'series.json is not available yet.'
+    assert client.get('/map', params={'year': 2024, 'month': 9}).json()['detail'] == 'map.parquet is not available yet.'
+    assert client.get('/regions').status_code == 503

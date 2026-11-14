@@ -19,8 +19,9 @@ FIELDS = ('region', 'year', 'month', 'raw_modis', 'raw_viirs', 'raw_detections',
 
 @pytest.fixture(scope='module')
 def outputs():
-    return [json.loads((config.PROCESSED_DIR / name).read_text())
-            for name in ('series.json', 'methodology.json')]
+    series, method = [json.loads((config.PROCESSED_DIR / name).read_text())
+                      for name in ('series.json', 'methodology.json')]
+    return [r for r in series if not r['is_forecast']], method
 
 
 def number(value):
@@ -78,11 +79,11 @@ def test_national_raw_totals_and_estimate_origin(outputs):
 
 def test_methodology_contract(outputs):
     _, method = outputs
-    assert set(method) == {'params','detection','validation','emulator','periods','findings'}
+    assert set(method) == {'params','detection','validation','emulator','periods','findings','forecast'}
     assert method['params'] == dict(grid_deg=config.GRID_DEG,calibration_years=list(config.CALIBRATION_YEARS),
         test_years=list(config.TEST_YEARS),simultaneous_max_minutes=config.SIMULTANEOUS_MAX_MINUTES,ci_level=config.CI_LEVEL)
-    assert len(method['detection']) == len(config.REGIONS)*12
-    assert {(r['region'],r['month']) for r in method['detection']} == {(r,m) for r in config.REGIONS for m in range(1,13)}
+    assert len(method['detection']) == (len(config.REGIONS)+1)*12
+    assert {(r['region'],r['month']) for r in method['detection']} == {(r,m) for r in (*config.REGIONS,config.NATIONAL) for m in range(1,13)}
     for row in method['detection']:
         assert set(row) == {'region','month','n_modis','n_viirs','n_both','p_modis','p_viirs'}
         for name in ('n_modis','n_viirs','n_both'):
@@ -111,11 +112,13 @@ def test_methodology_contract(outputs):
         assert row['region'] in config.REGIONS
         assert all(number(row[k]) and row[k]>=0 for k in ('monthly_error_pct','annual_error_pct'))
     for row in method['periods']:
-        assert set(row) == {'from','to','source','confidence'}
+        assert {'from','to','source','confidence'} <= set(row) <= {'from','to','source','confidence','note','partial_through'}
         assert row['source'] in ('terra_bridge','aqua','viirs')
-        assert row['confidence'] in ('low','normal')
+        assert row['confidence'] in ('low','normal','provisional')
         assert row['from'] <= row['to']
-    assert set(method['findings']) == {'calibration_overpass_gaps','chapman_correlated_bias_pct','emulator_drift','aqua_overpass_by_year','definitions'}
+    assert set(method['findings']) == {'calibration_overpass_gaps','chapman_correlated_bias_pct','emulator_drift','aqua_overpass_by_year','definitions',
+                                       'emulator_drift_latest','static_source_mask','noaa20_ratio'}
+    assert method['findings']['emulator_drift']['year'] == config.HISTORY_YEARS[1]
     assert method['findings']['chapman_correlated_bias_pct'] < 0
 
 
@@ -157,10 +160,24 @@ def test_structural_residual_zero_limit_and_complete_blocks():
 
 def test_historical_baselines_and_anomalies(outputs):
     series,_ = outputs
+    last = (config.LAST_DATA_DATE.year, config.LAST_DATA_DATE.month)
+    with connect() as con:
+        window = con.execute('SELECT region,year,estimated FROM read_parquet(?) WHERE year BETWEEN ? AND ?',
+            [str(config.INTERIM_DIR/'partial_window_estimates.parquet'),*config.HISTORY_YEARS]).fetchall()
     for row in series:
-        history = [r['estimated'] for r in series if r['region']==row['region'] and r['month']==row['month']
-                   and config.HISTORY_YEARS[0]<=r['year']<=config.HISTORY_YEARS[1]]
+        if (row['year'],row['month']) == last:
+            history = [e for r,y,e in window if r==row['region']]
+            assert len(history) == config.HISTORY_YEARS[1]-config.HISTORY_YEARS[0]+1
+        else:
+            history = [r['estimated'] for r in series if r['region']==row['region'] and r['month']==row['month']
+                       and config.HISTORY_YEARS[0]<=r['year']<=config.HISTORY_YEARS[1]]
         assert row['hist_median'] == pytest.approx(float(np.median(history)),abs=0.1)
+        thresholds = np.percentile(history, config.ANOMALY_PERCENTILES)
+        value = row['estimated']
+        expected = ('low' if value < thresholds[0] - 0.05 else 'normal' if value <= thresholds[1] - 0.05 else
+                    'high' if value <= thresholds[2] - 0.05 else 'very_high')
+        if min(abs(value - t) for t in thresholds) > 0.05:
+            assert row['anomaly_class'] == expected, row
 
 
 def test_structural_year_blocks_preserve_spatial_and_seasonal_dependence():
@@ -197,3 +214,51 @@ def test_raw_cell_union_and_modis_equivalent(outputs):
                 assert row['raw_viirs']==viirs
             equivalent = terra*ratios[(r,m)] if (y,m)<(config.AQUA_START.year,config.AQUA_START.month) else aqua
             assert row['modis_equiv']==round(equivalent,1)
+
+
+def test_series_2026_uses_snpp_only_and_marks_partial_month(outputs):
+    series, method = outputs
+    last = (config.LAST_DATA_DATE.year, config.LAST_DATA_DATE.month)
+    with connect() as con:
+        cells = str(config.INTERIM_DIR/'cells.parquet')
+        assert con.execute('SELECT max(date) FROM read_parquet(?)', [cells]).fetchone()[0] == config.LAST_DATA_DATE
+        assert con.execute("SELECT max(date) FROM read_parquet(?) WHERE sensor='snpp'", [cells]).fetchone()[0] <= config.SNPP_END
+        counts = {(r,y,m): (s,n) for r,y,m,s,n in con.execute('''SELECT region,year,month,
+            count(*) FILTER(WHERE sensor='snpp'), count(*) FILTER(WHERE sensor IN ('noaa20','noaa21'))
+            FROM read_parquet(?) WHERE year=? GROUP BY ALL''', [cells, config.LAST_DATA_DATE.year]).fetchall()}
+        estimates = {(r,y,m): (p,b) for r,y,m,p,b in con.execute(
+            'SELECT region,year,month,partial_through,noaa20_bridge FROM read_parquet(?)',
+            [str(config.INTERIM_DIR/'estimates.parquet')]).fetchall()}
+        segments = con.execute('''SELECT s.region,s.estimated,s.n_noaa20,n.ratio,p.p2 FROM read_parquet(?) s
+            JOIN read_parquet(?) n USING(region) JOIN read_parquet(?) p USING(region,month) WHERE s.mode='noaa20' ''',
+            [str(config.INTERIM_DIR/f) for f in ('capture_segments.parquet','noaa20_ratio.parquet','detection_probs.parquet')]).fetchall()
+    sensitivity = json.loads((config.INTERIM_DIR/'sensitivity.json').read_text())
+    rows = [r for r in series if r['year'] == config.LAST_DATA_DATE.year and r['region'] in config.REGIONS]
+    assert rows
+    for row in rows:
+        snpp, others = counts[(row['region'],row['year'],row['month'])]
+        assert row['raw_viirs'] == snpp and others > 0
+        assert row['source'] == 'viirs_only'
+    last_rows = [r for r in series if (r['year'],r['month']) == last]
+    if sensitivity['noaa20_included']:
+        assert {r['region'] for r in last_rows} == {*config.REGIONS, config.NATIONAL}
+        assert all(estimates[(r['region'],*last)] == (config.LAST_DATA_DATE, True) for r in last_rows)
+        assert segments and all(abs(e - n*ratio/p2) < 1e-8 for _,e,n,ratio,p2 in segments)
+        assert all(r['cv'] <= config.N20_RATIO_MAX_CV for r in sensitivity['noaa20_ratio'])
+        final = method['periods'][-1]
+        assert (final['to'], final['partial_through'], final['confidence']) == (
+            f'{last[0]:04d}-{last[1]:02d}', config.LAST_DATA_DATE.isoformat(), 'provisional')
+    else:
+        assert not last_rows and not segments
+    assert all(not b for (r,y,m),(p,b) in estimates.items() if (y,m) != last)
+    assert all(p is None for (r,y,m),(p,b) in estimates.items() if (y,m) != last)
+
+
+def test_history_and_calibration_exclude_2026():
+    sensitivity = json.loads((config.INTERIM_DIR/'sensitivity.json').read_text())
+    assert config.HISTORY_YEARS[1] < config.SNPP_END.year
+    assert config.CALIBRATION_YEARS[1] < config.SNPP_END.year and config.TEST_YEARS[1] < config.SNPP_END.year
+    years = {r['year'] for r in sensitivity['partial_window']}
+    assert config.SNPP_END.year in years and min(years) == config.FIRST_YEAR
+    ytd = {r['year']: r for r in sensitivity['year_to_date']}
+    assert set(ytd) == set(range(config.VIIRS_START.year, config.SNPP_END.year + 1))

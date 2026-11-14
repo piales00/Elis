@@ -55,6 +55,19 @@ def residual_factors(sensitivity, sensor):
     return factors, years
 
 
+def partial_history(con):
+    path = config.INTERIM_DIR / 'partial_window_estimates.parquet'
+    if not path.exists():
+        return {}
+    rows = records(con, 'SELECT * FROM read_parquet(?)', [str(path)])
+    last = max(r['year'] for r in rows)
+    history = {}
+    for row in rows:
+        if config.HISTORY_YEARS[0] <= row['year'] <= config.HISTORY_YEARS[1]:
+            history.setdefault((row['region'], last, row['month']), []).append(row['estimated'])
+    return history
+
+
 def build_replicates(con, sensitivity):
     rng = np.random.default_rng(config.SEED)
     factors = {sensor: residual_factors(sensitivity, sensor) for sensor in ('aqua', 'terra')}
@@ -132,6 +145,7 @@ def main():
         for row in estimates:
             if config.HISTORY_YEARS[0] <= row['year'] <= config.HISTORY_YEARS[1]:
                 history.setdefault((row['region'], row['month']), []).append(row['estimated'])
+        partial = partial_history(con)
         output = []
         tails = ((1 - config.CI_LEVEL) / 2, (1 + config.CI_LEVEL) / 2)
         for row in estimates:
@@ -139,7 +153,7 @@ def main():
             key = (region, year, month)
             counts = raw_index.get(key, dict(raw_modis=0, raw_viirs=0, raw_detections=0))
             lo, hi = np.quantile(draws[key], tails)
-            baseline = history[(region, month)]
+            baseline = partial.get((region, year, month), history[(region, month)])
             thresholds = np.percentile(baseline, config.ANOMALY_PERCENTILES)
             category = ('low' if row['estimated'] < thresholds[0] else
                         'normal' if row['estimated'] <= thresholds[1] else
