@@ -72,7 +72,7 @@ def main() -> None:
             continue
         download_country_csv(product, year)
         print(f"Descargado: {destination.name}")
-    print("Los CSV NOAA-20/21 de 2026 deben añadirse manualmente desde FIRMS Archive Download.")
+    print("Los CSV solicitados de NOAA-20/21 se añaden manualmente en data/raw/; los NRT son provisionales.")
 
 
 if __name__ == "__main__":
