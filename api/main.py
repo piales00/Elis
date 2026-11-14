@@ -100,3 +100,20 @@ def get_methodology(region: str | None = Query(default=None, min_length=1)) -> d
         if isinstance(filtered.get(key), list):
             filtered[key] = [row for row in filtered[key] if row.get("region") == region]
     return filtered
+
+
+@app.get("/forecast")
+def get_forecast(region: str | None = Query(default=None, min_length=1)) -> dict[str, Any]:
+    value = read_json("forecast.json")
+    if not isinstance(value, dict) or not isinstance(value.get("regions"), list):
+        raise HTTPException(status_code=500, detail="forecast.json has an invalid format.")
+    if region is None:
+        return value
+    regions = [row for row in value["regions"] if row.get("region") == region]
+    if not regions:
+        raise HTTPException(status_code=404, detail=f"No forecast entry for region '{region}'.")
+    filtered = dict(value, regions=regions)
+    for key in ("backtest", "out_of_sample"):
+        if isinstance(filtered.get(key), dict) and isinstance(filtered[key].get("rows"), list):
+            filtered[key] = dict(filtered[key], rows=[row for row in filtered[key]["rows"] if row.get("region") == region])
+    return filtered

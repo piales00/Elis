@@ -24,7 +24,12 @@ Los CSV originales de FIRMS se guardan en `data/raw/`, que no se sube al reposit
 .\.venv\Scripts\python.exe scripts/build_series.py
 .\.venv\Scripts\python.exe scripts/validate.py
 .\.venv\Scripts\python.exe scripts/build_map.py
+.\.venv\Scripts\python.exe scripts/fetch_power.py
+.\.venv\Scripts\python.exe scripts/forecast.py
+.\.venv\Scripts\python.exe scripts/forecast_v2.py
 ```
+
+`forecast.py` writes the monthly forecast rows of `series.json` and the `forecast` block of `methodology.json`. `forecast_v2.py` runs after it: it downloads the ONI (NOAA CPC) and ICEN (ENFEN/IGP) indices into `data/external/enso/`, builds the department series from `map.parquet`, and writes the probabilistic August–October season outlook to `data/processed/forecast.json` plus `methodology.json` → `forecast.season_outlook`.
 
 Los datos integrados cubren MODIS Terra desde 2000, Aqua desde 2002, S-NPP desde 2012, NOAA-20 desde 2018 y NOAA-21 desde 2023; todos llegan hasta noviembre de 2026. La API distingue `raw_viirs` (S-NPP) de `raw_viirs_noaa20` y `raw_viirs_noaa21`. En datos estándar se conserva el filtro `type=0`; los CSV NRT no incluyen esa columna y se filtran por confianza, por lo que los meses NRT son provisionales hasta su reemplazo por FIRMS.
 
