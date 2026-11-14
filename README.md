@@ -20,7 +20,7 @@ Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al
 .\.venv\Scripts\python.exe scripts/build_peru_data.py
 ```
 
-El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. Los ZIP de FIRMS de NOAA-20 (J1) y NOAA-21 (J2) están en `data/raw/`: el archivo estándar cubre enero–julio de 2026 y el NRT, agosto hasta el 13 y 14 de noviembre, respectivamente. En los CSV estándar se conserva el filtro `type=0`; los NRT no incluyen esa columna y se filtran por confianza VIIRS `n` o `h`, por lo que sus datos son provisionales hasta que NASA los reemplace por estándar. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
+El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. La entrega 2026 de FIRMS incluye MODIS Terra/Aqua (estándar hasta agosto; NRT desde septiembre hasta el 13 de noviembre), VIIRS NOAA-20 (J1) y NOAA-21 (J2) (estándar hasta julio; NRT desde agosto hasta el 13 y 14 de noviembre), y VIIRS S-NPP (estándar hasta julio; NRT desde agosto hasta el 1 de noviembre). En los CSV estándar se conserva el filtro `type=0`; los NRT no incluyen esa columna y se filtran con los umbrales de confianza de cada instrumento. NASA reemplaza los datos NRT por estándar cuando están listos, así que los meses NRT son provisionales. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
 
 ## Exploración
 

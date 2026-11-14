@@ -17,7 +17,7 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 | Tipo de detección | solo `type = 0` (vegetación) | Quita volcanes, industria y minería |
 | Confianza MODIS | `confidence >= 30` | Descarta la confianza baja |
 | Confianza VIIRS | `confidence` en `n` o `h` | Equivalente: descarta la baja (`l`) |
-| VIIRS NRT 2026 | confianza `n` o `h`; `type` no está disponible | Datos provisionales hasta que FIRMS los reemplace por estándar |
+| NRT 2026 | MODIS: `confidence >= 30`; VIIRS: confianza `n` o `h`; `type` no está disponible | Datos provisionales hasta que FIRMS los reemplace por estándar |
 | Par de calibración | Aqua (MODIS) y S-NPP (VIIRS) | Pasan a una hora parecida, cerca de la 1:30 pm |
 | Años de calibración | 2013–2020 | 2012 se excluye porque VIIRS empieza el 20 de enero |
 | Años de prueba | 2021–2024 | El método nunca los ve al calibrar |
