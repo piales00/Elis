@@ -154,3 +154,18 @@ El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; n
 ## 5. Datos de prueba
 
 Mientras no existan los datos reales, el frontend usa archivos con estas mismas columnas en `web/mock/` (`series.json`, `regions.geojson`, `map-2024-09.json`, `methodology.json`). Al llegar los reales, solo se cambia la dirección de donde se leen.
+
+## 6. Imágenes satelitales (NASA GIBS, desde el navegador)
+
+La vista "Daily satellite image" del mapa no pasa por la API: el navegador pide a NASA GIBS solo el día elegido. No hace falta clave. Identificadores, fechas y niveles confirmados en los GetCapabilities del 2026-11-14; están en `web/src/lib/gibs.js`.
+
+| Uso | Capa | Endpoint y matriz | Formato | Zoom máximo |
+|---|---|---|---|---|
+| Color real | `VIIRS_SNPP_CorrectedReflectance_TrueColor` (desde 2015-11-24); antes, `MODIS_Aqua_CorrectedReflectance_TrueColor` (desde 2002-07-03) o `MODIS_Terra_CorrectedReflectance_TrueColor` (desde 2000-02-24) | WMTS EPSG:3857, `GoogleMapsCompatible_Level9` | JPEG | 9 |
+| Infrarrojo de onda corta | `VIIRS_SNPP_CorrectedReflectance_BandsM11-I2-I1`; antes, `MODIS_Aqua_CorrectedReflectance_Bands721` o `MODIS_Terra_CorrectedReflectance_Bands721` | WMTS EPSG:3857, `GoogleMapsCompatible_Level9` | JPEG | 9 |
+| Detecciones MODIS | `MODIS_Combined_Thermal_Anomalies_All` (desde 2002-07-04); antes, `MODIS_Terra_Thermal_Anomalies_All` (desde 2000-11-01) | WMTS EPSG:4326, matriz `1km`, nivel 5 | MVT (gzip) | — |
+| Detecciones VIIRS | `VIIRS_SNPP_Thermal_Anomalies_375m_All` (desde 2012-01-20, con huecos) | WMTS EPSG:4326, matriz `500m`, nivel 5 | MVT (gzip) | — |
+
+- Las capas de anomalías térmicas aparecen en el GetCapabilities EPSG:3857, pero allí responden 404 a cualquier tesela. En EPSG:4326 sí funcionan. La web descarga las teselas de nivel 5 (9° × 9°) que cubren la región elegida, las decodifica y las dibuja como GeoJSON en el mapa web.
+- Cada detección trae `SCAN` y `TRACK` (km): de cerca se dibuja como un rectángulo de ese tamaño, que es su huella real. Son las detecciones NRT de FIRMS sin filtrar (día y noche, toda confianza), así que no coinciden con las celdas-día del método.
+- Huecos conocidos: S-NPP sin imagen del 2026-11-03 en adelante y sin detecciones del 2024-09-26 al 2024-09-29, entre otros. MODIS deja franjas negras entre órbitas cerca del ecuador. La web lo avisa en vez de pedir teselas que no existen.
