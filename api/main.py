@@ -6,6 +6,26 @@ from typing import Any
 import duckdb
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+from api.chat import router as chat_router
+
+
+class RouteCORSMiddleware:
+    def __init__(self, app: ASGIApp, allow_origins: list[str]) -> None:
+        self.get_cors = CORSMiddleware(app, allow_origins=allow_origins, allow_methods=["GET"], allow_headers=["*"])
+        self.chat_cors = CORSMiddleware(
+            app,
+            allow_origins=allow_origins,
+            allow_methods=["POST", "OPTIONS"],
+            allow_headers=["*"],
+        )
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") == "http" and scope.get("path") == "/chat":
+            await self.chat_cors(scope, receive, send)
+            return
+        await self.get_cors(scope, receive, send)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -17,7 +37,8 @@ app = FastAPI(
     description="Comparable fire-activity calendar for Peru (2000-2026), in fire cell-days.",
     version="0.1.0",
 )
-app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["GET"], allow_headers=["*"])
+app.add_middleware(RouteCORSMiddleware, allow_origins=CORS_ORIGINS)
+app.include_router(chat_router)
 
 
 def read_json(filename: str) -> Any:
