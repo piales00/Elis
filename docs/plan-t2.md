@@ -383,3 +383,36 @@ La estimación se calcula por región y mes (`series.json`). El mapa **reparte**
 
 ### Límite que se declara
 Antes de 2012 el mapa solo puede poner fuego donde MODIS lo vio. Los fuegos pequeños que MODIS no ve están en el total de la región, pero el mapa los reparte entre las celdas con fuegos grandes. El mapa anterior a 2012 muestra bien **cuánto** y aproximadamente **dónde**.
+
+## Tarea 4g — `regions.geojson` provisional
+
+**Entrega:** `data/processed/regions.geojson`, con el formato del contrato, para que `/regions` y el mapa funcionen hoy. Se reemplaza cuando T1 entregue el definitivo.
+
+- `scripts/export_regions.py` exporta los polígonos provisionales que ya usa `scripts/regions.py` (no los redefine: los importa).
+- Una `Feature` por macrorregión (`level = "macro"`, `id` = `amazonia`, `sierra` o `costa`, `name` = `Amazon`, `Andes` o `Coast`) y una para el país (`id = "peru"`, `name = "Peru"`, `level = "pais"`), que es la unión de las tres.
+- Propiedad extra `provisional: true` en todas las `Feature`.
+- Coordenadas en grados con a lo más 4 decimales; GeoJSON válido (anillos cerrados, orden antihorario en el exterior).
+- **Cuidado:** `regions.py` usa `data/processed/regions.geojson` si existe. Al exportarlo, `cells.py` pasaría a leerlo. Por eso `regions.py` solo debe usar el archivo cuando sus `Feature` **no** tienen `provisional: true`; si lo tienen, sigue con sus polígonos internos. Es el único cambio permitido en `regions.py`, y los resultados de `cells.py` no deben cambiar.
+
+## Tarea 4h — Mapa antes de 2012: lo visto y lo no visto
+
+**Problema:** antes de 2012, `estimated` de la región se reparte solo entre las celdas donde MODIS vio fuego. Como Aqua ve cerca del 14 %, cada día visto recibe unas 7 veces su valor y el 2,7 % de las celdas supera 31 (máximo 159).
+
+**Regla nueva** para los meses con `source = modis_only`, por región y mes:
+- **Parte vista:** `seen = raw_modis_region / p_modis_efectivo`, repartida entre las celdas según sus días MODIS. En la práctica: cada celda recibe `raw_modis_celda`. *(Ajuste: la parte vista son los días que MODIS vio, sin escalar.)*
+- **Parte no vista:** `unseen = estimated_region − Σ raw_modis_celda`, repartida según la **climatología VIIRS** de esa región y mes del año: la fracción de las celdas-día de S-NPP de `CALIBRATION_YEARS` y `TEST_YEARS` (2013–2024) que cayó en cada celda.
+- `estimated_celda = raw_modis_celda + unseen × clim_celda`. Las celdas sin fuego MODIS ese mes pero con climatología positiva **también entran al mapa** (con `raw_modis = 0` y `raw_viirs = null`).
+- Si `unseen < 0` (raro), se usa la regla actual para ese mes y se registra.
+- Para `both` y `viirs_only` no cambia nada.
+
+**Validación (obligatoria):** en 2013–2020 se arma el mapa con la regla nueva usando solo Aqua (como si no hubiera VIIRS) y se compara con el mapa real basado en S-NPP de esos mismos meses:
+- correlación espacial de Spearman por región y mes (mediana y percentiles 25–75);
+- la misma métrica para la regla actual (todo a celdas MODIS), para comparar;
+- porcentaje de celdas por encima de 31 con cada regla.
+Resultados en `data/interim/map_validation.json`.
+
+**Criterios de aceptación**
+- La suma por región y mes sigue coincidiendo con `series.json` (las pruebas de `tests/test_map.py` se adaptan solo donde la regla nueva lo exige, por ejemplo `raw_modis = 0` en celdas nuevas).
+- La regla nueva supera a la actual en la correlación de la validación; si no, se informa y no se aplica.
+- Menos del 0,1 % de las celdas supera 31.
+- `map.parquet` sigue pesando menos de 10 MB.
