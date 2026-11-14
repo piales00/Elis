@@ -1,4 +1,6 @@
 .venv/
 data/raw/
+data/interim/
 __pycache__/
 .env
+data/external/
