@@ -447,3 +447,40 @@ En este orden: `cells.py` (con `--all-types` también), `capture_recapture.py`, 
 
 ### Límite que se declara
 Los departamentos no siguen las regiones naturales: Cusco, Puno, Junín o Ayacucho tienen partes de selva y de sierra. Agrupar departamentos completos mezcla regímenes de fuego dentro de una macrorregión.
+
+## Tarea 4j — Incorporar 2026
+
+**Entrega:** la serie, el mapa y la metodología llegan hasta noviembre de 2026, con 2026 comparable con los años anteriores.
+
+### Datos (en `data/raw/2026/`, no se suben)
+Descarga de FIRMS Archive Download del 2026-11-14, recortada a Perú. Por sensor hay dos archivos:
+
+| Archivo | Versión | Fechas | `type` |
+|---|---|---|---|
+| `viirs-snpp_2026_archive.csv` | SP (`2`) | 01-01 a 07-31 | Sí |
+| `viirs-snpp_2026_nrt.csv` | NRT (`2.0NRT`) | 08-01 a **11-01** (S-NPP termina el 2 de noviembre) | No |
+| `modis_2026_archive.csv` | SP (`61.03`) | 01-01 a 08-31 | Sí |
+| `modis_2026_nrt.csv` | NRT (`6.1NRT`) | 09-01 a 11-13 | No |
+| `viirs-noaa20_2026_*.csv`, `viirs-noaa21_2026_*.csv` | SP hasta 07-31, NRT hasta 11-13/14 | — | Solo SP |
+
+Diferencias con los archivos anuales por país: en VIIRS las columnas de temperatura se llaman `brightness` y `bright_t31` (no `bright_ti4` y `bright_ti5`), y `satellite` vale `SNPP`, `N20` o `N21`.
+
+### Reglas
+1. **`cells.py`** lee también `data/raw/2026/`. Sensores nuevos: `noaa20` y `noaa21`. Columna nueva en `cells.parquet`: `processing` (`sp` o `nrt`).
+2. **Filtro de vegetación en NRT.** Los NRT no traen `type`. Se construye una máscara de fuentes estáticas con la historia SP: las celdas de 0,1° donde, entre 2012 y 2025, al menos `STATIC_MIN_SHARE` de las detecciones del instrumento tienen `type` distinto de 0 y hay al menos `STATIC_MIN_DETECTIONS`. Las detecciones NRT en esas celdas se descartan. Se valida aplicando la máscara a los meses SP de 2026 y a 2024–2025 (donde sí hay `type`): se reporta cuántas detecciones `type ≠ 0` elimina y cuántas `type = 0` elimina por error.
+3. **Efecto NRT frente a SP.** No hay solape SP/NRT en estos archivos, así que no se puede medir directo. Se declara como límite y se marca `provisional` en `periods`.
+4. **`raw_viirs` y la estimación usan solo S-NPP**, igual que los demás años: `estimated = n_snpp / p_viirs`.
+5. **Del 2 al 14 de noviembre de 2026 no hay S-NPP.** Noviembre de 2026 se estima con los días disponibles de S-NPP (solo el día 1) más NOAA-20 para el resto, llevado a escala S-NPP con la razón `r_n20 = n_snpp / n_noaa20` por región, medida en los meses de 2026 en que ambos coinciden (enero a octubre), con *bootstrap* por meses. El mes va marcado como parcial (hasta el día 13) y con rango más ancho. Si la razón es inestable entre meses (coeficiente de variación mayor que `N20_RATIO_MAX_CV`), noviembre de 2026 se deja fuera de la serie y se informa.
+6. **MODIS 2026:** entra a `raw_modis`, `raw_terra`, `raw_aqua` y `modis_equiv` (Aqua real). Se reporta el `modis_equiv` del emulador junto al real, como en 2025, para seguir la deriva.
+7. **`series.json`:** filas hasta 2026-11. `hist_median` y `anomaly_class` siguen usando `HISTORY_YEARS` (2003–2025): 2026 se compara con la historia, no entra en ella. `source = viirs_only` (o el que corresponda por disponibilidad).
+8. **`methodology.json`:** `periods` agrega 2026 con `confidence: "provisional"` desde agosto (NRT) y una nota del mes parcial; `findings` agrega la validación de la máscara y la razón NOAA-20/S-NPP.
+9. **`map.parquet`:** incluye 2026 con las mismas reglas.
+10. NOAA-21 solo se guarda en `cells.parquet`; no entra en ningún cálculo.
+
+Parámetros nuevos en `config.py`: `RAW_2026_DIR`, `STATIC_MIN_SHARE = 0.5`, `STATIC_MIN_DETECTIONS = 5`, `N20_RATIO_MAX_CV = 0.25`, `SNPP_END = 2026-11-01`, `LAST_DATA_DATE = 2026-11-13`.
+
+### Criterios de aceptación
+- Los resultados de 2000–2025 no cambian (misma serie que antes de la tarea, con tolerancia de redondeo), salvo que la máscara estática no se aplica a datos SP.
+- La razón `estimated / n_snpp` de 2026 queda en el mismo rango que 2013–2025.
+- `pytest` completo pasa, con pruebas nuevas para 2026 (filas hasta 2026-11, `raw_viirs` solo S-NPP, mes parcial marcado).
+- Informe: tabla mensual de 2026 (S-NPP, Aqua, estimated con rango, `anomaly_class`) y comparación del acumulado enero–octubre de 2026 con el mismo período de cada año 2012–2025.
