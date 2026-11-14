@@ -134,10 +134,14 @@ Una fila por celda, año y mes con actividad.
 | `raw_aqua` | entero | Días del mes con detección de Aqua en la celda |
 | `raw_modis` | entero | Días del mes con detección de Terra o Aqua (unión, sin duplicar) |
 | `raw_viirs` | entero o `null` | Días del mes con detección de VIIRS S-NPP. `null` antes de 2012 |
+| `raw_viirs_noaa20` | entero | Días del mes con detección de VIIRS NOAA-20, separado de S-NPP |
+| `raw_viirs_noaa21` | entero | Días del mes con detección de VIIRS NOAA-21, separado de S-NPP |
 | `estimated` | número | Parte de la estimación de la región y mes (`series.json`) que le toca a la celda. La suma de las celdas de una región da el `estimated` de la serie |
 | `size_ratio` | número o `null` | Razón VIIRS/MODIS de la celda (pieza 3, extra) |
 
 `raw_viirs` cuenta solo S-NPP, igual que en `series.json`, porque es el satélite con el que se calibró el método. Sumar NOAA-20 y NOAA-21 desde 2018 metería un salto falso nuevo: más satélites ven más celdas-día sin que haya más fuego. NOAA-20 y NOAA-21 solo se usan donde falta S-NPP (después del 2026-11-02), con su propia calibración.
+
+`raw_viirs_noaa20` y `raw_viirs_noaa21` exponen los conteos de esos satélites por separado para inspección y transparencia. No se suman a `raw_viirs` ni alteran la serie calibrada.
 
 `region` es una de las tres macrorregiones. Cada celda de 0,1° se asigna a la unidad departamental que cubre la mayor parte de su área y luego a su macrorregión. Callao cuenta como unidad departamental dentro de Costa.
 
@@ -149,7 +153,7 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 |---|---|---|
 | `GET /regions` | — | `regions.geojson` |
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
-| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `estimated` |
+| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.

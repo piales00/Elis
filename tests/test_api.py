@@ -13,7 +13,8 @@ import config
 from api.main import app
 
 
-MAP_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs', 'estimated']
+MAP_FIELDS = ['lat', 'lon', 'raw_terra', 'raw_aqua', 'raw_modis', 'raw_viirs',
+              'raw_viirs_noaa20', 'raw_viirs_noaa21', 'estimated']
 
 
 @pytest.fixture(scope='module')
