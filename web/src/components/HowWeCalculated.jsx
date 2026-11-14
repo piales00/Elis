@@ -3,7 +3,7 @@ import { LIMITS, PENDING, SOURCES, STEPS } from "../content/sources.js";
 
 function Card({ title, children }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="card p-5">
       <h3 className="m-0 text-lg font-semibold">{title}</h3>
       {children}
     </div>
@@ -27,7 +27,7 @@ function PairBar({ label, value, max, color, hatched, text }) {
   return (
     <div className="grid grid-cols-[5.5rem_1fr_4.5rem] items-center gap-2 text-sm">
       <span className="text-muted">{label}</span>
-      <span aria-hidden="true" className="block h-3 rounded-sm bg-bg">
+      <span aria-hidden="true" className="block h-3 rounded-sm bg-surface-2">
         <span className="block h-full rounded-sm" style={{ width: `${pct}%`, background: fill, border: `1px solid ${color}` }} />
       </span>
       <span className="text-right tabular-nums">{text}</span>
@@ -155,7 +155,7 @@ export default function HowWeCalculated({ methodology, region }) {
           <ul className="m-0 mt-3 grid list-none gap-3 p-0 text-sm">
             {SOURCES.map((s) => (
               <li key={s.key}>
-                <a href={s.url} target="_blank" rel="noreferrer" className="font-semibold text-est underline underline-offset-2">
+                <a href={s.url} target="_blank" rel="noreferrer" className="font-semibold text-sat underline underline-offset-2">
                   {t(`method.source.${s.key}.name`)}
                 </a>
                 <span className="block text-muted">{t(`method.source.${s.key}.text`)}</span>

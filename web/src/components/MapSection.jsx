@@ -6,6 +6,7 @@ import { beforeCoverage, DEFAULT_SUB, gapNoteKey, sensorFor } from "../content/s
 import TimeBar from "./TimeBar.jsx";
 import MapLegend from "./MapLegend.jsx";
 import MapCellTable from "./MapCellTable.jsx";
+import { isMock } from "../data/client.js";
 import SensorSelector from "./SensorSelector.jsx";
 
 const MapView = lazy(() => import("./MapView.jsx"));
@@ -50,23 +51,13 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
     <div className="grid gap-4">
       <TimeBar period={period} series={series} loading={seriesLoading} onChange={onPeriodChange} />
 
-      <SensorSelector
-        group={group}
-        sub={sub}
-        onGroupChange={(g) => {
-          setGroup(g);
-          setSub(DEFAULT_SUB[g]);
-        }}
-        onSubChange={setSub}
-      />
-
       {gapKey && (
-        <p role="note" className="m-0 rounded-lg border border-dashed border-forecast bg-surface p-3 text-sm">
+        <p role="note" className="card-soft m-0 border-dashed border-forecast p-3 text-sm">
           {t(gapKey)}
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="relative">
           <Suspense fallback={<p className="m-0 text-muted">{t("status.loading")}</p>}>
             <MapView
@@ -82,15 +73,45 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
           {message && (
             <p
               role={isError ? "alert" : "status"}
-              className={`absolute inset-x-12 bottom-8 m-0 rounded-lg border bg-surface/95 px-3 py-2 text-center text-sm shadow ${
+              className={`absolute left-1/2 top-3 m-0 w-[min(34rem,calc(100%-11rem))] -translate-x-1/2 rounded-xl border bg-bg/90 px-3 py-2 text-center text-sm ${
                 isError ? "border-danger font-semibold text-danger" : "border-line"
               }`}
             >
               {message}
             </p>
           )}
+          <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-5rem)]">
+            <MapLegend metric={metric} breaks={breaks} />
+          </div>
         </div>
-        <MapLegend metric={metric} breaks={breaks} />
+        <div className="grid gap-4">
+          <SensorSelector
+            group={group}
+            sub={sub}
+            onGroupChange={(g) => {
+              setGroup(g);
+              setSub(DEFAULT_SUB[g]);
+            }}
+            onSubChange={setSub}
+          />
+          <div className="card-soft p-4 text-xs text-muted">
+            <ul className="m-0 grid list-none gap-2 p-0">
+              <li className="flex items-center gap-3">
+                <svg width="26" height="10" aria-hidden="true">
+                  <line x1="1" x2="25" y1="5" y2="5" strokeWidth="1.2" strokeDasharray="3 3" style={{ stroke: "var(--muted)" }} />
+                </svg>
+                <span>{t("map.legend.region")}</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <svg width="26" height="10" aria-hidden="true">
+                  <line x1="1" x2="25" y1="5" y2="5" strokeWidth="1.6" style={{ stroke: "var(--sat)", opacity: 0.7 }} />
+                </svg>
+                <span>{t("map.legend.selected")}</span>
+              </li>
+            </ul>
+            <p className="m-0 mt-3">{t(isMock ? "map.boundaries.mock" : "map.boundaries.api")}</p>
+          </div>
+        </div>
       </div>
 
       <MapCellTable cells={cells} metric={metric} />

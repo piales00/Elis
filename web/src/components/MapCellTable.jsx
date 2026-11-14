@@ -8,10 +8,10 @@ export default function MapCellTable({ cells, metric }) {
   const rows = cells.filter((c) => c[metric] !== null && c[metric] !== undefined).sort((a, b) => b[metric] - a[metric]).slice(0, LIMIT);
   const num = (v) => (v === null || v === undefined ? t("series.na") : formatNumber(v));
   const coord = (v, pos, neg) => `${Math.abs(v).toFixed(2)}°${t(`coord.${v < 0 ? neg : pos}`)}`;
-  const th = "whitespace-nowrap border-b border-line px-2.5 py-1 text-right first:text-left";
+  const th = "whitespace-nowrap border-b border-line px-2.5 py-2 text-right text-xs font-semibold uppercase tracking-wide text-muted first:text-left";
   return (
-    <details className="rounded-xl border border-line bg-surface p-4">
-      <summary className="cursor-pointer font-semibold">{t("map.table.summary")}</summary>
+    <details className="card p-4">
+      <summary className="cursor-pointer font-head font-bold">{t("map.table.summary")}</summary>
       <p className="mb-2 mt-2 text-sm text-muted">{t("map.table.note", { shown: rows.length, total: cells.length })}</p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm tabular-nums">

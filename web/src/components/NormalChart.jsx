@@ -1,16 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FIRST_YEAR } from "../config.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { useElementWidth } from "../lib/hooks.js";
 import { monthSlots, seriesMax, slotState } from "../lib/series.js";
-import SlotDetails from "./SlotDetails.jsx";
+import SlotDetails, { CLASS_GLYPH } from "./SlotDetails.jsx";
 import YearStepper from "./YearStepper.jsx";
 
-const H = 260;
-const MT = 14;
+const H = 300;
+const MT = 20;
 const MB = 62;
-const GLYPH = { low: "↓", normal: "→", high: "↑", very_high: "⇈" };
 const REFERENCE_START = 2003;
+const CLASS_COLOR = { low: "var(--sat)", normal: "var(--muted)", high: "var(--amber)", very_high: "#f08a6a" };
 
 function Swatch({ children, label }) {
   return (
@@ -30,22 +30,44 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
   const [focused, setFocused] = useState(false);
   const [cursor, setCursor] = useState(period.month);
 
+  useEffect(() => {
+    setCursor(period.month);
+  }, [period.month, period.year]);
+
   const slots = useMemo(() => monthSlots(series, period.year), [series, period.year]);
-  const max = useMemo(() => seriesMax(series, ["est_high", "hist_median"]), [series]);
-  const compact = width < 520;
-  const ml = compact ? 38 : 52;
+  const max = useMemo(
+    () =>
+      seriesMax(
+        series.filter((r) => r.year === period.year),
+        ["est_high", "hist_median"],
+      ),
+    [series, period.year],
+  );
+  const ml = width < 520 ? 38 : 50;
   const mr = 8;
   const slotW = Math.max((width - ml - mr) / 12, 1);
   const plotH = H - MT - MB;
   const x = (month) => ml + (month - 0.5) * slotW;
   const y = (v) => MT + plotH - (Math.min(v, max) / max) * plotH;
-  const barW = Math.min(slotW * 0.5, 34);
+  const barW = Math.min(slotW * 0.6, 44);
   const hasYear = slots.some((s) => s.row);
-
-  const active = slots[(hover ?? cursor) - 1];
-  const sel = slots[period.month - 1];
   const hasRef = (row) => row && row.hist_median !== null && row.hist_median !== undefined;
-  const compactFmt = { format: (v) => formatNumber(v, { notation: "compact" }) };
+  const fmtCompact = (v) => formatNumber(v, { notation: "compact" });
+
+  const activeMonth = hover ?? (focused ? cursor : period.month);
+  const active = slots[activeMonth - 1];
+  const sel = slots[period.month - 1];
+
+  const medianRuns = [];
+  let run = [];
+  for (const { month, row } of slots) {
+    if (hasRef(row)) run.push([month, row.hist_median]);
+    else {
+      if (run.length) medianRuns.push(run);
+      run = [];
+    }
+  }
+  if (run.length) medianRuns.push(run);
 
   const onPointerMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -62,39 +84,34 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
     e.preventDefault();
   };
 
-  let summary;
   const label = `${t(`month.${period.month}`)} ${period.year}`;
+  const cls = sel.row?.anomaly_class ? t(`anomaly.${sel.row.anomaly_class}`) : t("series.na");
+  let summary;
   if (!sel.row) summary = t("normal.summary.none", { label });
-  else if (sel.row.is_forecast) summary = t("normal.summary.forecast", { label, class: sel.row.anomaly_class ? t(`anomaly.${sel.row.anomaly_class}`) : t("series.na") });
+  else if (sel.row.is_forecast) summary = t("normal.summary.forecast", { label, class: cls });
   else if (!hasRef(sel.row) || !sel.row.anomaly_class) summary = t("normal.summary.noRef", { label });
-  else summary = t("normal.summary.observed", { label, class: t(`anomaly.${sel.row.anomaly_class}`) });
+  else summary = t("normal.summary.observed", { label, class: cls });
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p
-          role="status"
-          className={`m-0 max-w-[60ch] text-lg font-semibold ${sel.row?.is_forecast ? "text-forecast" : ""}`}
-        >
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p role="status" className={`m-0 max-w-[58ch] font-head text-xl font-bold ${sel.row?.is_forecast ? "text-forecast" : ""}`}>
           {summary}
         </p>
         <YearStepper year={period.year} onChange={(year) => onSelectPeriod({ year, month: period.month })} />
       </div>
 
-      {period.year < REFERENCE_START && period.year >= FIRST_YEAR && (
-        <p className="mb-3 mt-0 rounded-lg border border-line bg-bg p-3 text-sm text-muted">{t("normal.pre2003")}</p>
-      )}
+      {period.year < REFERENCE_START && period.year >= FIRST_YEAR && <p className="card-soft mb-4 mt-0 p-3 text-sm text-muted">{t("normal.pre2003")}</p>}
 
       {!hasYear ? (
-        <p className="m-0 rounded-xl border border-dashed border-line p-6 text-center text-muted">
-          {t("normal.empty", { year: period.year })}
-        </p>
+        <p className="m-0 rounded-2xl border border-dashed border-line p-8 text-center text-muted">{t("normal.empty", { year: period.year })}</p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div>
             <div ref={ref}>
               {width > 0 && (
                 <svg
+                  key={period.year}
                   width={width}
                   height={H}
                   role="group"
@@ -106,98 +123,80 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
                   onKeyDown={onKeyDown}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
-                  className="block cursor-crosshair rounded-lg"
+                  className="fc-fade block cursor-crosshair rounded-xl"
                 >
-                  {[0, 1, 2, 3, 4].map((i) => {
-                    const v = (max / 4) * i;
-                    return (
-                      <g key={i}>
-                        <line x1={ml} x2={width - mr} y1={y(v)} y2={y(v)} style={{ stroke: "var(--line)" }} />
-                        <text x={ml - 6} y={y(v) + 4} textAnchor="end" style={{ fill: "var(--muted)", fontSize: 11 }}>
-                          {compactFmt.format(v)}
-                        </text>
-                      </g>
-                    );
-                  })}
+                  {[0, 0.5, 1].map((f) => (
+                    <g key={f}>
+                      <line x1={ml} x2={width - mr} y1={y(max * f)} y2={y(max * f)} strokeDasharray={f === 0 ? undefined : "2 5"} style={{ stroke: "var(--line)" }} />
+                      <text x={ml - 8} y={y(max * f) + 4} textAnchor="end" style={{ fill: "var(--muted)", fontSize: 11 }}>
+                        {fmtCompact(max * f)}
+                      </text>
+                    </g>
+                  ))}
+
+                  {medianRuns.map((r, i) =>
+                    r.length > 1 ? (
+                      <polyline key={i} points={r.map(([m, v]) => `${x(m)},${y(v)}`).join(" ")} fill="none" strokeDasharray="2 4" strokeLinecap="round" style={{ stroke: "var(--amber)", strokeWidth: 1.6, opacity: 0.8 }} />
+                    ) : null,
+                  )}
 
                   {slots.map(({ month, row }) => {
                     const state = slotState(row);
                     const on = month === period.month;
+                    const barTop = row ? y(row.estimated) : y(0);
                     return (
                       <g key={month}>
-                        {on && (
-                          <rect x={x(month) - slotW / 2} y={MT} width={slotW} height={plotH} style={{ fill: "var(--accent)", opacity: 0.1 }} />
-                        )}
                         {(hover === month || (focused && cursor === month)) && (
-                          <rect
-                            x={x(month) - slotW / 2}
-                            y={MT}
-                            width={slotW}
-                            height={plotH}
-                            strokeDasharray="3 2"
-                            style={{ fill: "none", stroke: "var(--fg)" }}
-                          />
+                          <rect x={x(month) - slotW / 2 + 2} y={MT} width={slotW - 4} height={plotH} rx="6" strokeDasharray="3 3" style={{ fill: "none", stroke: "var(--muted)" }} />
                         )}
                         {row ? (
                           <>
                             <rect
                               x={x(month) - barW / 2}
-                              y={y(row.estimated)}
+                              y={barTop}
                               width={barW}
-                              height={Math.max(y(0) - y(row.estimated), 0)}
+                              height={Math.max(y(0) - barTop, 1)}
+                              rx="3"
                               strokeDasharray={row.is_forecast ? "4 3" : undefined}
                               style={{
                                 fill: row.is_forecast ? "none" : "var(--c-est)",
-                                fillOpacity: 0.85,
-                                stroke: "var(--c-est)",
-                                strokeWidth: row.is_forecast ? 1.8 : 0.5,
+                                fillOpacity: on ? 1 : 0.72,
+                                stroke: row.is_forecast ? "var(--forecast)" : on ? "var(--fg)" : "none",
+                                strokeWidth: row.is_forecast ? 1.8 : 1.6,
                               }}
                             />
-                            <g style={{ stroke: "var(--fg)", strokeWidth: 1.5 }}>
+                            <g style={{ stroke: "var(--fg)", strokeWidth: 1.5, opacity: 0.9 }}>
                               <line x1={x(month)} x2={x(month)} y1={y(row.est_low)} y2={y(row.est_high)} />
-                              <line x1={x(month) - 5} x2={x(month) + 5} y1={y(row.est_low)} y2={y(row.est_low)} />
-                              <line x1={x(month) - 5} x2={x(month) + 5} y1={y(row.est_high)} y2={y(row.est_high)} />
+                              <line x1={x(month) - 4} x2={x(month) + 4} y1={y(row.est_low)} y2={y(row.est_low)} />
+                              <line x1={x(month) - 4} x2={x(month) + 4} y1={y(row.est_high)} y2={y(row.est_high)} />
                             </g>
                             {hasRef(row) && (
-                              <line
-                                x1={x(month) - slotW * 0.42}
-                                x2={x(month) + slotW * 0.42}
-                                y1={y(row.hist_median)}
-                                y2={y(row.hist_median)}
-                                strokeDasharray="6 3"
-                                style={{ stroke: "var(--accent)", strokeWidth: 3 }}
-                              />
+                              <>
+                                <line x1={x(month) - barW / 2 - 4} x2={x(month) + barW / 2 + 4} y1={y(row.hist_median)} y2={y(row.hist_median)} style={{ stroke: "var(--amber)", strokeWidth: 3, strokeLinecap: "round" }} />
+                                <circle cx={x(month)} cy={y(row.hist_median)} r="0" />
+                              </>
                             )}
                           </>
                         ) : (
-                          <line
-                            x1={x(month) - barW / 2}
-                            x2={x(month) + barW / 2}
-                            y1={y(0)}
-                            y2={y(0)}
-                            strokeDasharray="1 3"
-                            style={{ stroke: "var(--muted)", strokeWidth: 2 }}
-                          />
+                          <line x1={x(month) - barW / 2} x2={x(month) + barW / 2} y1={y(0)} y2={y(0)} strokeDasharray="1 3" style={{ stroke: "var(--none)", strokeWidth: 2 }} />
                         )}
-                        <text
-                          x={x(month)}
-                          y={y(0) + 16}
-                          textAnchor="middle"
-                          style={{ fill: on ? "var(--fg)" : "var(--muted)", fontSize: 11, fontWeight: on ? 700 : 400 }}
-                        >
+                        {on && <rect x={x(month) - 20} y={y(0) + 7} width="40" height="20" rx="10" style={{ fill: "var(--accent)" }} />}
+                        <text x={x(month)} y={y(0) + 17.5} textAnchor="middle" dominantBaseline="central" style={{ fill: on ? "#fff" : "var(--muted)", fontSize: 11.5, fontWeight: on ? 700 : 500 }}>
                           {t(`month.${month}`)}
                         </text>
-                        <text x={x(month)} y={y(0) + 34} textAnchor="middle" style={{ fill: "var(--fg)", fontSize: 13 }}>
-                          {row?.anomaly_class && hasRef(row) ? GLYPH[row.anomaly_class] : state === "unavailable" ? "○" : ""}
-                        </text>
-                        {slotW >= 76 && (
-                          <text x={x(month)} y={y(0) + 49} textAnchor="middle" style={{ fill: "var(--muted)", fontSize: 10 }}>
-                            {row?.anomaly_class && hasRef(row)
-                              ? t(`anomaly.${row.anomaly_class}`)
-                              : state === "unavailable"
-                                ? t("availability.unavailable")
-                                : t("normal.refMissing")}
-                          </text>
+                        {row?.anomaly_class && hasRef(row) ? (
+                          <g>
+                            <circle cx={x(month)} cy={y(0) + 44} r="10" style={{ fill: "var(--surface)", stroke: CLASS_COLOR[row.anomaly_class], strokeWidth: on ? 2 : 1 }} />
+                            <text x={x(month)} y={y(0) + 44} textAnchor="middle" dominantBaseline="central" style={{ fill: CLASS_COLOR[row.anomaly_class], fontSize: 12, fontWeight: 700 }}>
+                              {CLASS_GLYPH[row.anomaly_class]}
+                            </text>
+                          </g>
+                        ) : (
+                          state === "unavailable" && (
+                            <text x={x(month)} y={y(0) + 44} textAnchor="middle" dominantBaseline="central" style={{ fill: "var(--none)", fontSize: 12 }}>
+                              ○
+                            </text>
+                          )
                         )}
                       </g>
                     );
@@ -206,29 +205,33 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
               )}
             </div>
 
-            <ul aria-label={t("chart.legend.title")} className="m-0 mt-4 flex list-none flex-wrap gap-x-5 gap-y-2 p-0 text-sm">
-              <Swatch label={t("normal.legend.estimate")}>
-                <rect x="8" y="2" width="14" height="12" style={{ fill: "var(--c-est)", opacity: 0.85 }} />
-              </Swatch>
-              <Swatch label={t("normal.legend.range")}>
-                <g style={{ stroke: "var(--fg)", strokeWidth: 1.5 }}>
-                  <line x1="15" x2="15" y1="2" y2="14" />
-                  <line x1="10" x2="20" y1="2" y2="2" />
-                  <line x1="10" x2="20" y1="14" y2="14" />
-                </g>
-              </Swatch>
-              <Swatch label={t("normal.legend.median")}>
-                <line x1="2" x2="28" y1="8" y2="8" strokeDasharray="6 3" style={{ stroke: "var(--accent)", strokeWidth: 3 }} />
-              </Swatch>
-              <Swatch label={t("normal.legend.forecast")}>
-                <rect x="8" y="2" width="14" height="12" strokeDasharray="4 3" style={{ fill: "none", stroke: "var(--c-est)", strokeWidth: 1.8 }} />
-              </Swatch>
-              <Swatch label={t("normal.legend.none")}>
-                <line x1="4" x2="26" y1="8" y2="8" strokeDasharray="1 3" style={{ stroke: "var(--muted)", strokeWidth: 2 }} />
-              </Swatch>
-            </ul>
-            <p className="mb-0 mt-3 text-sm text-muted">{t("normal.glyphs")}</p>
-            <p className="m-0 text-sm text-muted">{t("normal.thresholds")}</p>
+            <div className="mt-5 grid gap-2">
+              <ul aria-label={t("chart.legend.title")} className="m-0 flex list-none flex-wrap gap-x-5 gap-y-2 p-0 text-xs text-muted">
+                <Swatch label={t("normal.legend.estimate")}>
+                  <rect x="8" y="2" width="14" height="12" rx="3" style={{ fill: "var(--c-est)" }} />
+                </Swatch>
+                <Swatch label={t("normal.legend.range")}>
+                  <g style={{ stroke: "var(--fg)", strokeWidth: 1.5 }}>
+                    <line x1="15" x2="15" y1="2" y2="14" />
+                    <line x1="11" x2="19" y1="2" y2="2" />
+                    <line x1="11" x2="19" y1="14" y2="14" />
+                  </g>
+                </Swatch>
+                <Swatch label={t("normal.legend.median")}>
+                  <line x1="4" x2="26" y1="8" y2="8" style={{ stroke: "var(--amber)", strokeWidth: 3, strokeLinecap: "round" }} />
+                </Swatch>
+                <Swatch label={t("normal.legend.forecast")}>
+                  <rect x="8" y="2" width="14" height="12" rx="3" strokeDasharray="4 3" style={{ fill: "none", stroke: "var(--forecast)", strokeWidth: 1.8 }} />
+                </Swatch>
+                <Swatch label={t("normal.legend.none")}>
+                  <line x1="4" x2="26" y1="8" y2="8" strokeDasharray="1 3" style={{ stroke: "var(--none)", strokeWidth: 2 }} />
+                </Swatch>
+              </ul>
+              <p className="m-0 text-xs text-muted">{t("normal.scale", { year: period.year, max: formatNumber(max) })}</p>
+              <p className="m-0 text-xs text-muted">
+                {t("normal.glyphs")} {t("normal.thresholds")}
+              </p>
+            </div>
           </div>
           <SlotDetails slot={active} withReference />
         </div>

@@ -1,7 +1,7 @@
 import { useI18n } from "../i18n/I18nProvider.jsx";
 
 const itemClass = {
-  observed: "border-accent",
+  observed: "border-sat",
   forecast: "border-dashed border-forecast",
   none: "border-dotted border-line text-none",
 };
@@ -20,7 +20,7 @@ export default function Coverage2026({ series }) {
           const row = rows.find((r) => r.month === month);
           const key = !row ? "none" : row.is_forecast ? "forecast" : "observed";
           return (
-            <li key={month} data-state={key} className={`rounded-lg border px-2.5 py-1.5 text-sm ${itemClass[key]}`}>
+            <li key={month} data-state={key} className={`rounded-xl border bg-surface px-3 py-2 text-sm ${itemClass[key]}`}>
               {t(`month.${month}`)}
               <small className="block text-muted">{t(`coverage.${key}`)}</small>
             </li>

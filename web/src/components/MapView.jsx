@@ -2,15 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { useI18n } from "../i18n/I18nProvider.jsx";
-import { prefersDark, prefersReducedMotion } from "../lib/hooks.js";
-import {
-  baseStyle,
-  cellsToGeoJSON,
-  featureBounds,
-  stepExpression,
-  CELL_COLORS,
-  CELL_OUTLINE_WIDTHS,
-} from "../lib/mapStyle.js";
+import { prefersReducedMotion } from "../lib/hooks.js";
+import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, tuneBasemap } from "../lib/mapStyle.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -40,10 +33,9 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
 
   useEffect(() => {
     if (!regions || mapRef.current) return;
-    const dark = prefersDark();
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: baseStyle(dark),
+      style: BASE_STYLE_URL,
       bounds: featureBounds(regions.features.find((f) => f.properties.id === "peru") ?? regions.features[0]),
       fitBoundsOptions: { padding: 32 },
       attributionControl: { compact: true },
@@ -64,11 +56,11 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
     popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
 
-    const lineColor = dark ? "#e8edf5" : "#243044";
     map.on("load", () => {
+      tuneBasemap(map);
       const before = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
       const addLayer = (layer) => map.addLayer(layer, before);
       map.addSource("regions", { type: "geojson", data: regions });
@@ -85,17 +77,17 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         type: "fill",
         source: "regions",
         filter: ["==", ["get", "level"], "macro"],
-        paint: { "fill-color": "#0072b2", "fill-opacity": 0.06 },
+        paint: { "fill-color": "#58b8d8", "fill-opacity": 0.04 },
       });
       addLayer({
         id: "regions-line",
         type: "line",
         source: "regions",
         paint: {
-          "line-color": lineColor,
-          "line-width": 1.4,
-          "line-opacity": 0.7,
-          "line-dasharray": [3, 2],
+          "line-color": "#9daabd",
+          "line-width": 0.8,
+          "line-opacity": 0.22,
+          "line-dasharray": [3, 3],
         },
       });
       addLayer({
@@ -103,21 +95,21 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         type: "line",
         source: "regions",
         filter: ["==", ["get", "id"], ""],
-        paint: { "line-color": "#0072b2", "line-width": 3.5 },
+        paint: { "line-color": "#58b8d8", "line-width": 1.4, "line-opacity": 0.5 },
       });
       addLayer({
         id: "cells-fill",
         type: "fill",
         source: "cells",
-        paint: { "fill-color": stepExpression(CELL_COLORS), "fill-opacity": 0.88 },
+        paint: { "fill-color": cellPaint().fillColor, "fill-opacity": cellPaint().fillOpacity },
       });
       addLayer({
         id: "cells-outline",
         type: "line",
         source: "cells",
         paint: {
-          "line-color": dark ? "#f5f5f5" : "#3b1a0b",
-          "line-width": stepExpression(CELL_OUTLINE_WIDTHS),
+          "line-color": CELL_OUTLINE_COLOR,
+          "line-width": cellPaint().lineWidth,
         },
       });
       setReady(true);
@@ -187,15 +179,16 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !breaks) return;
-    map.setPaintProperty("cells-fill", "fill-color", stepExpression(CELL_COLORS, breaks));
-    map.setPaintProperty("cells-outline", "line-width", stepExpression(CELL_OUTLINE_WIDTHS, breaks));
+    const paint = cellPaint(breaks);
+    map.setPaintProperty("cells-fill", "fill-color", paint.fillColor);
+    map.setPaintProperty("cells-outline", "line-width", paint.lineWidth);
   }, [ready, breaks]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
     map.setFilter("region-selected-line", ["==", ["get", "id"], region]);
-    map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.14, 0.05]);
+    map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.07, 0.02]);
     fit(prefersReducedMotion() ? 0 : 600);
   }, [ready, region]);
 
@@ -205,12 +198,12 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         ref={containerRef}
         role="region"
         aria-label={ariaLabel}
-        className="h-[420px] w-full overflow-hidden rounded-xl border border-line sm:h-[520px]"
+        className="h-[460px] w-full overflow-hidden rounded-2xl border border-line sm:h-[560px] lg:h-[640px]"
       />
       <button
         type="button"
         onClick={() => fit(prefersReducedMotion() ? 0 : 600)}
-        className="absolute left-2 top-2 rounded-md border border-line bg-surface px-2.5 py-1 text-sm font-medium shadow hover:bg-bg"
+        className="btn-icon absolute left-3 top-3 font-medium"
       >
         {t("map.reset")}
       </button>

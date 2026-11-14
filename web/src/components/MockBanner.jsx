@@ -5,11 +5,8 @@ export default function MockBanner() {
   const { t } = useI18n();
   if (!isMock) return null;
   return (
-    <div
-      role="status"
-      className="sticky top-0 z-10 flex flex-wrap gap-x-3 gap-y-1 bg-warn-bg px-4 py-2 text-sm text-warn-fg"
-    >
-      <strong>{t("mock.badge")}</strong>
+    <div role="status" className="relative z-30 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 bg-warn-bg px-4 py-1.5 text-sm text-warn-fg">
+      <strong className="tracking-wide">{t("mock.badge")}</strong>
       <span>{t("mock.detail")}</span>
     </div>
   );

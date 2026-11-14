@@ -42,14 +42,12 @@ export default function App() {
       <MockBanner />
       <Header regionIds={regionIds} region={region} onRegionChange={setRegion} />
       <Hero />
-      <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-6">
+      <div className="mx-auto max-w-[1240px] px-4 pt-6 sm:px-6">
         <StatusMessage status={loadError ? "error" : seriesLoading ? "loading" : "ready"} error={loadError} />
       </div>
       <main>
         <Section id="false-record" eyebrow={t("record.eyebrow")} title={t("record.title")} lede={t("record.lede")}>
-          <div className="rounded-xl border border-line bg-surface p-4 sm:p-6">
-            <FalseRecordChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
-          </div>
+          <FalseRecordChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
         </Section>
 
         <Section id="map" eyebrow={t("map.eyebrow")} title={t("map.title")} lede={t("map.lede")}>
@@ -66,15 +64,11 @@ export default function App() {
         </Section>
 
         <Section id="fire-clock" eyebrow={t("clock.eyebrow")} title={t("clock.title")} lede={t("clock.lede")}>
-          <div className="rounded-xl border border-line bg-surface p-4 sm:p-6">
-            <FireClock series={series} region={region} period={period} onSelectPeriod={setPeriod} />
-          </div>
+          <FireClock series={series} region={region} period={period} onSelectPeriod={setPeriod} />
         </Section>
 
         <Section id="is-it-normal" eyebrow={t("normal.eyebrow")} title={t("normal.title")} lede={t("normal.lede")}>
-          <div className="rounded-xl border border-line bg-surface p-4 sm:p-6">
-            <NormalChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
-          </div>
+          <NormalChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
         </Section>
 
         <Section id="method" eyebrow={t("method.eyebrow")} title={t("method.title")} lede={t("method.lede")}>
@@ -87,8 +81,8 @@ export default function App() {
           <DataSummary series={series} regionCount={regionIds.length} mapCells={map.cells} methodology={methodology} />
         </Section>
       </main>
-      <footer className="border-t border-line px-4 py-8 sm:px-6">
-        <p className="mx-auto m-0 max-w-[1180px] text-sm text-muted">{t("unit.note")}</p>
+      <footer className="border-t border-line px-4 py-10 sm:px-6">
+        <p className="mx-auto m-0 max-w-[1240px] text-sm text-muted">{t("unit.note")}</p>
       </footer>
     </>
   );
