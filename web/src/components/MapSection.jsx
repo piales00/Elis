@@ -8,6 +8,10 @@ import MapLegend from "./MapLegend.jsx";
 import MapCellTable from "./MapCellTable.jsx";
 import { isMock } from "../data/client.js";
 import SensorSelector from "./SensorSelector.jsx";
+import ImageryControls from "./imagery/ImageryControls.jsx";
+import ImageryLegend from "./imagery/ImageryLegend.jsx";
+import { useImageryView } from "./imagery/useImageryView.js";
+import { FIRST_YEAR, LAST_YEAR } from "../config.js";
 
 const MapView = lazy(() => import("./MapView.jsx"));
 const NONE = [];
@@ -16,6 +20,8 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
   const { t } = useI18n();
   const [group, setGroup] = useState("estimated");
   const [sub, setSub] = useState("all");
+  const img = useImageryView({ period, onPeriodChange, regions, region });
+  const regionLabel = t(`region.${region}`);
 
   const sensor = sensorFor(group, sub);
   const gapKey = gapNoteKey(group, sensor, period.year, period.month);
@@ -46,6 +52,10 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
   const cells = state === "observed" && ready && !noCoverage && !fieldMissing && !allNull ? map.cells : NONE;
   const breaks = useMemo(() => computeBreaks(cells, metric), [cells, metric]);
   const periodLabel = `${t(`month.${period.month}`)} ${period.year}`;
+  if (img.view === "imagery") {
+    message = img.message;
+    isError = img.isError;
+  }
 
   return (
     <div className="grid gap-4">
@@ -67,6 +77,8 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
               breaks={breaks}
               region={region}
               onRegionSelect={onRegionSelect}
+              onCellSelect={img.selectCell}
+              imagery={img.imagery}
               ariaLabel={t("map.aria", { period: periodLabel })}
             />
           </Suspense>
@@ -81,11 +93,29 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
             </p>
           )}
           <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-5rem)]">
-            <MapLegend metric={metric} breaks={breaks} />
+            {img.view === "imagery" ? (
+              <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} />
+            ) : (
+              <MapLegend metric={metric} breaks={breaks} />
+            )}
           </div>
         </div>
         <div className="grid gap-4">
-          <SensorSelector
+          <ImageryControls
+            view={img.view}
+            onViewChange={img.setView}
+            base={img.base}
+            onBaseChange={img.setBase}
+            date={img.date}
+            onDateChange={img.setDate}
+            raster={img.raster}
+            satellites={img.satellites}
+            onSatelliteChange={img.setSatellite}
+            minYear={FIRST_YEAR}
+            maxYear={LAST_YEAR}
+            onTrueScale={img.trueScale}
+          />
+          {img.view === "cells" && <SensorSelector
             group={group}
             sub={sub}
             onGroupChange={(g) => {
@@ -93,7 +123,7 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
               setSub(DEFAULT_SUB[g]);
             }}
             onSubChange={setSub}
-          />
+          />}
           <div className="card-soft p-4 text-xs text-muted">
             <ul className="m-0 grid list-none gap-2 p-0">
               <li className="flex items-center gap-3">
