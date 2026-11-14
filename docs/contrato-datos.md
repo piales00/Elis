@@ -53,21 +53,23 @@ Una fila por región, año y mes. Alimenta el récord falso, el reloj del fuego 
 | `modis_equiv` | número | La misma actividad en escala MODIS (pieza 2). Sirve de comprobación |
 | `source` | texto | `modis_only`, `both` o `viirs_only`: con qué datos se calculó |
 | `hist_median` | número | Mediana de `estimated` de ese mes en 2003–2025 |
-| `anomaly_class` | texto | `bajo`, `normal`, `alto` o `muy_alto`, comparado con su propio mes |
+| `anomaly_class` | texto | `low`, `normal`, `high` o `very_high`, comparado con su propio mes |
 | `is_forecast` | booleano | `true` solo para meses pronosticados (pieza 4) |
 
 ```json
 {"region": "amazonia", "year": 2005, "month": 9, "raw_modis": 1000, "raw_viirs": null,
  "raw_detections": 2100, "estimated": 5000, "est_low": 4200, "est_high": 6100,
  "modis_equiv": 1000, "source": "modis_only", "hist_median": 3800,
- "anomaly_class": "alto", "is_forecast": false}
+ "anomaly_class": "high", "is_forecast": false}
 ```
 
 Los números del ejemplo son inventados.
 
 ### `regions.geojson`
 
-Un polígono por región. Propiedades: `id` (igual a `region`), `name` (para mostrar, con tildes) y `level` (`pais`, `macro` o `departamento`).
+Un polígono por región. Propiedades: `id` (igual a `region`), `name` (para mostrar, en inglés: `Amazon`, `Andes`, `Coast`; los departamentos con su nombre oficial, por ejemplo `Ucayali`) y `level` (`country`, `macro` o `department`).
+
+**Idioma:** todo valor que llegue a la pantalla va en inglés, porque la app la evalúa la NASA. Los identificadores (`region`) se mantienen como están.
 
 ### `methodology.json`
 

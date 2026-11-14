@@ -40,6 +40,8 @@ Si se suma una cuarta persona, toma T6. Una quinta toma el pronóstico de tempor
 
 ## Reglas de trabajo
 
+0. **Todo lo que ve la NASA va en inglés:** la app, la API, el README, las diapositivas, el video y el formulario. Solo los documentos internos y los commits quedan en español.
+
 1. **H20 manda:** una demo fea que funciona vale más que una bonita a medias.
 2. **Nadie espera a nadie:** si te falta un dato, usa el de prueba y sigue.
 3. **Pull Requests pequeños** y mezclados seguido, para no acumular conflictos.

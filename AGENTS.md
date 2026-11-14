@@ -40,7 +40,7 @@ docs/              Documentación
 
 - **Datos y método:** Python 3 y DuckDB. Usar el entorno `.venv` (`python3 -m venv .venv && .venv/bin/pip install duckdb`).
 - **API:** FastAPI que sirve archivos ya calculados. No calcula nada pesado al recibir una petición.
-- **Web:** mapa con MapLibre y gráficos. Toda la interfaz en español.
+- **Web:** mapa con MapLibre y gráficos. Toda la interfaz en **inglés**.
 
 ## Reglas
 
@@ -50,4 +50,7 @@ docs/              Documentación
 4. **Git:** Conventional Commits en español (`feat(api): ...`, `fix(web): ...`), una rama por tarea y Pull Requests pequeños. Detalle en `GIT.md`. No subas `data/raw/`, `.venv/` ni `.env`.
 5. **Sin comentarios en el código** salvo que sean imprescindibles.
 6. **Prioridad:** a la hora 20 todo debe estar conectado con datos reales, aunque se vea feo. Los extras van después.
-7. **Idioma:** documentación y textos de la interfaz en español neutro (tú).
+7. **Idioma — el resultado final va en inglés, porque lo evalúa la NASA:**
+   - **En inglés:** todos los textos de la app (interfaz, etiquetas, leyendas, tooltips, pantalla de metodología), la API (rutas, campos, mensajes de error), los nombres en el código, el `README.md`, el pitch, las diapositivas, el video y el formulario de envío de Space Apps.
+   - **En español:** solo los documentos internos del equipo (`PROYECTO.md`, `docs/equipo.md`, `docs/contrato-datos.md`, `docs/benchmarking.md`, `GIT.md`) y los mensajes de commit.
+   - Antes del envío, `README.md` se reescribe completo en inglés.
