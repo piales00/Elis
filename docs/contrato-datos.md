@@ -17,6 +17,7 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 | Tipo de detección | solo `type = 0` (vegetación) | Quita volcanes, industria y minería |
 | Confianza MODIS | `confidence >= 30` | Descarta la confianza baja |
 | Confianza VIIRS | `confidence` en `n` o `h` | Equivalente: descarta la baja (`l`) |
+| VIIRS NRT 2026 | confianza `n` o `h`; `type` no está disponible | Datos provisionales hasta que FIRMS los reemplace por estándar |
 | Par de calibración | Aqua (MODIS) y S-NPP (VIIRS) | Pasan a una hora parecida, cerca de la 1:30 pm |
 | Años de calibración | 2013–2020 | 2012 se excluye porque VIIRS empieza el 20 de enero |
 | Años de prueba | 2021–2024 | El método nunca los ve al calibrar |
@@ -29,7 +30,7 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 | Campo | Tipo | Valores |
 |---|---|---|
 | `region` | texto | `peru`, `amazonia`, `sierra`, `costa`. Los departamentos son opcionales, con el nombre en minúsculas y sin tildes (`ucayali`) |
-| `year` | entero | 2000 a 2025 en el alcance actual; 2026 se añadirá solo si llegan los datos solicitados a FIRMS |
+| `year` | entero | 2000 a 2026 |
 | `month` | entero | 1 a 12 |
 
 Las macrorregiones se arman agrupando departamentos completos. Es una aproximación y se declara en "Cómo lo calculamos".

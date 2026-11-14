@@ -185,9 +185,15 @@ def classify_file(path: Path, row: dict[str, str]) -> str | None:
 
 
 def accepted_row(path: Path, row: dict[str, str]) -> str | None:
-    if row.get("type", "").strip() != VEGETATION_TYPE:
-        return None
     sensor = classify_file(path, row)
+    if sensor is None:
+        return None
+    detection_type = row.get("type", "").strip()
+    if detection_type:
+        if detection_type != VEGETATION_TYPE:
+            return None
+    elif sensor != "viirs" or "_nrt_" not in path.name.lower():
+        return None
     if sensor in {"terra", "aqua"}:
         try:
             if int(float(row.get("confidence", ""))) < MODIS_CONFIDENCE_MIN:
@@ -246,10 +252,12 @@ def write_observations(destination: Path, departments: list[dict]) -> tuple[int,
             sources.append(path.name)
             with path.open(encoding="utf-8-sig", newline="") as source:
                 reader = csv.DictReader(source)
-                required = {"latitude", "longitude", "acq_date", "type", "confidence"}
+                required = {"latitude", "longitude", "acq_date", "confidence"}
                 fields = {str(column).strip().lower() for column in (reader.fieldnames or [])}
                 if not required.issubset(fields):
                     raise ValueError(f"Columnas FIRMS incompletas en {path.name}.")
+                if "type" not in fields and "_nrt_" not in filename:
+                    raise ValueError(f"Falta la columna type en el archivo estándar {path.name}.")
                 for row in reader:
                     normalized = {str(key).strip().lower(): value or "" for key, value in row.items()}
                     sensor = accepted_row(path, normalized)

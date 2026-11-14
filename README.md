@@ -1,6 +1,6 @@
 # FireChronos Perú
 
-Calendario histórico comparable del fuego en Perú (2000–2025), construido a partir de las detecciones de MODIS y VIIRS de NASA FIRMS.
+Calendario histórico comparable del fuego en Perú (2000–2026), construido a partir de las detecciones de MODIS y VIIRS de NASA FIRMS.
 
 Proyecto del equipo Log N + 1 para NASA Space Apps 2026, reto *Harmonization of MODIS and VIIRS Hot Spots*.
 
@@ -20,7 +20,7 @@ Los CSV anuales de FIRMS para Perú se guardan en `data/raw/`, que no se sube al
 .\.venv\Scripts\python.exe scripts/build_peru_data.py
 ```
 
-El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. El alcance actual llega hasta 2025. Si llegan a tiempo los CSV de NOAA-20/21 de 2026 solicitados a FIRMS, se podrán guardar en `data/raw/` como `viirs-noaa20_2026_Peru.csv` y `viirs-noaa21_2026_Peru.csv`, ampliar `MAX_YEAR` a 2026 en `scripts/config.py` y volver a ejecutar el generador. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
+El generador publica `data/processed/regions.geojson` con Perú, las tres macrorregiones y las unidades departamentales, además de `map.parquet` para todo el país. Los ZIP de FIRMS de NOAA-20 (J1) y NOAA-21 (J2) están en `data/raw/`: el archivo estándar cubre enero–julio de 2026 y el NRT, agosto hasta el 13 y 14 de noviembre, respectivamente. En los CSV estándar se conserva el filtro `type=0`; los NRT no incluyen esa columna y se filtran por confianza VIIRS `n` o `h`, por lo que sus datos son provisionales hasta que NASA los reemplace por estándar. `estimated` se mantiene en `null` hasta recibir la estimación de T2.
 
 ## Exploración
 
