@@ -28,3 +28,30 @@ python3 -m venv .venv && .venv/bin/pip install duckdb
 ```
 
 `scripts/recaptura.py` es un borrador de la estimación por captura y recaptura; todavía no se ha ejecutado ni validado.
+
+## Cómo trabajamos con Git
+
+Las reglas de commits, ramas y Pull Requests están en [GIT.md](GIT.md).
+
+## Skills del proyecto
+
+El repositorio incluye skills para Claude Code en `.claude/skills/`, como copias reales: se cargan solas al abrir el proyecto, sin instalar nada. `skills-lock.json` registra el origen de las que se instalaron con el CLI `skills`.
+
+| Skill | Para qué sirve en este proyecto | Origen |
+|---|---|---|
+| `fastapi` | Construir la API que sirve el calendario del fuego | Instalada: `fastapi/fastapi` |
+| `query` | Consultar los CSV de FIRMS con DuckDB | Instalada: `duckdb/duckdb-skills` |
+| `duckdb-docs` | Consultar la documentación de DuckDB | Instalada: `duckdb/duckdb-skills` |
+| `maplibre-cartography` | Diseñar el mapa de detecciones con MapLibre | Instalada: `maplibre/maplibre-agent-skills` |
+| `maplibre-pmtiles-patterns` | Servir las teselas del mapa con PMTiles | Instalada: `maplibre/maplibre-agent-skills` |
+| `mapbox-geospatial-operations` | Operaciones geoespaciales (distancias, áreas, uniones espaciales) | Instalada: `mapbox/mapbox-agent-skills` |
+| `data-visualization` | Gráficos en Python (matplotlib, seaborn, plotly) para el análisis | Instalada: `anthropics/knowledge-work-plugins` |
+| `video-report` | Skill interna de Remotion para reportar videos; uso limitado aquí | Instalada: `remotion-dev/remotion` |
+| `hackathon-judging` | Entender la rúbrica y los criterios del jurado | Instalada: `samber/dev-event-organizer-skills` |
+| `impeccable` | Revisar y pulir la interfaz web | Copiada de la configuración local |
+| `design-taste-frontend` | Dirección de arte para la página pública | Copiada de la configuración local |
+| `animate` | Animaciones de la interfaz (reloj del fuego, transiciones) | Copiada de la configuración local |
+| `emil-design-eng` | Detalles de pulido de UI según Emil Kowalski | Copiada de la configuración local |
+| `video-use` | Editar el video del pitch | Copiada de la configuración local (sin `.venv`) |
+| `pptx` | Crear o editar la presentación en PowerPoint | Copiada de la configuración local (Anthropic) |
+| `code-review` | Revisión de código antes de mezclar un PR | Copiada de la configuración local |
