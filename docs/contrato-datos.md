@@ -29,7 +29,7 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 | Campo | Tipo | Valores |
 |---|---|---|
 | `region` | texto | `peru`, `amazonia`, `sierra`, `costa`. Los departamentos son opcionales, con el nombre en minúsculas y sin tildes (`ucayali`) |
-| `year` | entero | 2000 a 2026 |
+| `year` | entero | 2000 a 2025 en el alcance actual; 2026 se añadirá solo si llegan los datos solicitados a FIRMS |
 | `month` | entero | 1 a 12 |
 
 Las macrorregiones se arman agrupando departamentos completos. Es una aproximación y se declara en "Cómo lo calculamos".
@@ -71,6 +71,16 @@ Un polígono por región. Propiedades: `id` (igual a `region`), `name` (para mos
 
 **Idioma:** todo valor que llegue a la pantalla va en inglés, porque la app la evalúa la NASA. Los identificadores (`region`) se mantienen como están.
 
+The FeatureCollection includes the country (`peru`), the three macroregions (`amazonia`, `sierra`, `costa`), and 25 departmental units (24 departments and Callao). Department polygons include `macroregion`; macroregion polygons include `departments`. `metadata` records the source, retrieval date, and reference-boundary note.
+
+The approximate department grouping is documented in `scripts/config.py`:
+
+| Macroregion | Departments |
+|---|---|
+| Amazon | Amazonas, Loreto, Madre de Dios, San Martín, Ucayali |
+| Andes | Áncash, Apurímac, Arequipa, Ayacucho, Cajamarca, Cusco, Huancavelica, Huánuco, Junín, Pasco, Puno |
+| Coast | Callao, Ica, La Libertad, Lambayeque, Lima, Moquegua, Piura, Tacna, Tumbes |
+
 ### `methodology.json`
 
 Alimenta "Cómo lo calculamos".
@@ -102,9 +112,16 @@ Una fila por celda, año y mes con actividad.
 | `lat`, `lon` | número | Centro de la celda |
 | `region` | texto | Macrorregión de la celda |
 | `year`, `month` | entero | — |
-| `raw_modis`, `raw_viirs` | entero | Días con detección en el mes, por sensor |
-| `estimated` | número | Actividad estimada de la celda |
+| `raw_terra` | entero | Celdas-día con detección observada por Terra |
+| `raw_aqua` | entero | Celdas-día con detección observada por Aqua |
+| `raw_modis` | entero | Celdas-día únicos observados por Terra o Aqua |
+| `raw_viirs` | entero | Celdas-día únicos observados por S-NPP, NOAA-20 o NOAA-21 |
+| `estimated` | número o `null` | Actividad estimada de la celda; `null` hasta que T2 entregue una estimación compatible |
 | `size_ratio` | número o `null` | Razón VIIRS/MODIS de la celda (pieza 3, extra) |
+
+`raw_terra` y `raw_aqua` cuentan días únicos por separado. `raw_modis` cuenta la unión de días vistos por Terra o Aqua, sin duplicar una celda-día que ambos sensores hayan visto. `raw_viirs` cuenta la unión de días vistos por S-NPP, NOAA-20 o NOAA-21, sin duplicados entre plataformas. Callao se incluye como unidad departamental en Perú y en la agrupación de Costa.
+
+`region` en `map.parquet` es una de las tres macrorregiones. Cada celda de 0,1° se asigna a la unidad departamental que cubre la mayor parte de su área y luego a su macrorregión.
 
 ## 4. API
 
@@ -112,7 +129,7 @@ Una fila por celda, año y mes con actividad.
 |---|---|---|
 | `GET /regions` | — | `regions.geojson` |
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
-| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_modis`, `raw_viirs`, `estimated` |
+| `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.
