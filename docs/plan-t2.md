@@ -484,3 +484,31 @@ Parámetros nuevos en `config.py`: `RAW_2026_DIR`, `STATIC_MIN_SHARE = 0.5`, `ST
 - La razón `estimated / n_snpp` de 2026 queda en el mismo rango que 2013–2025.
 - `pytest` completo pasa, con pruebas nuevas para 2026 (filas hasta 2026-11, `raw_viirs` solo S-NPP, mes parcial marcado).
 - Informe: tabla mensual de 2026 (S-NPP, Aqua, estimated con rango, `anomaly_class`) y comparación del acumulado enero–octubre de 2026 con el mismo período de cada año 2012–2025.
+
+## Tarea 4k — Pronóstico de temporada (pieza 4)
+
+**Entrega:** filas `is_forecast: true` en `series.json`, una clave `forecast` en `methodology.json` y la demo "crudo frente a corregido". La definición de la pieza está en `PROYECTO.md`, sección "Pieza 4".
+
+### Datos
+- Fuego: `estimated` de `series.json` (corregido) y `raw_detections` (crudo), por región y mes.
+- Lluvia y temperatura mensuales de **NASA POWER** (API pública, sin clave), 2000–2026, promediadas por macrorregión con una rejilla de puntos dentro de cada región. `scripts/fetch_power.py` las guarda en `data/external/power/` (no se sube) y genera `data/interim/climate_monthly.parquet`.
+
+### Modelo
+- Simple, porque hay unas 23 temporadas por región: regresión regularizada o años análogos. Predictores: fuego acumulado de los meses previos (en logaritmo), lluvia y temperatura acumuladas, y sus anomalías. Nada de modelos grandes.
+- Objetivo: el `estimated` mensual y el total de la temporada (agosto a octubre), por región.
+- Salida: mediana, rango al `CI_LEVEL` y `anomaly_class` (con los mismos percentiles de la serie). Nunca una cifra sin rango.
+
+### Pruebas obligatorias
+1. **Backtesting 2003–2025**, dejando fuera cada año (o con origen móvil): se predice la temporada con lo conocido hasta julio, y cada mes con 1, 2 y 3 meses de anticipación. Se compara con dos líneas base: la climatología (mediana histórica del mes) y la persistencia de la anomalía. Métricas: error absoluto en logaritmo, acierto de la clase y cobertura del rango.
+2. **2026 como prueba fuera de muestra:** 2026 no está en la historia. Se predice agosto–octubre de 2026 con lo conocido hasta julio de 2026 y se compara con lo observado.
+3. **Demo crudo frente a corregido:** el mismo modelo se entrena con `raw_detections` de 2003–2011 y predice 2013–2025; y con `estimated`. Se mide cuánto se equivoca cada uno al cruzar 2012. Además se muestra qué "tendencia" aprende un modelo con término de tendencia entrenado en crudo 2003–2025 frente a uno entrenado en corregido.
+
+### Qué se publica
+- Filas de pronóstico solo para los meses posteriores al último observado y solo con la anticipación en que el backtesting le gana a la climatología. Si no le gana en ninguna, se publica la climatología con su rango, etiquetada como tal, y se dice.
+- En las filas de pronóstico: `is_forecast: true`, `raw_modis`, `raw_viirs`, `raw_detections` y `modis_equiv` en `null`, `source: "forecast"`.
+- `methodology.json` → `forecast`: modelo, predictores, métricas del backtesting frente a las líneas base, resultado de 2026 y la demo crudo frente a corregido.
+- Lo observado no se toca: las filas existentes de `series.json` deben quedar idénticas.
+
+### Criterios de aceptación
+- `pytest` completo pasa, con pruebas nuevas: las filas observadas no cambian, las de pronóstico cumplen el esquema, y `est_low ≤ estimated ≤ est_high`.
+- El informe da el acierto real aunque sea modesto. Si el modelo no le gana a la climatología, se dice.
