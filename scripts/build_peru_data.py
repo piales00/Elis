@@ -192,7 +192,7 @@ def accepted_row(path: Path, row: dict[str, str]) -> str | None:
     if detection_type:
         if detection_type != VEGETATION_TYPE:
             return None
-    elif sensor != "viirs" or "_nrt_" not in path.name.lower():
+    elif "_nrt_" not in path.name.lower():
         return None
     if sensor in {"terra", "aqua"}:
         try:
