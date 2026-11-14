@@ -1,0 +1,6 @@
+{"type":"FeatureCollection","features":[
+{"type":"Feature","properties":{"id":"peru","name":"Peru","level":"country"},"geometry":{"type":"Polygon","coordinates":[[[-81.3,-18.4],[-68.6,-18.4],[-68.6,-0.04],[-81.3,-0.04],[-81.3,-18.4]]]}},
+{"type":"Feature","properties":{"id":"amazonia","name":"Amazon","level":"macro"},"geometry":{"type":"Polygon","coordinates":[[[-74.5,-13],[-69,-13],[-69,-3],[-74.5,-3],[-74.5,-13]]]}},
+{"type":"Feature","properties":{"id":"sierra","name":"Andes","level":"macro"},"geometry":{"type":"Polygon","coordinates":[[[-78,-17],[-74.5,-17],[-74.5,-6],[-78,-6],[-78,-17]]]}},
+{"type":"Feature","properties":{"id":"costa","name":"Coast","level":"macro"},"geometry":{"type":"Polygon","coordinates":[[[-81.2,-18],[-78,-18],[-78,-4],[-81.2,-4],[-81.2,-18]]]}}
+]}
