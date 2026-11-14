@@ -5,6 +5,9 @@ const selectClass = "rounded-md border border-line bg-surface px-2 py-1 text-sm 
 const LINKS = [
   ["record", "#false-record"],
   ["map", "#map"],
+  ["clock", "#fire-clock"],
+  ["normal", "#is-it-normal"],
+  ["method", "#method"],
   ["data", "#data-check"],
 ];
 
