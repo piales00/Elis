@@ -11,6 +11,9 @@ import Section from "./components/Section.jsx";
 import StatusMessage from "./components/StatusMessage.jsx";
 import FalseRecordChart from "./components/FalseRecordChart.jsx";
 import MapSection from "./components/MapSection.jsx";
+import FireClock from "./components/FireClock.jsx";
+import NormalChart from "./components/NormalChart.jsx";
+import HowWeCalculated from "./components/HowWeCalculated.jsx";
 import Coverage2026 from "./components/Coverage2026.jsx";
 import SeriesTable from "./components/SeriesTable.jsx";
 import DataSummary from "./components/DataSummary.jsx";
@@ -60,6 +63,22 @@ export default function App() {
             onPeriodChange={setPeriod}
             map={map}
           />
+        </Section>
+
+        <Section id="fire-clock" eyebrow={t("clock.eyebrow")} title={t("clock.title")} lede={t("clock.lede")}>
+          <div className="rounded-xl border border-line bg-surface p-4 sm:p-6">
+            <FireClock series={series} region={region} period={period} onSelectPeriod={setPeriod} />
+          </div>
+        </Section>
+
+        <Section id="is-it-normal" eyebrow={t("normal.eyebrow")} title={t("normal.title")} lede={t("normal.lede")}>
+          <div className="rounded-xl border border-line bg-surface p-4 sm:p-6">
+            <NormalChart series={series} region={region} period={period} onSelectPeriod={setPeriod} />
+          </div>
+        </Section>
+
+        <Section id="method" eyebrow={t("method.eyebrow")} title={t("method.title")} lede={t("method.lede")}>
+          <HowWeCalculated methodology={methodology} region={region} />
         </Section>
 
         <Section id="data-check" eyebrow={t("nav.data")} title={t("check.title")} lede={t("check.lede")}>
