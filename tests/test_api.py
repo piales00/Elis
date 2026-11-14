@@ -74,6 +74,13 @@ def test_map_by_region(client):
     assert client.get('/map', params={'year': 2024, 'month': 9, 'region': 'atlantis'}).json() == []
 
 
+def test_map_by_country_returns_all_macroregions(client):
+    params = {'year': 2024, 'month': 9}
+    full = client.get('/map', params=params).json()
+    country = client.get('/map', params={**params, 'region': 'peru'}).json()
+    assert country == full
+
+
 def test_map_before_viirs_has_null_viirs(client):
     rows = client.get('/map', params={'year': 2005, 'month': 9}).json()
     assert rows and all(r['raw_viirs'] is None for r in rows)
