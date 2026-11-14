@@ -80,7 +80,7 @@ export default function ChatChart({ chartData, onSyncView }) {
   const activePoint = hoverIdx !== null && series[hoverIdx] ? series[hoverIdx] : series[series.length - 1];
 
   return (
-    <div className="mt-2.5 rounded-xl border border-line bg-[#111a27] p-3">
+    <div className="mt-2.5 rounded-xl border border-line bg-bg p-3">
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div>
           <p className="m-0 text-xs font-semibold text-fg">{title}</p>
@@ -98,7 +98,7 @@ export default function ChatChart({ chartData, onSyncView }) {
                 month: activePoint?.month || 9,
               })
             }
-            className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1 text-[11px] font-medium text-fg transition hover:border-muted cursor-pointer"
+            className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1 text-[11px] font-medium text-fg transition hover:border-est cursor-pointer"
           >
             {t("chat.chart.syncView")}
           </button>
@@ -116,8 +116,8 @@ export default function ChatChart({ chartData, onSyncView }) {
           const val = maxVal * frac;
           return (
             <g key={frac}>
-              <line x1={padLeft} y1={y} x2={width - padRight} y2={y} stroke="#243246" strokeDasharray="3 3" />
-              <text x={padLeft - 6} y={y + 3} textAnchor="end" fontSize="9.5" fill="#9daabd">
+              <line x1={padLeft} y1={y} x2={width - padRight} y2={y} stroke="var(--line)" strokeDasharray="3 3" />
+              <text x={padLeft - 6} y={y + 3} textAnchor="end" fontSize="9.5" fill="var(--muted)">
                 {val >= 1000 ? `${(val / 1000).toFixed(val >= 10000 ? 0 : 1)}k` : Math.round(val)}
               </text>
             </g>
@@ -125,24 +125,24 @@ export default function ChatChart({ chartData, onSyncView }) {
         })}
 
         {hasBand && bandPolygon && (
-          <polygon points={bandPolygon} fill="rgba(88, 184, 216, 0.18)" stroke="none" />
+          <polygon points={bandPolygon} fill="var(--era-fill)" stroke="none" />
         )}
 
         {medianPath && (
           <path
             d={medianPath}
             fill="none"
-            stroke="#9daabd"
+            stroke="var(--muted)"
             strokeWidth="1.5"
             strokeDasharray="4 3"
           />
         )}
 
         {showRawOverlay && rawPath && (
-          <path d={rawPath} fill="none" stroke="#ef7b45" strokeWidth="2" />
+          <path d={rawPath} fill="none" stroke="var(--c-raw)" strokeWidth="2" />
         )}
 
-        <path d={estPath} fill="none" stroke="#58b8d8" strokeWidth="2.2" />
+        <path d={estPath} fill="none" stroke="var(--c-est)" strokeWidth="2.2" />
 
         {series.map((d, i) => {
           const cx = xFor(i);
@@ -152,10 +152,10 @@ export default function ChatChart({ chartData, onSyncView }) {
             (!isMonthly && highlight_year && d.year === highlight_year) ||
             Boolean(d.is_forecast);
           const dotColor = d.is_forecast
-            ? "#b79ced"
+            ? "var(--forecast)"
             : d.provisional
-              ? "#f4b860"
-              : "#58b8d8";
+              ? "var(--c-modis)"
+              : "var(--c-est)";
 
           const showTick =
             isMonthly ||
@@ -188,11 +188,11 @@ export default function ChatChart({ chartData, onSyncView }) {
                 cy={cy}
                 r={isHighlighted ? 4.2 : 2.6}
                 fill={dotColor}
-                stroke="#0b111b"
-                strokeWidth="1.2"
+                stroke="var(--surface)"
+                strokeWidth="1.4"
               />
               {showTick && (
-                <text x={cx} y={height - 8} textAnchor="middle" fontSize="9.5" fill="#9daabd">
+                <text x={cx} y={height - 8} textAnchor="middle" fontSize="9.5" fill="var(--muted)">
                   {tickLabel}
                 </text>
               )}
@@ -202,27 +202,27 @@ export default function ChatChart({ chartData, onSyncView }) {
       </svg>
 
       {activePoint && (
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-1.5 text-[11px] text-muted">
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-1.5 text-[11px] text-muted">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-[#58b8d8]" />
+              <span className="inline-block h-2 w-2 rounded-full bg-est" />
               <span>{t("chat.chart.harmonized")}</span>
             </span>
             {showRawOverlay && (
               <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2 w-2 rounded-full bg-[#ef7b45]" />
+                <span className="inline-block h-2 w-2 rounded-full bg-[var(--c-raw)]" />
                 <span>{t("chat.chart.raw")}</span>
               </span>
             )}
             {isMonthly && (
               <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2 w-2 rounded-full bg-[#9daabd]" />
+                <span className="inline-block h-2 w-2 rounded-full bg-muted" />
                 <span>{t("chat.chart.median")}</span>
               </span>
             )}
             {series.some((d) => d.is_forecast) && (
               <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2 w-2 rounded-full bg-[#b79ced]" />
+                <span className="inline-block h-2 w-2 rounded-full bg-forecast" />
                 <span>{t("chat.chart.forecast")}</span>
               </span>
             )}
@@ -240,7 +240,7 @@ export default function ChatChart({ chartData, onSyncView }) {
               </span>
             )}
             {showRawOverlay && activePoint.raw_detections != null && (
-              <span className="text-[#ef7b45]"> · raw: {fmtInt(activePoint.raw_detections)}</span>
+              <span className="text-[var(--c-raw)]"> · raw: {fmtInt(activePoint.raw_detections)}</span>
             )}
           </div>
         </div>

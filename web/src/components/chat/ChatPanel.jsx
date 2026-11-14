@@ -219,9 +219,9 @@ export default function ChatPanel({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="ask-the-data-drawer"
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full border border-[#58b8d8]/60 bg-[#172231] px-4 py-2.5 text-sm font-semibold text-fg shadow-lg transition hover:border-[#58b8d8] hover:bg-[#1e2d41] cursor-pointer"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full border border-line bg-fg px-4 py-2.5 text-sm font-semibold text-bg shadow-lg transition hover:opacity-90 cursor-pointer"
       >
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#58b8d8]" />
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
         <span>{t("chat.trigger")}</span>
       </button>
 
@@ -230,13 +230,13 @@ export default function ChatPanel({
           id="ask-the-data-drawer"
           role="dialog"
           aria-label={t("chat.title")}
-          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-line bg-[#0b111b]/95 backdrop-blur-md shadow-2xl"
+          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-line bg-bg shadow-2xl"
         >
           <div className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3.5">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="m-0 text-base font-bold text-fg">{t("chat.title")}</h2>
-                <span className="rounded-full border border-line bg-[#111a27] px-2 py-0.5 text-[11px] font-medium text-[#58b8d8]">
+                <span className="rounded-full border border-line bg-bg px-2.5 py-0.5 text-[11px] font-semibold text-est">
                   {regionName}
                 </span>
               </div>
@@ -247,7 +247,7 @@ export default function ChatPanel({
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="rounded-lg border border-line bg-[#111a27] px-2.5 py-1 text-xs text-muted hover:text-fg cursor-pointer"
+                  className="rounded-lg border border-line bg-bg px-2.5 py-1 text-xs font-medium text-muted hover:text-fg cursor-pointer"
                 >
                   {t("chat.clear")}
                 </button>
@@ -256,7 +256,7 @@ export default function ChatPanel({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={t("chat.close")}
-                className="rounded-lg border border-line bg-[#111a27] px-2.5 py-1 text-xs font-semibold text-fg hover:border-muted cursor-pointer"
+                className="rounded-lg border border-line bg-bg px-2.5 py-1 text-xs font-semibold text-fg hover:border-muted cursor-pointer"
               >
                 ✕
               </button>
@@ -264,18 +264,18 @@ export default function ChatPanel({
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            <div className="rounded-xl border border-line bg-surface p-3">
-              <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
+            <div className="rounded-xl border border-line bg-surface p-3.5">
+              <p className="m-0 mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted">
                 {t("chat.presets.heading")}
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 {PRESET_QUESTIONS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     disabled={streaming}
                     onClick={() => handlePresetClick(preset)}
-                    className="rounded-lg border border-line bg-[#111a27] px-2.5 py-1.5 text-left text-xs text-fg transition hover:border-[#58b8d8] hover:bg-[#1e2d41] disabled:opacity-50 cursor-pointer"
+                    className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-left text-xs font-medium text-fg transition hover:border-est hover:bg-surface disabled:opacity-50 cursor-pointer"
                   >
                     {t(preset.key)}
                   </button>
@@ -284,7 +284,7 @@ export default function ChatPanel({
             </div>
 
             {liveStatus === "unavailable" && (
-              <div className="rounded-xl border border-amber/50 bg-[#2a1c05]/70 px-3 py-2 text-xs text-[#f4b860]">
+              <div className="rounded-xl border border-line bg-warn-bg px-3 py-2 text-xs font-medium text-warn-fg">
                 {t("chat.status.offlineFallback")}
               </div>
             )}
@@ -293,7 +293,7 @@ export default function ChatPanel({
               if (turn.role === "user") {
                 return (
                   <div key={turn.id} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-br-sm border border-[#58b8d8]/40 bg-[#1e2d41] px-3.5 py-2 text-sm text-fg">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-fg px-3.5 py-2 text-sm font-medium text-bg">
                       {turn.content}
                     </div>
                   </div>
@@ -307,18 +307,18 @@ export default function ChatPanel({
                       turn.tools.map((tl, idx) => (
                         <span
                           key={`${tl.name}-${idx}`}
-                          className="inline-flex items-center gap-1 rounded-full border border-line bg-[#111a27] px-2 py-0.5 text-[11px] font-mono text-[#58b8d8]"
+                          className="inline-flex items-center gap-1 rounded-full border border-line bg-bg px-2 py-0.5 text-[11px] font-mono font-medium text-est"
                         >
                           ⚙ {tl.name}
                         </span>
                       ))}
                     {turn.done && !turn.error && turn.verified && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#5fd3a5]/40 bg-[#5fd3a5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5fd3a5]">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-line bg-bg px-2 py-0.5 text-[11px] font-medium text-[var(--c-viirs)]">
                         ✓ {t("chat.badge.verified")}
                       </span>
                     )}
                     {turn.done && !turn.verified && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber bg-amber/15 px-2 py-0.5 text-[11px] font-semibold text-amber">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-line bg-warn-bg px-2 py-0.5 text-[11px] font-semibold text-warn-fg">
                         ⚠ {t("chat.notice.unverified")}: {turn.unverified.join(", ")}
                       </span>
                     )}
@@ -339,8 +339,8 @@ export default function ChatPanel({
                   )}
 
                   {turn.error && (
-                    <div className="mt-2 rounded-lg border border-accent/50 bg-accent/10 p-2.5 text-xs text-[#ff7b7b]">
-                      <p className="m-0">{turn.error}</p>
+                    <div className="mt-2 rounded-lg border border-danger/40 bg-bg p-2.5 text-xs text-danger">
+                      <p className="m-0 font-medium">{turn.error}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <button
                           type="button"
@@ -348,7 +348,7 @@ export default function ChatPanel({
                             const lastUser = [...turns].reverse().find((m) => m.role === "user");
                             if (lastUser) runLiveQuestion(lastUser.content);
                           }}
-                          className="rounded border border-line bg-surface px-2 py-1 text-[11px] text-fg hover:border-muted cursor-pointer"
+                          className="rounded border border-line bg-surface px-2 py-1 text-[11px] font-medium text-fg hover:border-muted cursor-pointer"
                         >
                           {t("chat.retry")}
                         </button>
@@ -359,12 +359,12 @@ export default function ChatPanel({
                   {turn.chart && <ChatChart chartData={turn.chart} onSyncView={onSyncView} />}
 
                   {turn.done && (
-                    <div className="mt-2.5 flex items-center justify-between border-t border-line/60 pt-2 text-xs">
+                    <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2 text-xs">
                       <span className="text-[11px] text-muted">{t("chat.unitReminder")}</span>
                       <a
                         href="#method"
                         onClick={() => setOpen(false)}
-                        className="font-semibold text-[#58b8d8] hover:underline"
+                        className="font-semibold text-est hover:underline"
                       >
                         {t("chat.howWeCalculateLink")} →
                       </a>
@@ -385,7 +385,7 @@ export default function ChatPanel({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.input.placeholder")}
                 aria-label={t("chat.input.placeholder")}
-                className="flex-1 rounded-xl border border-line bg-[#0b111b] px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-[#58b8d8] focus:outline-none disabled:opacity-50"
+                className="flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-est focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
