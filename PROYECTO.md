@@ -47,6 +47,17 @@ Se agrupan las detecciones de VIIRS en la escala de MODIS para responder "¿qué
 ### Pieza 3 — El desacuerdo como sensor (experimental)
 Donde VIIRS ve mucho más que MODIS, los fuegos son pequeños (chacras, caña, pastizales). Donde ven casi lo mismo, son grandes (bosque). Con eso se arma un **mapa del tamaño típico del fuego**. Se presenta como **hipótesis en prueba**, validada contra MapBiomas.
 
+### Pieza 4 — "¿Cómo viene la temporada?" (solo si alcanza el tiempo)
+Es un pronóstico de temporada por región, construido **sobre la serie corregida**: *"con el fuego acumulado hasta julio y la lluvia de este año, ¿septiembre será normal, alto o muy alto?"*
+
+- **Entradas:** el fuego acumulado de los primeros meses (corregido) y la lluvia mensual de NASA POWER (gratis y sin clave).
+- **Modelo:** simple (comparación con años parecidos o una regresión sencilla), porque hay unas 25 temporadas por región.
+- **Salida:** una categoría (normal, alto o muy alto) con un rango, nunca una cifra exacta.
+- **Prueba (backtesting):** se "predicen" temporadas pasadas como si no se conocieran y se informa el acierto real, aunque sea modesto.
+- **Demo clave:** el mismo modelo entrenado con datos crudos predice un crecimiento falso (aprende el salto de 2012). Entrenado con datos corregidos, da una temporada realista. Frase del pitch: *"Sin armonizar, hasta la IA se equivoca."*
+- **En la app:** el anillo exterior del reloj del fuego se completa con una línea punteada etiquetada "pronóstico", siempre separada de lo observado.
+- **Condición:** se construye **solo después** de que las piezas 1 y 2 funcionen. Si falta tiempo, se hace únicamente la demo "crudo frente a corregido".
+
 ## 4. Evidencia que ya tenemos (datos reales de FIRMS, Perú)
 
 Datos: MODIS 2000–2025 y VIIRS S-NPP 2012–2025, unos 1,4 millones de detecciones. Scripts en `scripts/`.
@@ -82,10 +93,11 @@ Una sola página que se recorre como una historia. Al hacer clic en una región,
 | 5 | **"Cómo lo calculamos":** los peces, el equivalente MODIS, la validación y los límites | Por qué confiar | Importante |
 | 6 | **Mapa "lo que nadie vio"** y **mapa del tamaño del fuego** | El aporte original | Si sobra tiempo |
 | 7 | **"Literalmente armonizamos":** el cierre musical | Que el jurado lo recuerde | Si sobra tiempo |
+| 8 | **Pronóstico de temporada** (línea punteada en el reloj) y demo "sin armonizar, hasta la IA se equivoca" | Por qué la corrección importa para decidir | Si sobra tiempo |
 
 Tres relojes lado a lado (Amazonía, sierra y costa) muestran que **Perú tiene tres temporadas de fuego distintas**.
 
-**Fuera de alcance:** chatbot, predicción de incendios, globo 3D y modelo de propensión al fuego.
+**Fuera de alcance:** chatbot, predicción de dónde habrá un incendio mañana, globo 3D y modelo de propensión al fuego. El pronóstico de temporada (pieza 4) sí entra, si alcanza el tiempo.
 
 ## 7. Clima y propensión al fuego
 
@@ -103,7 +115,7 @@ Tres relojes lado a lado (Amazonía, sierra y costa) muestran que **Perú tiene 
 | 6–12 h | Equivalente MODIS; validación con años reservados; comparación con MapBiomas; agregados en Parquet |
 | 12–20 h | API con FastAPI; frontend: récord falso, mapa con barra de tiempo y reloj del fuego |
 | 20–28 h | "¿Este año es normal?", "Cómo lo calculamos" y rangos de incertidumbre |
-| 28–33 h | Datos 2026 (VIIRS NOAA-20/21); extras: lo que nadie vio, mapa de tamaño, audio |
+| 28–33 h | Datos 2026 (VIIRS NOAA-20/21); extras según el tiempo: pieza 4 (pronóstico, unas 5–6 h), lo que nadie vio, mapa de tamaño, audio |
 | 33–36 h | Video, ensayo del pitch y envío |
 
 ## 9. Riesgos y respuestas para el jurado
@@ -115,6 +127,7 @@ Tres relojes lado a lado (Amazonía, sierra y costa) muestran que **Perú tiene 
 | ¿No están llevando el presente al pasado? | Calibramos por región y mes, separamos Terra y Aqua, y probamos con años reservados |
 | ¿Borraron también cambios reales? | La serie corregida mantiene 2005 y 2010 como años altos, lo que coincide con sequías conocidas |
 | ¿Por qué no usan FIRMS directamente? | FIRMS muestra observaciones; nosotros una historia comparable con su incertidumbre |
+| ¿Su sistema predice incendios? | No predice incendios puntuales. Da un pronóstico de temporada por región, separado de lo observado y probado con temporadas pasadas |
 
 ## 10. Decisiones pendientes del equipo
 
