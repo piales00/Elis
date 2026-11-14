@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "skills": {
+    "data-visualization": {
+      "source": "anthropics/knowledge-work-plugins",
+      "sourceType": "github",
+      "skillPath": "data/skills/data-visualization/SKILL.md",
+      "computedHash": "2d313aa0dc3624db43c11139b10cb2e3e7a264fae1a687ad097d3d0a2fad016b"
+    },
+    "duckdb-docs": {
+      "source": "duckdb/duckdb-skills",
+      "sourceType": "github",
+      "skillPath": "skills/duckdb-docs/SKILL.md",
+      "computedHash": "d907581e423d89fc2acdc02079901cae357193cf1599fb42415da7c30df2e4cc"
+    },
+    "fastapi": {
+      "source": "fastapi/fastapi",
+      "sourceType": "github",
+      "skillPath": "fastapi/.agents/skills/fastapi/SKILL.md",
+      "computedHash": "27e7911866460c5c8e69761f492f077b24130a748b980e604b88660a022bd893"
+    },
+    "hackathon-judging": {
+      "source": "samber/dev-event-organizer-skills",
+      "sourceType": "github",
+      "skillPath": "skills/hackathon-judging/SKILL.md",
+      "computedHash": "78df4987f88aa18b8347bd33f13a4d690451ce58db1713eefd8de6723dbeb22b"
+    },
+    "mapbox-geospatial-operations": {
+      "source": "mapbox/mapbox-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mapbox-geospatial-operations/SKILL.md",
+      "computedHash": "7c1c7fdcff39a0228bf79152362f5326617835f10d2d994d6668ef07f4f52e37"
+    },
+    "maplibre-cartography": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-cartography/SKILL.md",
+      "computedHash": "403a0942529a01a2b1bde7ac163e3e558c086814bb6b454b8c74d44da6026374"
+    },
+    "maplibre-pmtiles-patterns": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-pmtiles-patterns/SKILL.md",
+      "computedHash": "678174edca9879b3d4fc0d4682147a214151412e1431d5e8757cf15d67f5415b"
+    },
+    "query": {
+      "source": "duckdb/duckdb-skills",
+      "sourceType": "github",
+      "skillPath": "skills/query/SKILL.md",
+      "computedHash": "8c4722442f5eba39b7a034e95be5a405910ce08adb12ade3834f49c92542d236"
+    },
+    "video-report": {
+      "source": "remotion-dev/remotion",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/video-report/SKILL.md",
+      "computedHash": "161987899dc6d9feafe93d5d82ce2b8b3cac7501c029e21485befc36d941705d"
+    }
+  }
+}
