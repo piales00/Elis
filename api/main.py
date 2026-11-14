@@ -1,30 +1,34 @@
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 import duckdb
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()]
 
 app = FastAPI(
     title="FireChronos Perú API",
-    description="Datos del calendario comparable de actividad de fuego en Perú.",
+    description="Comparable fire-activity calendar for Peru (2000-2026), in fire cell-days.",
     version="0.1.0",
 )
+app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["GET"], allow_headers=["*"])
 
 
 def read_json(filename: str) -> Any:
     path = PROCESSED_DIR / filename
     if not path.is_file():
-        raise HTTPException(status_code=503, detail=f"Aún no está disponible {filename}.")
+        raise HTTPException(status_code=503, detail=f"{filename} is not available yet.")
     try:
         with path.open(encoding="utf-8") as source:
             return json.load(source)
     except (OSError, json.JSONDecodeError) as error:
-        raise HTTPException(status_code=500, detail=f"No se pudo leer {filename}.") from error
+        raise HTTPException(status_code=500, detail=f"Could not read {filename}.") from error
 
 
 def records(value: Any, filename: str) -> list[dict[str, Any]]:
@@ -32,14 +36,14 @@ def records(value: Any, filename: str) -> list[dict[str, Any]]:
         return value
     if isinstance(value, dict) and isinstance(value.get("data"), list):
         return value["data"]
-    raise HTTPException(status_code=500, detail=f"El formato de {filename} no es válido.")
+    raise HTTPException(status_code=500, detail=f"{filename} has an invalid format.")
 
 
 @app.get("/regions")
 def get_regions() -> dict[str, Any]:
     value = read_json("regions.geojson")
     if not isinstance(value, dict) or value.get("type") != "FeatureCollection":
-        raise HTTPException(status_code=500, detail="regions.geojson no es un FeatureCollection válido.")
+        raise HTTPException(status_code=500, detail="regions.geojson is not a valid FeatureCollection.")
     return value
 
 
@@ -50,7 +54,7 @@ def get_series(
     to_year: int | None = Query(default=None, alias="to", ge=2000, le=2026),
 ) -> list[dict[str, Any]]:
     if from_year is not None and to_year is not None and from_year > to_year:
-        raise HTTPException(status_code=422, detail="El año inicial no puede superar al año final.")
+        raise HTTPException(status_code=422, detail="The start year cannot be later than the end year.")
     rows = records(read_json("series.json"), "series.json")
     selected = [row for row in rows if row.get("region") == region]
     if from_year is not None:
@@ -68,7 +72,7 @@ def get_map(
 ) -> list[dict[str, Any]]:
     path = PROCESSED_DIR / "map.parquet"
     if not path.is_file():
-        raise HTTPException(status_code=503, detail="Aún no está disponible map.parquet.")
+        raise HTTPException(status_code=503, detail="map.parquet is not available yet.")
     sql = "SELECT lat, lon, raw_terra, raw_aqua, raw_modis, raw_viirs, raw_viirs_noaa20, raw_viirs_noaa21, estimated FROM read_parquet(?) WHERE year = ? AND month = ?"
     parameters: list[Any] = [str(path), year, month]
     if region is not None:
@@ -81,7 +85,7 @@ def get_map(
             columns = [column[0] for column in result.description]
             return [dict(zip(columns, row)) for row in result.fetchall()]
     except duckdb.Error as error:
-        raise HTTPException(status_code=500, detail="No se pudo consultar map.parquet.") from error
+        raise HTTPException(status_code=500, detail="Could not query map.parquet.") from error
 
 
 @app.get("/methodology")
@@ -90,7 +94,7 @@ def get_methodology(region: str | None = Query(default=None, min_length=1)) -> d
     if region is None:
         return value
     if not isinstance(value, dict):
-        raise HTTPException(status_code=500, detail="El formato de methodology.json no es válido.")
+        raise HTTPException(status_code=500, detail="methodology.json has an invalid format.")
     filtered = dict(value)
     for key in ("detection", "validation"):
         if isinstance(filtered.get(key), list):
