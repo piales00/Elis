@@ -12,7 +12,8 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 |---|---|---|
 | País | `Peru` (parámetro del código) | El método es genérico; Perú es la demostración |
 | Cuadrícula | celdas de 0,1° (unos 11 km) | Más grande que el píxel de ambos sensores, incluso en el borde de la imagen de MODIS |
-| Unidad de actividad | **celda-día**: una celda con al menos una detección en una fecha | Evita contar varias veces el mismo fuego |
+| Unidad de actividad | **celda-día**: una celda con al menos una detección en una fecha. La pasada de día y la de noche cuentan como una sola (`daynight` no es parte de la clave) | Evita contar varias veces el mismo fuego |
+| Nivel del rango | 90 % (`est_low`, `est_high`) | Lo bastante amplio para ser honesto sin volverse inútil |
 | Fecha | `acq_date` en UTC | Es la que entrega FIRMS |
 | Tipo de detección | solo `type = 0` (vegetación) | Quita volcanes, industria y minería |
 | Confianza MODIS | `confidence >= 30` | Descarta la confianza baja |
@@ -21,7 +22,7 @@ Todos calculan con estos mismos valores. Están pensados para cambiarse en un so
 | Años de calibración | 2013–2020 | 2012 se excluye porque VIIRS empieza el 20 de enero |
 | Años de prueba | 2021–2024 | El método nunca los ve al calibrar |
 | Estratos | región × mes | La diferencia entre sensores cambia con ambos |
-| Terra | se calibra aparte | En 2000–2002 solo hay Terra, que pasa a otra hora |
+| Terra | se calibra aparte | Entre el 2000-11-01 y el 2002-07-03 solo hay Terra, que pasa a otra hora. Aqua empieza el 2002-07-04. 2000 solo tiene noviembre y diciembre |
 | Historia base para "¿es normal?" | 2003–2025 | Años con Aqua completo |
 
 ## 2. Identificadores comunes
@@ -49,8 +50,8 @@ Una fila por región, año y mes. Alimenta el récord falso, el reloj del fuego 
 | `raw_viirs` | entero o `null` | Celdas-día vistas por VIIRS. `null` antes de 2012 |
 | `raw_detections` | entero | Suma ingenua de detecciones de todos los sensores. Solo para mostrar el salto falso |
 | `estimated` | número | Fuego total estimado por captura y recaptura. **La cifra principal** |
-| `est_low`, `est_high` | número | Rango de incertidumbre de `estimated` |
-| `modis_equiv` | número | La misma actividad en escala MODIS (pieza 2). Sirve de comprobación |
+| `est_low`, `est_high` | número | Rango de incertidumbre de `estimated`, al 90 % |
+| `modis_equiv` | número | Celdas-día en escala **MODIS Aqua** (pieza 2). Sirve de comprobación. Ver la regla de abajo |
 | `source` | texto | `modis_only`, `both` o `viirs_only`: con qué datos se calculó |
 | `hist_median` | número | Mediana de `estimated` de ese mes en 2003–2025 |
 | `anomaly_class` | texto | `low`, `normal`, `high` o `very_high`, comparado con su propio mes |
@@ -64,6 +65,8 @@ Una fila por región, año y mes. Alimenta el récord falso, el reloj del fuego 
 ```
 
 Los números del ejemplo son inventados.
+
+**Regla de `modis_equiv`:** cuando hay datos de Aqua, es el conteo real de Aqua. Entre noviembre de 2000 y junio de 2002, cuando solo hay Terra, se lleva Terra a la escala de Aqua con `p_aqua / p_terra`. Cuando no hay MODIS, se usa el emulador entrenado con VIIRS (ver `emulator` en `methodology.json`). Es independiente de `estimated`: no se calcula con captura y recaptura.
 
 ### `regions.geojson`
 
@@ -85,13 +88,22 @@ Alimenta "Cómo lo calculamos".
   "validation": [
     {"region": "amazonia", "error_pct_method": 0.0, "error_pct_naive": 0.0,
      "mapbiomas_corr": 0.0}
-  ]
+  ],
+  "emulator": {
+    "train_years": [2013, 2020], "test_years": [2021, 2024],
+    "auc": 0.0, "brier": 0.0,
+    "monthly_error_pct": 0.0, "monthly_error_pct_fixed_ratio": 0.0,
+    "by_region": [
+      {"region": "amazonia", "monthly_error_pct": 0.0, "annual_error_pct": 0.0}
+    ]
+  }
 }
 ```
 
 - `p_modis`, `p_viirs`: fracción del fuego total que ve cada sensor (de 0 a 1).
 - `error_pct_method`: error medio en los años de prueba. `error_pct_naive`: el mismo error sin corregir, para comparar.
-- `mapbiomas_corr`: qué tan parecida es nuestra serie anual a la de área quemada de MapBiomas (de −1 a 1).
+- `mapbiomas_corr`: qué tan parecida es nuestra serie anual a la de área quemada de MapBiomas (de −1 a 1). Vale `null` mientras no se haga la comparación.
+- `emulator`: resultados del emulador MODIS (pieza 2) en los años de prueba. `auc` mide si distingue bien qué celdas ve MODIS y cuáles no (de 0,5 a 1). `brier` es el error de sus probabilidades (cuanto más bajo, mejor). `monthly_error_pct` es el error medio del total mensual frente al Aqua real, y `monthly_error_pct_fixed_ratio` es el mismo error con un factor fijo, para comparar.
 
 ### `map.parquet` — solo lo lee la API
 
