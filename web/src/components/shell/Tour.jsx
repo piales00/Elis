@@ -18,7 +18,8 @@ export const TOUR_STEPS = [
 
 export const AUTO_STEPS = TOUR_STEPS.filter((s) => ["cells", "imagery", "hud", "ask", "outlook", "data"].includes(s.id));
 
-export const TOUR_STEP_MS = 5000;
+export const AUTO_TOTAL_MS = 30000;
+export const TOUR_STEP_MS = Math.round(AUTO_TOTAL_MS / AUTO_STEPS.length);
 
 export function tourSteps(auto) {
   return auto ? AUTO_STEPS : TOUR_STEPS;

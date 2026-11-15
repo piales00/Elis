@@ -7,7 +7,7 @@ export default {
   "tour.hud.title": "Let Elis guide the map",
   "tour.terrain.text": "Toggle 3D for terrain. Drag the Drop to explore pin onto the map to fly to a location.",
   "tour.terrain.title": "Explore in 3D",
-  "tour.imagery.text": "Open the layers menu on smaller screens: True colour, Thermal, Night lights and Burn scars. Heat adds detection intensity.",
+  "tour.imagery.text": "Watch the map switch between Activity cells, Thermal, True colour and Burn scars. Night lights and Heat are in the layers menu, which opens from the map on smaller screens.",
   "tour.imagery.title": "See the satellite context",
   "tour.skip": "Skip",
   "chat.preset.aboutElis": "What is Elis and what does this app do?",
