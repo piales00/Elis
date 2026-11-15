@@ -354,7 +354,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       >
         {t("map.reset")}
       </button>}
-      <div className="fc-map-tools absolute right-3 z-[6] flex flex-col items-end gap-2" style={{ top: fill ? "var(--fc-tools-top, 144px)" : "96px" }}>
+      <div data-tour="terrain" className="fc-map-tools absolute right-3 z-[6] flex flex-col items-end gap-2" style={{ top: fill ? "var(--fc-tools-top, 144px)" : "96px" }}>
         <button type="button" disabled={!ready} aria-pressed={terrain} aria-label={t("map.terrain")} title={t("map.terrain")} onClick={() => changeTerrain(!terrainRef.current)} className={`fc-float fc-press grid size-11 place-items-center rounded-xl text-sm font-bold ${terrain ? "!border-est !text-est" : ""}`}>
           3D
         </button>

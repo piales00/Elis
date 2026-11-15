@@ -269,27 +269,49 @@ export default function App() {
       const s = tourSteps(auto)[i];
       if (!s) return;
       setPlaying(false);
+      setAutopilot(false);
+      setSpotlightOpen(false);
+      setProjectedTurn(null);
+      setPaletteOpen(false);
+      setSheetExpanded(false);
       setView(s.view);
-      setPanelOpen(true);
-      setRibbonMetric(s.metric);
-      selectRegion(s.region);
-      if (s.unit) setUnit(s.unit);
-      if (s.group) {
-        setGroup(s.group);
-        setSub(DEFAULT_SUB[s.group]);
-      }
-      if (s.layer === "cells") img.setView("cells");
-      else {
+      setPanelOpen(!["terrain", "hud"].includes(s.id));
+      setRibbonMetric(s.metric || "estimated");
+      selectRegion("peru");
+      setUnit("peru");
+      setGroup("estimated");
+      setSub(DEFAULT_SUB.estimated);
+      img.setHeat(false);
+      img.clearCell();
+      if (s.layer) {
         img.setBase(s.layer);
         img.setView("imagery");
+        img.setDate({ year: 2024, month: 9, day: 10 });
+      } else {
+        img.setView("cells");
+        setPeriod({ year: 2024, month: 9 });
       }
-      if (s.heat !== undefined) img.setHeat(s.heat);
-      if (s.date) img.setDate(s.date);
-      else if (s.period) setPeriod(s.period);
+      mapInstance?.fire("resetview");
       setLiveOpen(s.live ? "pinned" : null);
     },
-    [img, selectRegion],
+    [img, selectRegion, mapInstance],
   );
+
+  const closeTour = useCallback(() => {
+    setTour(null);
+    setPlaying(false);
+    setPaletteOpen(false);
+    setView("explore");
+    setPanelOpen(true);
+    setLiveOpen(null);
+    setSpotlightOpen(false);
+    setAutopilot(false);
+    setSheetExpanded(false);
+    img.setView("cells");
+    img.setHeat(false);
+    setRibbonMetric("estimated");
+    mapInstance?.fire("resetview");
+  }, [img, mapInstance]);
 
   const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
 
@@ -337,6 +359,10 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (e.key === "Escape" && tour) {
+        closeTour();
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPaletteOpen((o) => !o);
@@ -348,11 +374,10 @@ export default function App() {
         setPaletteOpen(true);
       } else if (new RegExp(`^[1-${VIEWS.length}]$`).test(e.key)) openView(VIEWS[Number(e.key) - 1]);
       else if (e.key === "Escape" && liveOpen) setLiveOpen(null);
-      else if (e.key === "Escape" && tour) setTour(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [paletteOpen, openView, tour, liveOpen]);
+  }, [paletteOpen, openView, tour, liveOpen, closeTour]);
 
   useEffect(() => {
     if (!liveOpen) return;
@@ -473,7 +498,7 @@ export default function App() {
       </a>
       <Rail view={view} panelOpen={panelOpen} onSelect={openView} onTour={() => startTour(false)} theme={theme} onTheme={toggleTheme} />
 
-      <aside id="fc-panel" aria-labelledby="fc-panel-title" className="fc-panel">
+      <aside data-tour="active-panel" id="fc-panel" aria-labelledby="fc-panel-title" className="fc-panel">
         <button
           type="button"
           className="fc-sheet-handle lg:hidden"
@@ -599,7 +624,7 @@ export default function App() {
             </button>
             <LiveBadge state={liveOpen} onState={setLiveOpen} />
             </div>
-            <div className="flex max-w-full flex-wrap items-center gap-2" data-elis-controls>
+            <div className="flex max-w-full flex-wrap items-center gap-2" data-elis-controls data-tour="hud">
             <button
               type="button"
               onClick={() => {
@@ -743,12 +768,9 @@ export default function App() {
 
       {tour && (
         <div className="fc-overlay-tour">
-          <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={() => setTour(null)}
-            onDone={() => {
-              setTour(null);
-              setView("explore");
-              setPanelOpen(true);
-            }}
+          <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={closeTour}
+            onPrepare={() => applyStep(tour.step, tour.auto)}
+            onDone={closeTour}
           />
         </div>
       )}
