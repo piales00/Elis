@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { getLive, NoDataError } from "../../data/client.js";
 import { CopyButton } from "./ApiCard.jsx";
 import Icon from "./icons.jsx";
+import { EVIDENCE_DOCS } from "../../content/evidence.js";
 
 export const LIVE_BRANCH = "https://github.com/piales00/firechronos-peru/tree/live-data";
 const SAME_RUN_MS = 6 * 3600 * 1000;
@@ -238,10 +239,71 @@ export default function LiveCheck({ onClose, titleId = "live-title" }) {
             <CopyButton text={sha} label="SHA-256" compact />
           </div>
           <p className="m-0 text-[12px] leading-relaxed text-muted">{t("live.verifyText")}</p>
-          <a className="fc-link inline-flex items-center gap-1 self-start text-[12.5px]" href={LIVE_BRANCH} target="_blank" rel="noopener">
-            {t("live.branch")}
-            <Icon name="external" size={13} />
-          </a>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <a className="fc-link inline-flex items-center gap-1 text-[12.5px]" href={LIVE_BRANCH} target="_blank" rel="noopener">
+              {t("live.branch")}
+              <Icon name="external" size={13} />
+            </a>
+            <a className="fc-link inline-flex items-center gap-1 text-[12.5px]" href={EVIDENCE_DOCS.continuity} target="_blank" rel="noopener">
+              {t("live.source")}
+              <Icon name="external" size={13} />
+            </a>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+export function LiveBadge({ state, onState }) {
+  const { t } = useI18n();
+  const timer = useRef(0);
+  const open = Boolean(state);
+  const clear = () => clearTimeout(timer.current);
+  useEffect(() => clear, []);
+  const enter = (e) => {
+    if (e.pointerType !== "mouse") return;
+    clear();
+    if (!state) timer.current = setTimeout(() => onState("hover"), 140);
+  };
+  const leave = (e) => {
+    if (e.pointerType !== "mouse") return;
+    clear();
+    if (state === "hover") timer.current = setTimeout(() => onState(null), 260);
+  };
+  return (
+    <div
+      className="relative"
+      onPointerEnter={enter}
+      onPointerLeave={leave}
+      onBlur={(e) => {
+        if (state !== "pinned" && !e.currentTarget.contains(e.relatedTarget)) onState(null);
+      }}
+    >
+      <button
+        type="button"
+        data-tour="live"
+        aria-expanded={open}
+        aria-controls="fc-live"
+        onFocus={(e) => {
+          if (!state && e.target.matches(":focus-visible")) onState("hover");
+        }}
+        onClick={() => {
+          clear();
+          onState(state === "pinned" ? null : "pinned");
+        }}
+        className="fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold"
+        aria-label={t("live.title")}
+      >
+        <span className="fc-live-dot" aria-hidden="true" />
+        <span className="hidden sm:inline">{t("live.badge")}</span>
+      </button>
+      {open && (
+        <section id="fc-live" role="dialog" aria-labelledby="live-title" className="fc-float fc-pop fc-live-pop">
+          <span className="fc-live-arrow" aria-hidden="true" />
+          <div className="fc-live-scroll">
+            <LiveCheck onClose={() => onState(null)} />
+          </div>
         </section>
       )}
     </div>

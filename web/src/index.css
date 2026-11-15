@@ -1098,15 +1098,40 @@ body {
 .fc-live-pop {
   position: absolute;
   left: 0;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   z-index: 30;
   width: min(30rem, calc(100vw - 24px));
+  padding: 0;
+  border-radius: 16px;
+  transform-origin: 24px -12px;
+}
+.fc-live-pop::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 14px;
+}
+.fc-live-arrow {
+  position: absolute;
+  left: 22px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: var(--overlay);
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  border-top-left-radius: 3px;
+}
+.fc-live-scroll {
+  position: relative;
   max-height: min(70vh, 40rem);
   overflow: auto;
   overscroll-behavior: contain;
   padding: 16px;
   border-radius: 16px;
-  transform-origin: top left;
 }
 .fc-switch {
   display: inline-flex;
@@ -1349,7 +1374,8 @@ th.text-right .fc-th-btn {
 .fc-skip {
   position: absolute;
   left: 8px;
-  top: -40px;
+  top: 8px;
+  transform: translateY(calc(-100% - 24px));
   z-index: 80;
   padding: 8px 12px;
   border-radius: 8px;
@@ -1357,7 +1383,7 @@ th.text-right .fc-th-btn {
   color: var(--bg);
 }
 .fc-skip:focus {
-  top: 8px;
+  transform: none;
 }
 
 .fc-rail {
@@ -1714,6 +1740,10 @@ th.text-right .fc-th-btn {
   border-radius: 14px;
   padding: 14px;
 }
+.fc-elis {
+  display: block;
+  object-fit: contain;
+}
 .fc-stage .fc-forecast-block {
   background: var(--overlay);
 }
@@ -1809,9 +1839,15 @@ th.text-right .fc-th-btn {
     position: fixed;
     left: 8px;
     right: 8px;
-    top: 60px;
+    top: 64px;
     width: auto;
-    max-height: calc(100dvh - 140px);
+  }
+  .fc-live-arrow,
+  .fc-live-pop::before {
+    display: none;
+  }
+  .fc-live-scroll {
+    max-height: calc(100dvh - 150px);
   }
   .fc-app,
   .fc-app[data-panel="closed"] {

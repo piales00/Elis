@@ -32,7 +32,7 @@ import OutlookView, { OutlookLegend } from "./components/shell/views/OutlookView
 import MethodView from "./components/shell/views/MethodView.jsx";
 import DataView from "./components/shell/views/DataView.jsx";
 import ContinuityView from "./components/shell/views/ContinuityView.jsx";
-import LiveCheck, { LiveSummary } from "./components/shell/LiveCheck.jsx";
+import { LiveBadge, LiveSummary } from "./components/shell/LiveCheck.jsx";
 
 const MapView = lazy(() => import("./components/MapView.jsx"));
 const NONE = [];
@@ -84,7 +84,7 @@ export default function App() {
   const [ribbonMetric, setRibbonMetric] = useState("estimated");
   const [playing, setPlaying] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [liveOpen, setLiveOpen] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(null);
   const [tour, setTour] = useState(() => {
     if (initial.tour) return { step: 0, auto: initial.tour === "auto" };
     try {
@@ -109,6 +109,10 @@ export default function App() {
   useEffect(() => {
     if (regionIds.length && !regionIds.includes(region)) setRegion(regionIds[0]);
   }, [regionIds, region]);
+
+  useEffect(() => {
+    document.title = t("app.title");
+  }, [t]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -262,7 +266,7 @@ export default function App() {
       if (s.heat !== undefined) img.setHeat(s.heat);
       if (s.date) img.setDate(s.date);
       else if (s.period) setPeriod(s.period);
-      setLiveOpen(Boolean(s.live));
+      setLiveOpen(s.live ? "pinned" : null);
     },
     [img, selectRegion],
   );
@@ -301,7 +305,7 @@ export default function App() {
         e.preventDefault();
         setPaletteOpen(true);
       } else if (new RegExp(`^[1-${VIEWS.length}]$`).test(e.key)) openView(VIEWS[Number(e.key) - 1]);
-      else if (e.key === "Escape" && liveOpen) setLiveOpen(false);
+      else if (e.key === "Escape" && liveOpen) setLiveOpen(null);
       else if (e.key === "Escape" && tour) setTour(null);
     };
     window.addEventListener("keydown", onKey);
@@ -311,7 +315,7 @@ export default function App() {
   useEffect(() => {
     if (!liveOpen) return;
     const onDown = (e) => {
-      if (!e.target.closest?.('#fc-live, [data-tour="live"], .fc-tour')) setLiveOpen(false);
+      if (!e.target.closest?.('#fc-live, [data-tour="live"], .fc-tour')) setLiveOpen(null);
     };
     window.addEventListener("pointerdown", onDown);
     return () => window.removeEventListener("pointerdown", onDown);
@@ -348,7 +352,7 @@ export default function App() {
     }
     VIEWS.forEach((v, i) => out.push({ id: `v-${v}`, group: t("palette.views"), label: t(`view.${v}`), hint: String(i + 1), run: () => openView(v) }));
     out.push({ id: "a-tour", group: t("palette.actions"), label: t("tour.start"), run: () => startTour(false) });
-    out.push({ id: "a-live", group: t("palette.actions"), label: t("live.title"), hint: t("live.badge"), run: () => setLiveOpen(true) });
+    out.push({ id: "a-live", group: t("palette.actions"), label: t("live.title"), hint: t("live.badge"), run: () => setLiveOpen("pinned") });
     out.push({ id: "a-continuity", group: t("palette.actions"), label: t("cont.toggle"), run: () => openView("continuity") });
     out.push({ id: "a-play", group: t("palette.actions"), label: t(playing ? "ribbon.pause" : "ribbon.play"), run: togglePlay });
     out.push({
@@ -396,10 +400,10 @@ export default function App() {
           openView("data");
         }}
       />
-      <LiveSummary onOpen={() => setLiveOpen(true)} />
+      <LiveSummary onOpen={() => setLiveOpen("pinned")} />
       </div>
     );
-  else if (view === "continuity") panel = <ContinuityView region={region} />;
+  else if (view === "continuity") panel = <ContinuityView region={region} period={period} onSelectPeriod={(p) => { setPlaying(false); setPeriod(p); }} />;
   else if (view === "compare") panel = <CompareView series={series} region={region} period={period} onSelectPeriod={setPeriod} methodology={methodology} />;
   else if (view === "year") panel = <YearView series={series} region={region} period={period} onSelectPeriod={setPeriod} />;
   else if (view === "outlook") panel = (
@@ -526,26 +530,7 @@ export default function App() {
             >
               <Icon name="fit" size={17} />
             </button>
-            <div className="relative">
-              <button
-                type="button"
-                data-tour="live"
-                aria-expanded={liveOpen}
-                aria-controls="fc-live"
-                onClick={() => setLiveOpen((o) => !o)}
-                className="fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold"
-                title={t("live.title")}
-                aria-label={t("live.title")}
-              >
-                <span className="fc-live-dot" aria-hidden="true" />
-                <span className="hidden sm:inline">{t("live.badge")}</span>
-              </button>
-              {liveOpen && (
-                <section id="fc-live" role="dialog" aria-labelledby="live-title" className="fc-float fc-pop fc-live-pop">
-                  <LiveCheck onClose={() => setLiveOpen(false)} />
-                </section>
-              )}
-            </div>
+            <LiveBadge state={liveOpen} onState={setLiveOpen} />
             {!tour && (
               <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
                 <Icon name="tour" size={17} />
