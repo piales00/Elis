@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../../lib/hooks.js";
 import { ElisMark } from "./Rail.jsx";
@@ -62,6 +62,79 @@ function useSpotlight(target, onPrepare) {
   }, [target]);
 }
 
+const GAP = 12;
+
+function overlap(a, b) {
+  const w = Math.min(a.r, b.r) - Math.max(a.l, b.l);
+  const h = Math.min(a.b, b.b) - Math.max(a.t, b.t);
+  return w > 0 && h > 0 ? w * h : 0;
+}
+
+function placeCard(card, target) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const w = Math.min(card.offsetWidth, vw - 2 * GAP);
+  const h = Math.min(card.offsetHeight, vh - 2 * GAP);
+  const stage = document.querySelector(".fc-stage")?.getBoundingClientRect();
+  const ribbon = document.querySelector(".fc-ribbon-wrap")?.getBoundingClientRect();
+  const wide = !!document.querySelector(".fc-app[data-wide]");
+  const left = wide || !stage ? 88 : Math.max(GAP, stage.left + GAP);
+  const right = vw - GAP - (wide ? 12 : 44);
+  const floor = wide || !ribbon || !ribbon.height ? vh - GAP - 12 : Math.min(vh - GAP, ribbon.top - GAP);
+  const ceil = GAP + (wide ? 0 : 56);
+  const clampX = (x) => Math.max(GAP, Math.min(x, vw - w - GAP));
+  const clampY = (y) => Math.max(GAP, Math.min(y, vh - h - GAP));
+  const spots = [
+    [right - w, floor - h],
+    [left, floor - h],
+    [right - w, ceil],
+    [left, ceil],
+  ];
+  if (target) {
+    spots.push([target.r + GAP, target.t], [target.l - w - GAP, target.t], [target.l, target.b + GAP], [target.l, target.t - h - GAP]);
+  }
+  spots.push([(vw - w) / 2, (vh - h) / 2]);
+  let best = null;
+  for (const [x, y] of spots) {
+    const l = clampX(x);
+    const t = clampY(y);
+    const box = { l, t, r: l + w, b: t + h };
+    const score = target ? overlap(box, target) : 0;
+    if (!best || score < best.score) best = { l, t, score };
+    if (score === 0) break;
+  }
+  return { left: best.l, top: best.t, maxHeight: vh - 2 * GAP, width: w };
+}
+
+function useCardPlacement(cardRef, target, deps) {
+  const [style, setStyle] = useState(null);
+  const run = useCallback(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    if (window.innerWidth < 1024) {
+      setStyle(null);
+      return;
+    }
+    const spot = document.querySelector("[data-tour-spot]");
+    const r = spot?.getBoundingClientRect();
+    const targetBox = r && r.width * r.height < window.innerWidth * window.innerHeight * 0.5 ? { l: r.left - 4, t: r.top - 4, r: r.right + 4, b: r.bottom + 4 } : null;
+    setStyle(placeCard(card, targetBox));
+  }, [cardRef]);
+  useLayoutEffect(() => {
+    run();
+    const ids = [setTimeout(run, 120), setTimeout(run, 700)];
+    window.addEventListener("resize", run);
+    const observer = new MutationObserver(() => requestAnimationFrame(run));
+    observer.observe(document.getElementById("root"), { attributes: true, attributeFilter: ["data-tour-spot", "data-panel", "data-wide"], subtree: true });
+    return () => {
+      ids.forEach(clearTimeout);
+      window.removeEventListener("resize", run);
+      observer.disconnect();
+    };
+  }, [run, target, ...deps]);
+  return style;
+}
+
 export default function TourCard({ step, auto, onStep, onClose, onDone = onClose, onPrepare }) {
   const { t } = useI18n();
   const steps = tourSteps(auto);
@@ -69,6 +142,8 @@ export default function TourCard({ step, auto, onStep, onClose, onDone = onClose
   const current = steps[step] ?? steps[0];
   const last = step >= total - 1;
   useSpotlight(current.target, onPrepare);
+  const cardRef = useRef(null);
+  const placed = useCardPlacement(cardRef, current.target, [step, auto]);
 
   const advance = useRef(null);
   advance.current = () => (last ? onClose() : onStep(step + 1));
@@ -79,7 +154,7 @@ export default function TourCard({ step, auto, onStep, onClose, onDone = onClose
   }, [auto, step]);
 
   return (
-    <section aria-labelledby="tour-title" aria-live="polite" className="fc-float fc-tour pointer-events-auto w-[min(26rem,calc(100%-1.5rem))] rounded-2xl p-4">
+    <section ref={cardRef} aria-labelledby="tour-title" aria-live="polite" data-placed={placed ? "" : undefined} style={placed ? { left: placed.left, top: placed.top, maxHeight: placed.maxHeight } : undefined} className="fc-float fc-tour pointer-events-auto w-[min(26rem,calc(100vw-1.5rem))] rounded-2xl p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="m-0 flex items-center gap-2 text-xs font-semibold text-muted tabular-nums">
           {t("tour.progress", { n: step + 1, total })}

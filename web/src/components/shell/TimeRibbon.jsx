@@ -207,7 +207,7 @@ export default function TimeRibbon({
         </div>
       </div>
 
-      <div className="relative order-last min-w-0 basis-full md:order-none md:basis-0 md:flex-1">
+      <div className="fc-ribbon-strip relative order-last min-w-0 basis-full md:order-none md:basis-0 md:flex-1">
         <div
           ref={ref}
           role="slider"
