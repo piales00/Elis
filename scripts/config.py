@@ -244,3 +244,16 @@ CONTINUITY_PRE_DRIFT_YEARS = (2013, 2022)
 CONTINUITY_DRIFT_YEARS = (2023, 2026)
 CONTINUITY_MIN_AQUA = 20
 MODIS_SCIENCE_END_YEAR = 2027
+LIVE_DIR = PROCESSED_DIR / "live"
+FIRMS_AREA_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{source}/{bbox}/1/{date}"
+FIRMS_TIMEOUT_SECONDS = 120
+PERU_BBOX = (-81.4, -18.4, -68.6, 0.0)
+PERU_POINT_BUFFER_DEG = 0.01
+LIVE_SOURCES = {
+    "snpp": {"firms": "VIIRS_SNPP_NRT", "instrument": "viirs", "satellites": ("N", "SNPP")},
+    "noaa20": {"firms": "VIIRS_NOAA20_NRT", "instrument": "viirs", "satellites": ("N20", "1", "J1")},
+    "aqua": {"firms": "MODIS_NRT", "instrument": "modis", "satellites": ("Aqua", "A")},
+}
+LIVE_CALIBRATION_DAYS = 120
+LIVE_SIGMA_GRID = tuple(round(0.05 * step, 2) for step in range(41))
+LIVE_DRAWS = 4000
