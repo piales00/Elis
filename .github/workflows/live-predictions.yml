@@ -1,0 +1,85 @@
+name: Live predictions
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      predict_date:
+        description: "Date to predict (YYYY-MM-DD, default: yesterday UTC)"
+        required: false
+      score_date:
+        description: "Date to score (YYYY-MM-DD, default: two days ago UTC)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-predictions
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: >
+          pip install duckdb==2.0.0 numpy==2.5.4 pandas==3.1.1 pyarrow==26.0.1
+          scikit-learn==1.9.1 scipy==1.18.1 joblib==1.6.0 threadpoolctl==3.8.0 shapely==2.2.0
+
+      - name: Check out the live-data branch
+        run: |
+          if git fetch --depth 1 origin live-data; then
+            git worktree add -B live-data live-data FETCH_HEAD
+          else
+            git worktree add --orphan -b live-data live-data
+          fi
+          mkdir -p live-data/data/processed/live/predictions data/processed/live/predictions
+          cp -r live-data/data/processed/live/predictions/. data/processed/live/predictions/ || true
+          if [ -f live-data/data/processed/live/scoreboard.json ]; then
+            cp live-data/data/processed/live/scoreboard.json data/processed/live/scoreboard.json
+          fi
+
+      - name: Predict and score
+        env:
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+          PREDICT_DATE: ${{ inputs.predict_date }}
+          SCORE_DATE: ${{ inputs.score_date }}
+        run: |
+          PREDICT_DATE="${PREDICT_DATE:-$(date -u -d 'yesterday' +%F)}"
+          SCORE_DATE="${SCORE_DATE:-$(date -u -d '2 days ago' +%F)}"
+          if [ -f "data/processed/live/predictions/${SCORE_DATE}.json" ]; then
+            python scripts/live_predict.py score --date "$SCORE_DATE"
+          else
+            echo "No sealed prediction for ${SCORE_DATE}; nothing to score."
+          fi
+          if [ -f "data/processed/live/predictions/${PREDICT_DATE}.json" ]; then
+            echo "Prediction for ${PREDICT_DATE} already sealed; it is never overwritten."
+          else
+            python scripts/live_predict.py predict --date "$PREDICT_DATE"
+          fi
+
+      - name: Commit to live-data
+        run: |
+          cp -r data/processed/live/predictions/. live-data/data/processed/live/predictions/
+          cp data/processed/live/scoreboard.json live-data/data/processed/live/scoreboard.json
+          cd live-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/processed/live
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "data: predicción y verificación del $(date -u +%F)"
+          git push origin live-data
