@@ -140,7 +140,12 @@ export default function ContinuityView({ region, period, onSelectPeriod }) {
             <label htmlFor="cont-shutdown" className="text-xs font-semibold text-muted">
               {t("cont.from")}
             </label>
-            <span className="font-head text-sm font-bold tabular-nums">{monthLabel(t, shutdown)}</span>
+            <span className="flex items-baseline gap-2">
+              <span className="w-[5.5rem] text-right text-[11px] text-muted" aria-live="polite">
+                {state.status === "loading" || state.status === "refreshing" ? t("status.loading") : ""}
+              </span>
+              <span className="font-head text-sm font-bold tabular-nums">{monthLabel(t, shutdown)}</span>
+            </span>
           </div>
           <input
             id="cont-shutdown"
@@ -177,9 +182,6 @@ export default function ContinuityView({ region, period, onSelectPeriod }) {
           </div>
           <p className="m-0 text-[11.5px] leading-snug text-muted">{t("cont.howto")}</p>
         </div>
-        <span className="ml-auto text-xs text-muted" aria-live="polite">
-          {state.status === "loading" || state.status === "refreshing" ? t("status.loading") : ""}
-        </span>
       </div>
 
       <section aria-labelledby="cont-modis" className="grid gap-2">
