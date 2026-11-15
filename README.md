@@ -183,41 +183,7 @@ We state them on purpose: a record that hides its limits is not more solid, only
 
 **Log N + 1**, NASA Space Apps Challenge 2026.
 
-<table align="center">
-  <tr>
-    <td align="center" valign="top" width="25%">
-      <h3>Piero</h3>
-      <b>CEO & Chief Science Officer</b><br>
-      <sub>Data science</sub><br><br>
-      Model training<br>
-      Methodology<br>
-      Harmonization and validation of the record
-    </td>
-    <td align="center" valign="top" width="25%">
-      <h3>Jossep</h3>
-      <b>CTO</b><br>
-      <sub>Data engineering</sub><br><br>
-      FIRMS download and processing<br>
-      FastAPI endpoints<br>
-      Published files in <code>data/processed/</code>
-    </td>
-    <td align="center" valign="top" width="25%">
-      <h3>Samuel</h3>
-      <b>CDO (Chief Design Officer)</b><br>
-      <sub>Design and frontend</sub><br><br>
-      Design of the whole project<br>
-      Interface, maps and charts<br>
-      User experience
-    </td>
-    <td align="center" valign="top" width="25%">
-      <h3>Valentino</h3>
-      <b>CAIO (Chief AI Officer)</b><br>
-      <sub>Conversational AI</sub><br><br>
-      Ask Elis interactive chatbot<br>
-      Scientific copilot that answers questions about the record
-    </td>
-  </tr>
-</table>
+<table align="center"> <tr> <td align="center" valign="top" width="25%"> <br> <h3>Piero</h3> <img src="https://img.shields.io/badge/CEO%20%C2%B7%20CSO-1D4ED8?style=for-the-badge" alt="CEO and Chief Science Officer"><br> <sub><b>Chief Science Officer</b></sub><br> <sub>Data science</sub><br><br> Model training<br> Methodology<br> Harmonization and validation<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Jossep</h3> <img src="https://img.shields.io/badge/CTO-15803D?style=for-the-badge" alt="CTO"><br> <sub><b>Chief Technology Officer</b></sub><br> <sub>Data engineering</sub><br><br> FIRMS download and processing<br> FastAPI endpoints<br> Published data files<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Samuel</h3> <img src="https://img.shields.io/badge/CDO-7E22CE?style=for-the-badge" alt="CDO"><br> <sub><b>Chief Design Officer</b></sub><br> <sub>Design and frontend</sub><br><br> Design of the whole project<br> Interface, maps and charts<br> User experience<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Valentino</h3> <img src="https://img.shields.io/badge/CAIO-C2410C?style=for-the-badge" alt="CAIO"><br> <sub><b>Chief AI Officer</b></sub><br> <sub>Conversational AI</sub><br><br> Ask Elis chatbot<br> Scientific copilot<br> Answers about the record<br><br> </td> </tr> </table>
 
 ## AI use
 
