@@ -1,91 +1,59 @@
-# 08 · Elis: Data Intelligence Assistant & 40s Mission Control HUD
+# 08 · Elis: Data assistant and guided demonstration
 
 Elis · Team Log N + 1 · NASA Space Apps 2026
 
-## Purpose
+## Purpose and scope
 
-Deliver an interactive, zero-hallucination conversational interface and an autonomous 40-second executive heads-up display (HUD) that translates the harmonized fire record into immediate, actionable operational decisions for Peruvian public agencies (MINAM, INDECI, SERNANP, FEMA).
+Ask Elis helps readers explore the processed harmonized record through questions, charts and a guided presentation. Figures are verified against the processed data through numerical checks on tool results. This does not guarantee correct interpretation or the absence of unsupported prose. The prototype has not been evaluated for emergency deployment, site-level fire risk or national emissions accounting.
 
-## The Decision-Maker Problem
+The unit is **fire cell-days**: a 0.1° cell (approximately 11 km) with at least one detection on a date. Reconstructed activity is presented with 90% ranges; forecasts are separate from observations. The map does not delineate individual fires or measure burned area.
 
-When public officials or automated AI systems ingest raw FIRMS detections without harmonization:
-1. **False Trends in Carbon Accounting:** The uncorrected +333.9% jump in 2012 creates a synthetic +16.8%/year fire surge, corrupting Peru's national greenhouse gas inventories submitted under the Paris Agreement.
-2. **Forecast Inflation:** Machine learning models trained on raw detections over-predict future fire risk by **6.6×**, prompting misallocated aerial firefighting resources.
-3. **Cognitive Overload:** In high-stakes command centers (COEN / INDECI), operators cannot spend minutes interpreting complex multi-sensor satellite tables. They require verified executive memos, 3D spatial confirmation, and clear decision pathways in seconds.
+## Architecture and numerical verification
 
-## System Architecture
+`POST /chat` streams Server-Sent Events. `api/chat.py` selects a provider using `CHAT_PROVIDER` and available credentials. The deployment template selects Google Gemini; the default Gemini model is `gemini-3.1-flash-lite`. Anthropic is another configurable provider, not a demonstrated automatic hot-standby path from Gemini.
 
-Elis connects frontend clients to the harmonized backend via Server-Sent Events (`POST /chat`) using a dual-engine tool-augmented generation (RAG) architecture:
+The model calls tools in `api/chat_tools.py`, including series retrieval, period comparison, year ranking, chart construction and methodology retrieval. These read precomputed data rather than recomputing the scientific method. The stream includes text, tool, chart, notice and completion events.
 
-```
-[Operator / Web HUD]
-       │  POST /chat (SSE stream)
-       ▼
-[Rate Limiting & Safety Guard (10 req/min per IP)]
-       │
-       ▼
-[Gemini 3.1 Flash Lite] ──(Intent Recognition)──► [Strict Function Calling]
-       │                                                      │
-       │                                            Queries local data in-memory:
-       │                                            • get_series (series.json)
-       │                                            • compare_periods
-       │                                            • rank_years
-       │                                            • show_chart
-       │                                            • get_methodology
-       │                                                      │
-       ◄──────── [Deterministic Numerical Payload] ───────────┘
-       │
-       ▼
-[Rigor Guard: verify_figures]
-       │ Asserts every numeric token matches tool outputs within tolerance
-       ▼
-[SSE Streaming to Frontend]
-  • event: tool    (Audit trail of tool executions)
-  • event: chart   (Interactive SVG visualization with 90% CI)
-  • event: text    (Formatted executive memo)
-  • event: done    (Verification flag: verified=true)
-```
+`api/chat_guard.py::verify_figures` extracts numerical tokens and compares them with tool-result values within its matching rules. It exempts dates, years, satellite identifiers and a set of allowed constants. Unsupported values can generate a notice; the completion payload reports the verification result. A successful numerical check cannot establish that a number has been assigned to the right region, period or causal claim, nor that all relevant uncertainty has been explained.
 
-- **Inference Engines:** Google Gemini API (`gemini-3.1-flash-lite`, `google-genai` SDK) primary with zero-cost thinking budget (`thinking_budget=0`), backed by Anthropic Claude (`claude-opus-5-5` / `claude-3-5-sonnet`) as a hot-standby fallback.
-- **Deterministic Number Guard:** `verify_figures` inspects generated text and matches all quantities against tool results. Any unsubstantiated number triggers a structured notice, eliminating hallucination.
+## Usage and budget controls
 
-## 40-Second Autonomous HUD (Mission Control)
+The implemented per-IP limits in `api/chat_guard.py` are **5 questions per rolling 10 minutes** and **20 per rolling 24 hours**. `render.yaml` configures `CHAT_DAILY_BUDGET_USD="0.5"`, a **USD 0.50 daily budget threshold**. The Python fallback remains USD 5.00 if that environment setting is absent or invalid; the deployment value must therefore be retained.
 
-To convey maximum technical and operational impact to NASA judges and emergency commanders within strict time constraints, Elis provides a calibrated **40-Second Autopilot Tour** ($4 \text{ missions} \times 10 \text{ seconds} = 40\,\text{s}$ total):
+The budget guard checks recorded spend before a request. Accounting is in process memory, and a request already in progress may exceed the threshold; this is not a durable billing hard cap across workers or restarts. The deployment template also leaves `CHAT_ENABLED=0`; actual availability depends on runtime configuration and credentials.
 
-### Continuity Timer Engine
-In `web/src/App.jsx` and `web/src/components/chat/ElisSpotlight.jsx`, the autopilot cycle executes seamlessly:
-- The timer advances each mission after `AUTOPILOT_MS = 10000` via `advanceRef.current`.
-- The callback passes `fromAutopilot = true` to `applyElisMission`, ensuring `autopilot: true` is preserved across transitions ($1 \to 2 \to 3 \to 4 \to 1$).
-- Manual clicks on mission buttons or decision chips gracefully pause the timer (`autopilot: false`), returning full interactive agency to the user.
+## Guided demonstration
 
-### UI/UX Components
-1. **Step Indicator:** Header counter `[ 1 / 4 ]`, `[ 2 / 4 ]`, `[ 3 / 4 ]`, `[ 4 / 4 ]` providing predictable progression.
-2. **Operator Query Badge:** Prominently highlights the authentic user inquiry addressed by Elis.
-3. **Executive Typography:** Formatted via `FormattedMessage.jsx`, stripping raw asterisks (`**`) and standardizing key findings, alert pills, and quantitative metrics.
-4. **Interactive Decision Chips:** Contextual operational actions (`[📊 Compare Raw vs Chapman]`, `[🛰️ 3D Terrain Relief]`, `[🛡️ INDECI T-60d Action Plan]`, `[🔮 2027 Season Outlook]`, `[💬 Ask Elis]`) that instantly sync the main map view, trigger camera flights, or open relevant analytical panels.
+`web/src/components/chat/ElisSpotlight.jsx` sets `AUTOPILOT_SECONDS = 40` and divides this duration among four missions (10 seconds each). The tour completes after the final mission, subject to browser scheduling. The timer calls `onSelectMission(..., true)` and `web/src/App.jsx` preserves the autoplay flag. Manual mission selection pauses autoplay. The step indicator, formatted text, map navigation and chart shortcuts support a presentation; their labels are not evidence of operational effectiveness.
 
-## Operational Mission Matrix
+Appropriate demonstration questions are:
 
-| Mission | Operator Query | Agency & Mandate | Verified Finding | Operational Decision |
-|---|---|---|---|---|
-| **01. Sensor Jump** | *"Why did fire detections explode 9× in 2012?"* | **MINAM** · Paris Agreement NDC | +333.9% raw jump resolved; Chapman residual error is 3.77%. | Replaces +16.8%/yr artificial trend with +0.18%/yr real baseline in national emissions registry. |
-| **02. Amazon Regime** | *"Are Amazon fires continuous fronts or small burns?"* | **SERNANP & FEMA** · Forest Crimes | VIIRS captures 84.9% of active cell-days; 2005 and 2010 megadroughts remain historical records. | Directs airborne interdiction to persistent canopy corridors in Madre de Dios and Ucayali. |
-| **03. Andes Regimes** | *"What is the fire regime in Machu Picchu?"* | **SERNANP Machu Picchu & GORE Cusco** | Fragmented pasture burns have only 7% MODIS recall. Cusco projected at High Alert for 2027 (1,788 cell-days). | Establishes community controlled burn calendars and perimeter firebreaks in Urubamba. |
-| **04. INDECI 2027** | *"Where should INDECI pre-position aerial resources?"* | **INDECI & COEN** · National Defense | Unaligned AI over-predicts by 6.6×. Chapman forecast achieved 99.9% 2026 backtest hit. Sierra Very High in 2027. | Guides 60-day pre-positioning (T-60d) of aerial tankers and ground brigades in 25 departments. |
+| Topic | Supported interpretation |
+|---|---|
+| Sensor transition | Why adding available sensor detections changes the measurement scale |
+| Regional history | How reconstructed activity varies among macroregions, with ranges |
+| Sensor disagreement | How sampling and sensitivity may affect differences; no confirmed classification of individual burns |
+| Seasonal outlook | Where backtest skill supports a model and where climatology is used |
 
-## Verification and Test Coverage
+## Evidence and corrections
 
-- **Backend Test Suite:** 69 passing unit and integration tests across `test_api.py`, `test_chat_api.py`, `test_chat_tools.py`, and `test_chat_guard.py` (`69 passed in 5.69s`).
-- **Frontend Production Build:** Compiles cleanly via Vite (`✓ built in 2.27s`, 97 modules).
-- **External Consistency:** Anchored to the 36-year MapBiomas Collection 2 dataset (1990–2025) with $r = 0.75$ global agreement and $r = 0.98$ in the Landsat 8 era (2013–2020).
+`series.json` gives 10,375 raw detections in 2011 and 92,807 in 2012, a factor of 8.95. The **333.90%** statistic in `methodology.json → validation` is instead the mean annual naive-detection discrepancy relative to estimated fire cell-days in **2021–2024**. It is a cross-unit diagnostic, not the percentage increase in 2012. The national **3.77%** method discrepancy compares Aqua-only and VIIRS-only reconstructions on held-out years; it does not measure absolute truth or prove complete removal of bias.
+
+`forecast.json → raw_vs_corrected` records a national seasonal median observed/predicted ratio of **4.49** for the naive series and **1.02** for the harmonized series (training 2003–2011, testing 2013–2025). The naive model **underpredicts** after the sensor transition. The earlier claim of inflated future risk is unsupported. The 2026 evaluation is a retrospective out-of-sample test, not a near-perfect hit-rate claim or proof of prospective issuance. See [05](05-seasonal-forecast.md) and the [article](../report/firechronos-technical-report.html) for forecast ranges.
+
+The raw and harmonized fitted slopes in `methodology.json` are descriptive measurement-series results. They do not establish effects on Peru's greenhouse-gas inventories. Neither the JSON nor these tests demonstrates benefits for aircraft deployment, firebreak placement, law enforcement or site-specific protection.
+
+## MapBiomas validation actually used
+
+The broad source archive and the analysis window are different. `scripts/mapbiomas.py` retains annual input years **2000–2025** using `FIRST_YEAR` and `HISTORY_YEARS`; `scripts/validate.py` compares shared years **2001–2025**, excluding the incomplete first year. MapBiomas is used for external consistency, not model calibration. VIIRS does not cover the entire validation window.
+
+`methodology.json → validation` gives Peru's annual Pearson correlation **r = 0.748**. The comparator is burned area, a different quantity from fire cell-days. Its own sensor changes and use of FIRMS filtering in the Andes limit independence. The within-era correlation quoted in note 06 is not stored in processed JSON and is not repeated here as a newly verified result. No claim of validation against all 36 years of the wider archive is made.
 
 ## Reproduce
 
 ```bash
-# Backend test suite
-.venv/bin/pytest tests/test_api.py tests/test_chat_api.py tests/test_chat_tools.py tests/test_chat_guard.py -q
-
-# Production web build
-cd web && npm run build
+python -m pytest -q
+python scripts/check_report_figures.py
 ```
+
+A passing test suite establishes only the behavior covered by those tests. It is not a scientific accuracy score, a deployment-status assertion or a certification of generated prose. The HTML article records numerical provenance; the data contract remains unchanged.
