@@ -127,7 +127,7 @@ TOOLS: list[dict[str, Any]] = [
         "name": "get_methodology",
         "description": (
             "Read verified methodology details, validation metrics, detection probabilities, "
-            "MODIS emulator performance, seasonal forecast evaluation, physical findings, periods, or limits."
+            "MODIS emulator performance, seasonal forecast evaluation and 2027 departmental outlooks (all 25 departments including Cusco/Machu Picchu, Ucayali, Madre de Dios, Puno, etc. under topic='forecast'), physical findings, periods, or limits."
         ),
         "strict": True,
         "input_schema": {
@@ -781,6 +781,26 @@ def tool_get_methodology(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bo
 
     if topic == "forecast":
         fc = methodology.get("forecast", {})
+        fc_file = _load_json("forecast.json")
+        dept_outlooks = []
+        for u in fc_file.get("regions", []):
+            dept_outlooks.append({
+                "region": u.get("region"),
+                "name": u.get("name"),
+                "level": u.get("level"),
+                "macroregion": u.get("macroregion"),
+                "target_year": u.get("target_year", fc_file.get("target_year", 2027)),
+                "season_months": fc_file.get("season_months", [8, 9, 10]),
+                "published": u.get("published"),
+                "method": u.get("method"),
+                "hist_median_2003_2025": u.get("hist_median"),
+                "predicted_median": u.get("median"),
+                "predicted_low_90": u.get("low"),
+                "predicted_high_90": u.get("high"),
+                "most_likely_class": u.get("most_likely_class"),
+                "probabilities": u.get("probabilities"),
+                "predictors": u.get("predictors"),
+            })
         return {
             "unit": UNIT,
             "topic": "forecast",
@@ -789,6 +809,7 @@ def tool_get_methodology(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bo
             "origin": fc.get("origin"),
             "excluded_partial_month": fc.get("excluded_partial_month"),
             "published": fc.get("published", []),
+            "season_outlook_2027_all_units": dept_outlooks,
             "backtest_by_region": fc.get("backtest", {}).get("by_region", []),
             "out_of_sample_2026": fc.get("out_of_sample", {}).get("by_region", []),
             "raw_vs_corrected": fc.get("raw_vs_corrected", {}),

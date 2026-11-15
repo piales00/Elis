@@ -103,6 +103,7 @@ export default function App() {
   const [mapInstance, setMapInstance] = useState(null);
   const [dataTab, setDataTab] = useState("series");
   const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [spotlightMinimized, setSpotlightMinimized] = useState(false);
   const [activeMissionId, setActiveMissionId] = useState("artifact");
   const [autopilot, setAutopilot] = useState(false);
   const [projectedTurn, setProjectedTurn] = useState(null);
@@ -282,19 +283,20 @@ export default function App() {
   const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
 
   const applyElisMission = useCallback(
-    (mission, enableAutopilot = null) => {
+    (mission, enableAutopilot = null, expandCard = true) => {
       if (!mission) return;
       setPlaying(false);
       setTour(null);
       setProjectedTurn(null);
       setActiveMissionId(mission.id);
       setSpotlightOpen(true);
+      setSpotlightMinimized(!expandCard);
       if (enableAutopilot !== null) setAutopilot(enableAutopilot);
       if (mission.region) selectRegion(mission.region);
       if (mission.year && mission.month) setPeriod({ year: mission.year, month: mission.month });
       if (mission.metric) setRibbonMetric(mission.metric);
       if (mission.mode3d) {
-        mapInstance?.fire("fly3d", { region: mission.region || "amazonia" });
+        mapInstance?.fire("fly3d", { region: mission.cameraKey || mission.region || "amazonia" });
       } else {
         mapInstance?.fire("resetview");
       }
@@ -496,12 +498,13 @@ export default function App() {
               onOpenMethod={() => openView("method")}
               onLaunchMission={(missionId, auto = false) => {
                 const found = ELIS_MISSIONS.find((m) => m.id === missionId) || ELIS_MISSIONS[0];
-                applyElisMission(found, auto);
+                applyElisMission(found, auto, true);
               }}
               onProjectTurn={(turn) => {
                 setAutopilot(false);
                 setProjectedTurn(turn);
                 setSpotlightOpen(true);
+                setSpotlightMinimized(false);
                 const targetReg = turn?.chart?.region && regionIds.includes(turn.chart.region) ? turn.chart.region : region;
                 if (targetReg) selectRegion(targetReg);
                 if (turn?.chart?.highlight_year) {
@@ -509,12 +512,12 @@ export default function App() {
                 }
                 mapInstance?.fire("fly3d", { region: targetReg });
               }}
-              onSyncView={({ region: nextRegion, year, month, mode3d }) => {
+              onSyncView={({ region: nextRegion, cameraKey, year, month, mode3d }) => {
                 const targetReg = nextRegion && regionIds.includes(nextRegion) ? nextRegion : region;
                 if (nextRegion && regionIds.includes(nextRegion)) selectRegion(nextRegion);
                 if (year && month) setPeriod({ year, month });
                 if (mode3d) {
-                  mapInstance?.fire("fly3d", { region: targetReg });
+                  mapInstance?.fire("fly3d", { region: cameraKey || targetReg });
                 }
               }}
             />
@@ -661,11 +664,13 @@ export default function App() {
 
         <ElisSpotlight
           open={spotlightOpen}
+          minimized={spotlightMinimized}
+          onToggleMinimized={setSpotlightMinimized}
           activeMissionId={activeMissionId}
           autopilot={autopilot}
           customTurn={projectedTurn}
           series={series}
-          onSelectMission={(m) => applyElisMission(m, false)}
+          onSelectMission={(m) => applyElisMission(m, false, !spotlightMinimized)}
           onToggleAutopilot={() => {
             if (!autopilot) {
               setProjectedTurn(null);
@@ -691,12 +696,12 @@ export default function App() {
             setAutopilot(false);
             openView("method");
           }}
-          onSyncView={({ region: nextRegion, year, month, mode3d }) => {
+          onSyncView={({ region: nextRegion, cameraKey, year, month, mode3d }) => {
             const targetReg = nextRegion && regionIds.includes(nextRegion) ? nextRegion : region;
             if (nextRegion && regionIds.includes(nextRegion)) selectRegion(nextRegion);
             if (year && month) setPeriod({ year, month });
             if (mode3d) {
-              mapInstance?.fire("fly3d", { region: targetReg });
+              mapInstance?.fire("fly3d", { region: cameraKey || targetReg });
             } else {
               mapInstance?.fire("resetview");
             }

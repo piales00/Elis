@@ -78,8 +78,13 @@ export default function ChatPanel({
       },
       assistantTurn,
     ]);
-    if (onProjectTurn) {
-      onProjectTurn(assistantTurn);
+    if (onSyncView && built.chart) {
+      onSyncView({
+        region: built.chart.region || targetRegion,
+        year: built.chart.highlight_year || 2024,
+        month: 9,
+        mode3d: false,
+      });
     }
   };
 
@@ -319,14 +324,14 @@ export default function ChatPanel({
                     onClick={() => onLaunchMission("disagreement", false)}
                     className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
                   >
-                    🔬 {locale === "es" ? "Clasificador de Fuego" : "Fire Size Classifier"}
+                    🏛️ {locale === "es" ? "Machu Picchu / Cusco" : "Machu Picchu / Cusco"}
                   </button>
                   <button
                     type="button"
                     onClick={() => onLaunchMission("earlywarning", false)}
                     className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
                   >
-                    🛡️ {locale === "es" ? "Alerta T-60d SERFOR" : "T-60d SERFOR Alert"}
+                    🛡️ {locale === "es" ? "Pronóstico 2027 INDECI" : "2027 INDECI Outlook"}
                   </button>
                 </div>
               </div>
@@ -337,6 +342,20 @@ export default function ChatPanel({
                 {t("chat.presets.heading")}
               </p>
               <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  disabled={streaming || snapshot}
+                  onClick={() =>
+                    runLiveQuestion(
+                      locale === "es"
+                        ? "¿Cuál es el pronóstico 2027 y el régimen de incendios en Cusco y Machu Picchu?"
+                        : "What is the 2027 fire season outlook and fire regime for Cusco and Machu Picchu?",
+                    )
+                  }
+                  className="w-full rounded-lg border border-forecast/40 bg-forecast/10 px-3 py-2 text-left text-xs font-semibold text-forecast transition hover:border-forecast disabled:opacity-50 cursor-pointer"
+                >
+                  🏛️ {locale === "es" ? "¿Pronóstico 2027 e incendios en Cusco y Machu Picchu?" : "What is the 2027 outlook & fire regime in Cusco / Machu Picchu?"}
+                </button>
                 {PRESET_QUESTIONS.map((preset) => (
                   <button
                     key={preset.id}

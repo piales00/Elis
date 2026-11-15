@@ -6,16 +6,15 @@ import Icon from "../shell/icons.jsx";
 
 const AUTOPILOT_MS = 11000;
 
-function useAnimatedNumber(target, duration = 850) {
+function useAnimatedNumber(target, duration = 750) {
   const [val, setVal] = useState(0);
   useEffect(() => {
     let raf = null;
     const start = performance.now();
-    const from = 0;
     const tick = (now) => {
       const t = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      setVal(from + (target - from) * eased);
+      setVal(target * eased);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -26,17 +25,17 @@ function useAnimatedNumber(target, duration = 850) {
   return val;
 }
 
-function AnimatedStat({ value, decimals = 1, suffix = "", prefix = "", colorClass = "text-fg", label, sublabel }) {
+function CompactStat({ value, decimals = 1, suffix = "", prefix = "", colorClass = "text-fg", label, sublabel }) {
   const animated = useAnimatedNumber(value);
   return (
-    <div className="rounded-xl border border-line bg-bg/85 p-3 backdrop-blur-md transition hover:border-est">
-      <p className="m-0 text-[10px] font-bold uppercase tracking-wider text-muted">{label}</p>
-      <p className={`m-0 mt-1 font-head text-2xl font-extrabold tabular-nums ${colorClass}`}>
+    <div className="rounded-xl border border-line bg-bg/85 px-2.5 py-2 backdrop-blur-md">
+      <p className="m-0 truncate text-[9.5px] font-bold uppercase tracking-wider text-muted">{label}</p>
+      <p className={`m-0 mt-0.5 font-head text-lg font-extrabold tabular-nums ${colorClass}`}>
         {prefix}
         {animated.toFixed(decimals)}
         {suffix}
       </p>
-      {sublabel && <p className="m-0 mt-0.5 text-[11px] text-muted">{sublabel}</p>}
+      {sublabel && <p className="m-0 truncate text-[10px] text-muted">{sublabel}</p>}
     </div>
   );
 }
@@ -46,23 +45,26 @@ export const ELIS_MISSIONS = [
     id: "artifact",
     badgeEn: "MISSION 01 · SENSOR HARMONIZATION",
     badgeEs: "MISIÓN 01 · ARMONIZACIÓN SATELITAL",
-    chipEn: "🚨 2012 False 9× Jump",
-    chipEs: "🚨 Falso Salto 9× (2012)",
+    chipEn: "🚨 2012 Jump (9×)",
+    chipEs: "🚨 Salto 2012 (9×)",
+    kpiPillEn: "+333.9% Naive → 3.77% Chapman",
+    kpiPillEs: "+333.9% Crudo → 3.77% Chapman",
     titleEn: "Why Peru's 2012 Fire Explosion Was an Optical Illusion",
     titleEs: "Por qué la explosión de fuego de 2012 fue una ilusión óptica",
     summaryEn:
-      "Combining MODIS (1 km) and VIIRS (375 m) without correction fabricates a 9× jump in 2012 (+333.9% naive bias). Capture-recapture (Chapman) harmonizes 26 years into a single comparable baseline with 3.77% residual error.",
+      "Adding MODIS (1 km) and VIIRS (375 m) without correction fabricates a 9× jump in 2012 (+333.9% bias). Capture-recapture (Chapman) harmonizes 26 years with 3.77% residual error.",
     summaryEs:
-      "Sumar MODIS (1 km) y VIIRS (375 m) sin corregir fabrica un salto falso de 9× en 2012 (+333.9% de sesgo). Nuestro estimador de captura y recaptura (Chapman) armoniza 26 años con solo 3.77% de error residual.",
+      "Sumar MODIS (1 km) y VIIRS (375 m) sin corregir fabrica un salto falso de 9× en 2012 (+333.9% de sesgo). Captura y recaptura (Chapman) armoniza 26 años con 3.77% de error residual.",
     region: "peru",
+    cameraKey: "peru",
     year: 2012,
     month: 9,
     mode3d: false,
     metric: "raw",
-    userRoleEn: "MINAM · Climate Inventory & Paris Agreement (NDC)",
-    userRoleEs: "MINAM · Inventario de Carbono y Acuerdo de París (NDC)",
-    actionEn: "Eliminates the artificial +16.8%/yr trend so national emissions reporting reflects real climate anomalies (+0.18%/yr).",
-    actionEs: "Elimina la tendencia artificial de +16.8%/año para que el reporte nacional de emisiones refleje el clima real (+0.18%/año).",
+    userRoleEn: "MINAM · Paris Agreement (NDC)",
+    userRoleEs: "MINAM · Acuerdo de París (NDC)",
+    actionEn: "Replaces the fake +16.8%/yr raw trend with the true +0.18%/yr baseline for national carbon inventories.",
+    actionEs: "Corrige la tendencia artificial de +16.8%/año a la real (+0.18%/año) en el inventario nacional de emisiones.",
     stats: [
       {
         value: 333.9,
@@ -70,10 +72,10 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "+",
         colorClass: "text-danger",
-        labelEn: "Naive Sensor Sum Error",
-        labelEs: "Error por Suma Ingenua",
-        subEn: "Uncorrected MODIS + VIIRS jump",
-        subEs: "Salto sin corregir MODIS + VIIRS",
+        labelEn: "Naive Sum Bias",
+        labelEs: "Sesgo Suma Cruda",
+        subEn: "Uncorrected jump",
+        subEs: "Salto sin corregir",
       },
       {
         value: 3.77,
@@ -81,10 +83,10 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "",
         colorClass: "text-[var(--c-viirs)]",
-        labelEn: "Chapman Harmonized Error",
-        labelEs: "Error Armonizado Chapman",
-        subEn: "2021–2024 blind holdout test",
-        subEs: "Prueba ciega 2021–2024",
+        labelEn: "Chapman Error",
+        labelEs: "Error Chapman",
+        subEn: "2021–2024 holdout",
+        subEs: "Prueba 2021–2024",
       },
       {
         value: 0.75,
@@ -92,42 +94,37 @@ export const ELIS_MISSIONS = [
         suffix: " r",
         prefix: "",
         colorClass: "text-est",
-        labelEn: "MapBiomas Validation",
-        labelEs: "Validación MapBiomas",
-        subEn: "Independent Landsat 30m (1990–2025)",
-        subEs: "Landsat 30m independiente (1990–2025)",
+        labelEn: "MapBiomas Match",
+        labelEs: "Correlación Landsat",
+        subEn: "Landsat 30m (36 yrs)",
+        subEs: "Landsat 30m (36 años)",
       },
     ],
-    bars: {
-      leftLabelEn: "Raw Uncorrected Trend (+16.77% / yr · 30.3× inflation)",
-      leftLabelEs: "Tendencia Cruda Sin Corregir (+16.77% / año · inflación 30.3×)",
-      leftPct: 96,
-      rightLabelEn: "Chapman Harmonized Baseline (+0.18% / yr · 90% CI)",
-      rightLabelEs: "Serie Armonizada Chapman (+0.18% / año · IC 90%)",
-      rightPct: 14,
-    },
   },
   {
     id: "amazon3d",
-    badgeEn: "MISSION 02 · 3D SATELLITE RELIEF",
-    badgeEs: "MISIÓN 02 · RELIEVE SATELITAL 3D",
-    chipEn: "🛰️ Amazon 3D Relief (2024)",
-    chipEs: "🛰️ Amazonía en 3D (2024)",
-    titleEn: "Amazon Basin Drought Anatomy: 2024 vs. 2005 & 2010",
-    titleEs: "Anatomía de Sequía en la Amazonía: 2024 frente a 2005 y 2010",
+    badgeEn: "MISSION 02 · 3D AMAZON DROUGHT",
+    badgeEs: "MISIÓN 02 · SEQUÍA AMAZONÍA 3D",
+    chipEn: "🛰️ Amazon 3D (2024)",
+    chipEs: "🛰️ Amazonía 3D (2024)",
+    kpiPillEn: "VIIRS 84.9% vs MODIS 21.5% Recall",
+    kpiPillEs: "Captura: VIIRS 84.9% vs MODIS 21.5%",
+    titleEn: "Amazon Drought Anatomy: Sept 2024 vs. 2005 & 2010",
+    titleEs: "Anatomía de Sequía en Amazonía: Sep 2024 vs. 2005 y 2010",
     summaryEn:
-      "In September, VIIRS captures 84.9% of active fire cell-days in the Amazon while MODIS captures only 21.5%. Harmonizing reveals that 2005 and 2010 megadroughts remain the true historical peaks, with September 2024 ranking 3rd.",
+      "In September, VIIRS captures 84.9% of active fire cell-days in the Amazon while MODIS sees 21.5%. Harmonizing proves 2005 and 2010 megadroughts remain the record highs, with Sept 2024 ranking 3rd.",
     summaryEs:
-      "En septiembre, VIIRS captura el 84.9% de las celdas-día de fuego en la Amazonía y MODIS solo el 21.5%. Al armonizar, las megasequías de 2005 y 2010 lideran la historia y septiembre de 2024 ocupa el 3.er lugar real.",
+      "En septiembre, VIIRS captura el 84.9% de celdas-día de fuego en la Amazonía y MODIS solo el 21.5%. Al armonizar, las megasequías de 2005 y 2010 lideran la historia y septiembre 2024 ocupa el 3.er lugar.",
     region: "amazonia",
+    cameraKey: "madre_de_dios",
     year: 2024,
     month: 9,
     mode3d: true,
     metric: "estimated",
-    userRoleEn: "SERNANP & Environmental Prosecutors (FEMA)",
+    userRoleEn: "SERNANP & FEMA Prosecutors",
     userRoleEs: "SERNANP y Fiscalías Ambientales (FEMA)",
-    actionEn: "Pinpoints high-intensity canopy fire corridors in Madre de Dios & Ucayali for targeted aerial surveillance.",
-    actionEs: "Localiza corredores de fuego de alta intensidad en Madre de Dios y Ucayali para vigilancia aérea focalizada.",
+    actionEn: "Directs aerial interdiction to persistent canopy fire corridors in Madre de Dios & Ucayali.",
+    actionEs: "Dirige vigilancia e interdicción aérea a corredores de fuego persistente en Madre de Dios y Ucayali.",
     stats: [
       {
         value: 84.9,
@@ -135,10 +132,10 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "",
         colorClass: "text-est",
-        labelEn: "VIIRS Detection Rate (Sept)",
-        labelEs: "Tasa Detección VIIRS (Sep)",
-        subEn: "375m resolution capture probability",
-        subEs: "Probabilidad de captura a 375m",
+        labelEn: "VIIRS Capture",
+        labelEs: "Captura VIIRS",
+        subEn: "375m peak recall",
+        subEs: "Sensibilidad a 375m",
       },
       {
         value: 21.5,
@@ -146,10 +143,10 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "",
         colorClass: "text-forecast",
-        labelEn: "MODIS Detection Rate (Sept)",
-        labelEs: "Tasa Detección MODIS (Sep)",
-        subEn: "1km resolution misses small burns",
-        subEs: "Píxel de 1km omite quemas pequeñas",
+        labelEn: "MODIS Capture",
+        labelEs: "Captura MODIS",
+        subEn: "1km misses small burns",
+        subEs: "Omite quemas chicas",
       },
       {
         value: 2.31,
@@ -157,107 +154,97 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "",
         colorClass: "text-[var(--c-viirs)]",
-        labelEn: "Amazon Model Error",
-        labelEs: "Error del Modelo en Amazonía",
-        subEn: "vs 361.4% naive sensor sum error",
-        subEs: "frente a 361.4% de error ingenuo",
+        labelEn: "Amazon Error",
+        labelEs: "Error Amazonía",
+        subEn: "vs 361.4% naive",
+        subEs: "vs 361.4% ingenuo",
       },
     ],
-    bars: {
-      leftLabelEn: "VIIRS S-NPP Capture Efficiency in Peak Season (84.9%)",
-      leftLabelEs: "Eficiencia de Captura VIIRS S-NPP en Temporada Pico (84.9%)",
-      leftPct: 85,
-      rightLabelEn: "MODIS Aqua Capture Efficiency in Peak Season (21.5%)",
-      rightLabelEs: "Eficiencia de Captura MODIS Aqua en Temporada Pico (21.5%)",
-      rightPct: 22,
-    },
   },
   {
     id: "disagreement",
-    badgeEn: "MISSION 03 · DISAGREEMENT AS SENSOR",
-    badgeEs: "MISIÓN 03 · EL DESACUERDO COMO SENSOR",
-    chipEn: "🔬 Fire Size Classifier",
-    chipEs: "🔬 Clasificador de Fuego",
-    titleEn: "Using Sensor Disagreement to Classify Agricultural vs. Forest Fires",
-    titleEs: "El desacuerdo entre satélites clasifica quema agrícola vs. incendio forestal",
+    badgeEn: "MISSION 03 · MACHU PICCHU & CUSCO",
+    badgeEs: "MISIÓN 03 · MACHU PICCHU Y CUSCO",
+    chipEn: "🏛️ Machu Picchu / Cusco",
+    chipEs: "🏛️ Machu Picchu / Cusco",
+    kpiPillEn: "Cusco 2027 Outlook: 1,788 [High Alert]",
+    kpiPillEs: "Pronóstico Cusco 2027: 1,788 [Alerta Alta]",
+    titleEn: "Machu Picchu & Cusco: Pasture Burns + 2027 High Alert",
+    titleEs: "Machu Picchu y Cusco: Quemas Agrícolas + Alerta Alta 2027",
     summaryEn:
-      "When VIIRS sees 1 hotspot in a cell, MODIS detects it only 7% of the time; when VIIRS sees >10 hotspots, MODIS detects 57%. High VIIRS/MODIS disagreement maps fragmented pasture burns in the Andes (4.1×) and North Coast cane (6.2×).",
+      "In the Andes (Cusco / Sacred Valley), VIIRS detects 4.1× more activity than MODIS because fragmented pasture burns (1 VIIRS spot) have only 7% MODIS recall. For the 2027 season, Cusco is projected at High Alert (1,788 cell-days vs 1,261 median).",
     summaryEs:
-      "Cuando VIIRS ve 1 foco en una celda, MODIS lo detecta solo el 7% de las veces; con >10 focos, MODIS ve el 57%. El alto desacuerdo VIIRS/MODIS mapea quemas agrícolas fragmentadas en la Sierra (4.1×) y caña en la Costa (6.2×).",
+      "En Cusco y el cañón de Machu Picchu, VIIRS detecta 4.1× más actividad que MODIS porque son quemas fragmentadas de pastizal (MODIS solo ve el 7%). Para la temporada 2027, Cusco tiene Alerta Alta (1,788 celdas-día predichas vs 1,261 histórica).",
     region: "sierra",
+    cameraKey: "cusco",
     year: 2024,
     month: 8,
     mode3d: true,
     metric: "estimated",
-    userRoleEn: "MIDAGRI & Regional Governments (Cusco, Puno, Apurímac)",
-    userRoleEs: "MIDAGRI y Gobiernos Regionales (Cusco, Puno, Apurímac)",
-    actionEn: "Replaces costly forest-fire suppression with community agricultural burn calendars where small-plot fires dominate.",
-    actionEs: "Reemplaza brigadas pesadas por calendarios comunitarios de quema agrícola controlada en zonas de baja magnitud.",
+    userRoleEn: "SERNANP Machu Picchu · GORE Cusco · MIDAGRI",
+    userRoleEs: "SERNANP Machu Picchu · GORE Cusco · MIDAGRI",
+    actionEn: "Deploy controlled community burn calendars and buffer-zone patrols in Urubamba ahead of the Aug–Oct 2027 High-risk season.",
+    actionEs: "Activar calendarios de quema controlada y patrullaje perimetral en Urubamba antes de la temporada Alta ago–oct 2027.",
     stats: [
       {
-        value: 7.0,
+        value: 1788,
         decimals: 0,
-        suffix: "%",
+        suffix: "",
         prefix: "",
         colorClass: "text-forecast",
-        labelEn: "MODIS Recall (1 VIIRS Spot)",
-        labelEs: "Detección MODIS (1 Foco VIIRS)",
-        subEn: "Small fragmented agricultural burns",
-        subEs: "Quemas agrícolas pequeñas de baja magnitud",
+        labelEn: "Cusco 2027 Forecast",
+        labelEs: "Pronóstico Cusco 2027",
+        subEn: "90% CI: 1,183–2,701",
+        subEs: "IC 90%: 1,183–2,701",
       },
       {
-        value: 57.0,
-        decimals: 0,
+        value: 71.1,
+        decimals: 1,
         suffix: "%",
         prefix: "",
-        colorClass: "text-est",
-        labelEn: "MODIS Recall (>10 Spots)",
-        labelEs: "Detección MODIS (>10 Focos)",
-        subEn: "Large sustained canopy fronts",
-        subEs: "Frentes forestales grandes y sostenidos",
+        colorClass: "text-danger",
+        labelEn: "High/Very High Prob",
+        labelEs: "Prob. Alta/Muy Alta",
+        subEn: "vs 1,261 hist. median",
+        subEs: "vs 1,261 med. hist.",
       },
       {
-        value: 0.72,
-        decimals: 2,
-        suffix: " r",
+        value: 4.1,
+        decimals: 1,
+        suffix: "×",
         prefix: "",
-        colorClass: "text-[var(--c-viirs)]",
-        labelEn: "Andes MapBiomas Match",
-        labelEs: "Correlación MapBiomas Sierra",
-        subEn: "36-year Landsat burned area match",
-        subEs: "Validado contra 36 años de Landsat",
+        colorClass: "text-est",
+        labelEn: "VIIRS/MODIS Ratio",
+        labelEs: "Razón VIIRS/MODIS",
+        subEn: "Small pasture fires",
+        subEs: "Fuegos de pastizal",
       },
     ],
-    bars: {
-      leftLabelEn: "Large Fire Fronts (>10 VIIRS pts): 57% Dual-Sensor Coincidence",
-      leftLabelEs: "Frentes Grandes (>10 pts VIIRS): 57% de Coincidencia Dual",
-      leftPct: 57,
-      rightLabelEn: "Small Agricultural Plots (1 VIIRS pt): 7% MODIS Visibility",
-      rightLabelEs: "Quemas Agrícolas Pequeñas (1 pt VIIRS): 7% Visibilidad MODIS",
-      rightPct: 7,
-    },
   },
   {
     id: "earlywarning",
-    badgeEn: "MISSION 04 · SEASONAL EARLY WARNING",
-    badgeEs: "MISIÓN 04 · ALERTA TEMPRANA ESTACIONAL",
-    chipEn: "🛡️ T-60d SERFOR / INDECI Alert",
-    chipEs: "🛡️ Alerta T-60d SERFOR / INDECI",
-    titleEn: "From Reactive Firefighting to 60-Day Pre-Positioned Logistics",
-    titleEs: "De apagar incendios a ciegas a pre-posicionar brigadas 60 días antes",
+    badgeEn: "MISSION 04 · 2027 SEASONAL OUTLOOK",
+    badgeEs: "MISIÓN 04 · PRONÓSTICO 2027 INDECI",
+    chipEn: "🛡️ 2027 INDECI Alert",
+    chipEs: "🛡️ Alerta 2027 INDECI",
+    kpiPillEn: "2026 Backtest: 99.9% Hit · 2027 Sierra Very High",
+    kpiPillEs: "Acierto 2026: 99.9% · Sierra 2027 Muy Alta",
+    titleEn: "2027 Pre-Positioned Logistics across 25 Departments",
+    titleEs: "Logística Preventiva 2027 en los 25 Departamentos",
     summaryEn:
-      "Without harmonization, AI models learn the 2012 jump and over-predict by 6.6×. Trained on our Chapman series + NASA POWER rainfall, out-of-sample 2026 seasonal forecast hit 22,939 vs 22,955 observed cell-days (99.9% precision).",
+      "Unaligned AI over-predicts by 6.6× due to the 2012 jump. Trained on our Chapman baseline, the 2026 out-of-sample forecast hit 22,939 vs 22,955 observed cell-days (99.9%). For 2027, Sierra (14,426) and Coast (1,895) project Very High anomalies.",
     summaryEs:
-      "Sin armonizar, cualquier IA aprende el salto de 2012 y sobrepredice 6.6×. Entrenado sobre nuestra serie Chapman + lluvias NASA POWER, el pronóstico fuera de muestra 2026 predijo 22,939 vs 22,955 celdas-día observadas (99.9% de acierto).",
+      "Sin armonizar, la IA sobrepredice 6.6× por el salto de 2012. Con nuestra serie Chapman, el pronóstico 2026 acertó 22,939 vs 22,955 celdas-día observadas (99.9%). Para 2027, Sierra (14,426) y Costa (1,895) proyectan temporada Muy Alta.",
     region: "sierra",
+    cameraKey: "sierra",
     year: 2026,
     month: 9,
     mode3d: false,
     metric: "estimated",
-    userRoleEn: "SERFOR & INDECI · National Emergency Logistics",
-    userRoleEs: "SERFOR e INDECI · Logística Nacional de Emergencias",
-    actionEn: "Pre-deploy regional brigades & helicopters to Andes (Very High outlook: 14,426 cell-days) 60 days ahead of August peak.",
-    actionEs: "Pre-posicionar brigadas y helicópteros en Sierra (pronóstico Muy Alto: 14,426 celdas-día) 60 días antes del pico de agosto.",
+    userRoleEn: "INDECI & SERFOR · T-60d Pre-Positioning",
+    userRoleEs: "INDECI y SERFOR · Pre-posicionamiento T-60d",
+    actionEn: "Pre-position helicopters and brigades 60 days ahead in Cusco, Junín, Áncash, Pasco & La Libertad for the 2027 peak.",
+    actionEs: "Pre-posicionar helicópteros y brigadas 60 días antes en Cusco, Junín, Áncash, Pasco y La Libertad para el pico 2027.",
     stats: [
       {
         value: 99.9,
@@ -265,21 +252,21 @@ export const ELIS_MISSIONS = [
         suffix: "%",
         prefix: "",
         colorClass: "text-[var(--c-viirs)]",
-        labelEn: "2026 Season Volume Hit",
-        labelEs: "Acierto Volumen Temporada 2026",
-        subEn: "22,939 predicted vs 22,955 observed",
-        subEs: "22,939 predicho vs 22,955 observado",
+        labelEn: "2026 Season Hit",
+        labelEs: "Acierto Temp. 2026",
+        subEn: "22,939 vs 22,955 obs",
+        subEs: "22,939 vs 22,955 obs",
       },
       {
-        value: 82.6,
-        decimals: 1,
-        suffix: "%",
+        value: 14426,
+        decimals: 0,
+        suffix: "",
         prefix: "",
-        colorClass: "text-est",
-        labelEn: "90%-CI Empirical Coverage",
-        labelEs: "Cobertura Real del Rango 90%",
-        subEn: "23-year leave-one-year-out backtest",
-        subEs: "Backtest de 23 temporadas (2003–2025)",
+        colorClass: "text-forecast",
+        labelEn: "Andes 2027 Outlook",
+        labelEs: "Sierra 2027 (Muy Alta)",
+        subEn: "90% CI: 10.1k–20.5k",
+        subEs: "IC 90%: 10.1k–20.5k",
       },
       {
         value: 6.6,
@@ -287,25 +274,19 @@ export const ELIS_MISSIONS = [
         suffix: "×",
         prefix: "",
         colorClass: "text-danger",
-        labelEn: "Unaligned AI Over-Prediction",
-        labelEs: "Error de IA sin Armonizar",
-        subEn: "Why raw satellite data breaks ML",
-        subEs: "Por qué el dato crudo rompe la IA",
+        labelEn: "Raw AI Bias",
+        labelEs: "Sesgo IA Cruda",
+        subEn: "Without Chapman",
+        subEs: "Sin armonización",
       },
     ],
-    bars: {
-      leftLabelEn: "Harmonized Ridge Model Accuracy (99.9% Season Volume Match)",
-      leftLabelEs: "Precisión del Modelo con Serie Armonizada (99.9% en Volumen)",
-      leftPct: 99,
-      rightLabelEn: "90% Confidence Band Empirical Coverage across 23 Seasons (82.6%)",
-      rightLabelEs: "Cobertura Empírica del Intervalo de Confianza en 23 Años (82.6%)",
-      rightPct: 83,
-    },
   },
 ];
 
 export default function ElisSpotlight({
   open,
+  minimized = false,
+  onToggleMinimized,
   activeMissionId = "artifact",
   autopilot = false,
   customTurn = null,
@@ -320,6 +301,9 @@ export default function ElisSpotlight({
 }) {
   const { locale } = useI18n();
   const isEs = locale === "es";
+  const [showChart, setShowChart] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null);
 
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
@@ -341,6 +325,24 @@ export default function ElisSpotlight({
     }, AUTOPILOT_MS);
     return () => clearTimeout(timer);
   }, [open, autopilot, missionIndex, customTurn]);
+
+  const handlePointerDown = (e) => {
+    if (e.target.closest("button, a, input")) return;
+    const startX = e.clientX - dragOffset.x;
+    const startY = e.clientY - dragOffset.y;
+    const onMove = (ev) => {
+      setDragOffset({
+        x: Math.max(-320, Math.min(320, ev.clientX - startX)),
+        y: Math.max(-420, Math.min(80, ev.clientY - startY)),
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
 
   const missionChart = useMemo(() => {
     if (customTurn?.chart) return customTurn.chart;
@@ -382,11 +384,73 @@ export default function ElisSpotlight({
 
   if (!open) return null;
 
+  if (minimized) {
+    return (
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-center px-3">
+        <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-1.5 rounded-full border border-line-strong bg-surface/90 px-3 py-1.5 shadow-xl backdrop-blur-xl">
+          <span className="inline-flex items-center gap-1.5 pr-1 text-xs font-extrabold text-forecast">
+            <ElisMark size={16} />
+            <span className="hidden sm:inline">Elis Dock</span>
+          </span>
+          {ELIS_MISSIONS.map((m) => {
+            const active = !customTurn && m.id === mission.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => onSelectMission(m)}
+                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
+                  active
+                    ? "border-est bg-est/20 text-est"
+                    : "border-line bg-bg/70 text-muted hover:text-fg"
+                }`}
+              >
+                {isEs ? m.chipEs : m.chipEn}
+              </button>
+            );
+          })}
+          <span className="hidden rounded-full border border-forecast/30 bg-forecast/10 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-forecast md:inline-block">
+            {isEs ? mission.kpiPillEs : mission.kpiPillEn}
+          </span>
+          <button
+            type="button"
+            onClick={onToggleAutopilot}
+            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold cursor-pointer ${
+              autopilot ? "border-forecast bg-forecast text-bg" : "border-line bg-bg text-fg"
+            }`}
+          >
+            {autopilot ? "⏸" : "▶"} 60s
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleMinimized?.(false)}
+            className="rounded-full border border-line bg-bg px-2.5 py-0.5 text-[11px] font-bold text-fg hover:border-est cursor-pointer"
+            title={isEs ? "Expandir tarjeta" : "Expand card"}
+          >
+            ▴ {isEs ? "Abrir" : "Expand"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-full px-1.5 py-0.5 text-xs font-bold text-muted hover:text-fg cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-center px-3 sm:bottom-24 sm:px-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-end px-3 sm:bottom-24 sm:px-5">
       <section
+        ref={dragRef}
         aria-label="Elis Mission Control Spotlight"
-        className="pointer-events-auto w-full max-w-[820px] overflow-hidden rounded-2xl border border-line-strong bg-surface/92 shadow-2xl backdrop-blur-xl transition-all duration-300"
+        style={{
+          transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0)`,
+        }}
+        className="pointer-events-auto w-full max-w-[490px] overflow-hidden rounded-2xl border border-line-strong bg-surface/90 shadow-2xl backdrop-blur-xl"
       >
         {autopilot && !customTurn && (
           <div className="h-1 w-full bg-bg">
@@ -400,62 +464,68 @@ export default function ElisSpotlight({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg/60 px-4 py-2.5">
+        <div
+          onPointerDown={handlePointerDown}
+          title={isEs ? "Arrastra para mover por la pantalla" : "Drag to move anywhere on screen"}
+          className="flex cursor-grab active:cursor-grabbing flex-wrap items-center justify-between gap-2 border-b border-line bg-bg/70 px-3.5 py-2 select-none"
+        >
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center rounded-lg bg-forecast/15 p-1 text-forecast">
-              <ElisMark size={20} />
+              <ElisMark size={16} />
             </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-extrabold uppercase tracking-widest text-forecast">
-                  {customTurn
-                    ? isEs
-                      ? "ELIS · RESPUESTA EN VIVO PROYECTADA"
-                      : "ELIS · LIVE AGENT PROJECTION"
-                    : isEs
-                      ? mission.badgeEs
-                      : mission.badgeEn}
-                </span>
-                <span className="rounded-full border border-[var(--c-viirs)]/40 bg-[var(--c-viirs)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--c-viirs)]">
-                  ✓ {isEs ? "Verificado con FIRMS & MapBiomas" : "Verified vs FIRMS & MapBiomas"}
-                </span>
-              </div>
-            </div>
+            <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+              {customTurn
+                ? isEs
+                  ? "ELIS · ANÁLISIS EN VIVO"
+                  : "ELIS · LIVE PROJECTION"
+                : isEs
+                  ? mission.badgeEs
+                  : mission.badgeEn}
+            </span>
+            <span className="text-[10px] text-muted hidden sm:inline">⠿ {isEs ? "Mover" : "Drag"}</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={onToggleAutopilot}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-md border px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
                 autopilot
-                  ? "border-forecast bg-forecast text-bg shadow-sm"
+                  ? "border-forecast bg-forecast text-bg"
                   : "border-line bg-bg text-fg hover:border-forecast"
               }`}
             >
-              <span>{autopilot ? "⏸" : "▶"}</span>
-              <span>{isEs ? (autopilot ? "Pausar Tour 60s" : "Autopiloto 60s") : autopilot ? "Pause 60s Tour" : "60s Autopilot"}</span>
+              {autopilot ? "⏸" : "▶"} 60s
             </button>
             <button
               type="button"
-              onClick={onOpenChatDrawer}
-              className="inline-flex items-center gap-1 rounded-lg border border-line bg-bg px-2.5 py-1 text-xs font-semibold text-fg transition hover:border-est cursor-pointer"
+              onClick={() => setShowChart((v) => !v)}
+              className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
+                showChart ? "border-est bg-est/15 text-est" : "border-line bg-bg text-muted hover:text-fg"
+              }`}
             >
-              <Icon name="ask" size={14} className="text-forecast" />
-              <span>{isEs ? "Preguntar a Elis" : "Ask Custom Question"}</span>
+              📊 {isEs ? "Gráfico" : "Chart"}
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleMinimized?.(true)}
+              title={isEs ? "Minimizar a barra inferior" : "Minimize to bottom dock"}
+              className="rounded-md border border-line bg-bg px-2 py-0.5 text-[11px] font-bold text-muted hover:text-fg cursor-pointer"
+            >
+              _
             </button>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close Spotlight"
-              className="rounded-lg border border-line bg-bg px-2 py-1 text-xs font-bold text-muted hover:text-fg cursor-pointer"
+              className="rounded-md border border-line bg-bg px-2 py-0.5 text-[11px] font-bold text-muted hover:text-fg cursor-pointer"
             >
               ✕
             </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-line bg-bg/30 px-4 py-2">
+        <div className="flex flex-wrap items-center gap-1 border-b border-line bg-bg/35 px-3.5 py-1.5">
           {ELIS_MISSIONS.map((m) => {
             const active = !customTurn && m.id === mission.id;
             return (
@@ -463,10 +533,10 @@ export default function ElisSpotlight({
                 key={m.id}
                 type="button"
                 onClick={() => onSelectMission(m)}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
+                className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
                   active
-                    ? "border-est bg-est/15 text-est shadow-sm"
-                    : "border-line bg-bg/70 text-muted hover:border-muted hover:text-fg"
+                    ? "border-est bg-est/15 text-est"
+                    : "border-line bg-bg/60 text-muted hover:text-fg"
                 }`}
               >
                 {isEs ? m.chipEs : m.chipEn}
@@ -475,136 +545,83 @@ export default function ElisSpotlight({
           })}
         </div>
 
-        <div className="grid gap-4 p-4 lg:grid-cols-12">
-          <div className="flex flex-col justify-between gap-3 lg:col-span-7">
-            <div>
-              <h3 className="m-0 font-head text-lg font-extrabold leading-snug text-fg sm:text-xl">
-                {customTurn
-                  ? isEs
-                    ? "Análisis en Vivo del Copiloto Elis"
-                    : "Elis Live Copilot Analysis"
-                  : isEs
-                    ? mission.titleEs
-                    : mission.titleEn}
-              </h3>
-              <p className="m-0 mt-1.5 text-xs leading-relaxed text-muted sm:text-sm">
-                {customTurn ? customTurn.content : isEs ? mission.summaryEs : mission.summaryEn}
-              </p>
-            </div>
-
-            {!customTurn && (
-              <div className="grid grid-cols-3 gap-2">
-                {mission.stats.map((st, idx) => (
-                  <AnimatedStat
-                    key={`${mission.id}-st-${idx}`}
-                    value={st.value}
-                    decimals={st.decimals}
-                    suffix={st.suffix}
-                    prefix={st.prefix}
-                    colorClass={st.colorClass}
-                    label={isEs ? st.labelEs : st.labelEn}
-                    sublabel={isEs ? st.subEs : st.subEn}
-                  />
-                ))}
-              </div>
-            )}
-
-            {!customTurn && mission.bars && (
-              <div className="rounded-xl border border-line bg-bg/70 p-2.5 text-xs">
-                <div className="mb-2">
-                  <div className="mb-1 flex justify-between font-medium text-fg">
-                    <span>{isEs ? mission.bars.leftLabelEs : mission.bars.leftLabelEn}</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
-                    <div
-                      className="h-full rounded-full bg-forecast transition-all duration-700"
-                      style={{ width: `${mission.bars.leftPct}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 flex justify-between font-medium text-fg">
-                    <span>{isEs ? mission.bars.rightLabelEs : mission.bars.rightLabelEn}</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
-                    <div
-                      className="h-full rounded-full bg-est transition-all duration-700"
-                      style={{ width: `${mission.bars.rightPct}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-forecast/30 bg-forecast/10 px-3 py-2 text-xs">
-              <div className="min-w-0 flex-1">
-                <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
-                  {isEs ? "DECISIÓN Y USUARIO:" : "DECISION & TARGET USER:"}{" "}
-                  {customTurn
-                    ? "SERFOR · INDECI · MINAM"
-                    : isEs
-                      ? mission.userRoleEs
-                      : mission.userRoleEn}
-                </span>
-                <p className="m-0 mt-0.5 text-xs font-medium text-fg">
-                  {customTurn
-                    ? isEs
-                      ? "Usa los botones de acción para sincronizar el relieve 3D o auditar el pronóstico regional."
-                      : "Use the action controls to sync the 3D satellite relief or audit regional seasonal preparedness."
-                    : isEs
-                      ? mission.actionEs
-                      : mission.actionEn}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onSyncView?.({
-                      region: customTurn?.chart?.region || mission.region,
-                      year: customTurn?.chart?.highlight_year || mission.year,
-                      month: customTurn?.chart?.highlight_month || mission.month,
-                      mode3d: true,
-                    })
-                  }
-                  className="rounded-lg border border-forecast bg-forecast px-2.5 py-1.5 text-xs font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
-                >
-                  🛰️ {isEs ? "Volar en 3D" : "Fly 3D Relief"}
-                </button>
-                {mission.id === "earlywarning" ? (
-                  <button
-                    type="button"
-                    onClick={onOpenOutlook}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-xs font-semibold text-fg hover:border-est cursor-pointer"
-                  >
-                    {isEs ? "Ver Mapa INDECI →" : "Open Outlook Map →"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onOpenMethod}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-xs font-semibold text-fg hover:border-est cursor-pointer"
-                  >
-                    {isEs ? "Ver Fórmulas →" : "Methodology →"}
-                  </button>
-                )}
-              </div>
-            </div>
+        <div className="space-y-2.5 p-3.5">
+          <div>
+            <h3 className="m-0 font-head text-base font-extrabold leading-snug text-fg">
+              {customTurn
+                ? isEs
+                  ? "Síntesis Verificada de Elis"
+                  : "Elis Verified Synthesis"
+                : isEs
+                  ? mission.titleEs
+                  : mission.titleEn}
+            </h3>
+            <p className="m-0 mt-1 text-xs leading-relaxed text-muted whitespace-pre-line">
+              {customTurn ? customTurn.content : isEs ? mission.summaryEs : mission.summaryEn}
+            </p>
           </div>
 
-          <div className="flex flex-col justify-between lg:col-span-5">
-            {missionChart ? (
-              <div className="my-auto">
-                <ChatChart chartData={missionChart} onSyncView={onSyncView} />
-              </div>
-            ) : (
-              <div className="flex h-48 items-center justify-center rounded-xl border border-line bg-bg/50 text-xs text-muted">
-                {isEs ? "Cargando serie armonizada…" : "Loading harmonized series…"}
-              </div>
-            )}
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-1 text-[10px] font-mono text-muted">
-              <span>Unit: fire cell-days (~11 km)</span>
-              <span>Chapman 90% CI · MapBiomas Validated</span>
+          {!customTurn && (
+            <div className="grid grid-cols-3 gap-1.5">
+              {mission.stats.map((st, idx) => (
+                <CompactStat
+                  key={`${mission.id}-st-${idx}`}
+                  value={st.value}
+                  decimals={st.decimals}
+                  suffix={st.suffix}
+                  prefix={st.prefix}
+                  colorClass={st.colorClass}
+                  label={isEs ? st.labelEs : st.labelEn}
+                  sublabel={isEs ? st.subEs : st.subEn}
+                />
+              ))}
+            </div>
+          )}
+
+          {(showChart || customTurn?.chart) && missionChart && (
+            <div className="pt-1">
+              <ChatChart chartData={missionChart} onSyncView={onSyncView} />
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-forecast/30 bg-forecast/10 px-3 py-2 text-xs">
+            <div className="min-w-0 flex-1">
+              <span className="font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-forecast">
+                🛡️ {customTurn ? "INDECI · SERFOR · MINAM" : isEs ? mission.userRoleEs : mission.userRoleEn}
+              </span>
+              <p className="m-0 mt-0.5 text-[11.5px] font-medium leading-snug text-fg">
+                {customTurn
+                  ? isEs
+                    ? "Vuela en 3D o abre el mapa departamental 2027 de INDECI."
+                    : "Fly to 3D satellite relief or open the 2027 departmental outlook map."
+                  : isEs
+                    ? mission.actionEs
+                    : mission.actionEn}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  onSyncView?.({
+                    region: customTurn?.chart?.region || mission.region,
+                    cameraKey: mission.cameraKey || customTurn?.chart?.region || mission.region,
+                    year: customTurn?.chart?.highlight_year || mission.year,
+                    month: customTurn?.chart?.highlight_month || mission.month,
+                    mode3d: true,
+                  })
+                }
+                className="rounded-lg border border-forecast bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
+              >
+                🛰️ 3D
+              </button>
+              <button
+                type="button"
+                onClick={onOpenOutlook}
+                className="rounded-lg border border-line bg-bg px-2 py-1 text-[11px] font-semibold text-fg hover:border-est cursor-pointer"
+              >
+                {isEs ? "Pronóstico 2027 →" : "2027 Map →"}
+              </button>
             </div>
           </div>
         </div>

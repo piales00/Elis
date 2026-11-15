@@ -160,7 +160,42 @@ def _build_auto_chart(
             )[2]
             if chart_ev:
                 return chart_ev
+        if name == "get_methodology" and isinstance(inp, dict) and inp.get("topic") == "forecast":
+            chart_ev = execute_tool(
+                "show_chart",
+                {
+                    "chart": "forecast",
+                    "region": reg,
+                    "from_year": 2024,
+                    "to_year": 2026,
+                },
+            )[2]
+            if chart_ev:
+                return chart_ev
     return None
+
+
+_GREETING_TOKENS = {
+    "hola",
+    "hello",
+    "hi",
+    "hey",
+    "buenas",
+    "buenos dias",
+    "buenas tardes",
+    "buenas noches",
+    "quien eres",
+    "que eres",
+    "que puedes hacer",
+    "help",
+    "ayuda",
+}
+
+
+def _is_greeting_only(text: str) -> bool:
+    cleaned = "".join(ch.lower() if ch.isalnum() or ch.isspace() else " " for ch in text)
+    normalized = " ".join(cleaned.split())
+    return normalized in _GREETING_TOKENS
 
 
 def _prepare_messages(
@@ -174,9 +209,17 @@ def _prepare_messages(
         content = msg.get("content", "")
         prepared.append({"role": role, "content": content})
     if prepared and prepared[-1]["role"] == "user":
+        raw_user_text = prepared[-1]["content"]
+        if _is_greeting_only(raw_user_text):
+            lang_hint = locale or "es"
+            prepared[-1]["content"] = (
+                f"{raw_user_text}\n\n[Context: user locale: {lang_hint}. "
+                "This is a conversational greeting. Do NOT call any tools; reply warmly in 2 short sentences as Elis and suggest 3 concrete topics to explore.]"
+            )
+            return prepared
         extra: list[str] = []
         if region:
-            extra.append(f"active screen region: {region}")
+            extra.append(f"default screen region if user omits region: {region}")
         if locale:
             extra.append(f"user locale: {locale}")
         if extra:
@@ -388,8 +431,9 @@ async def _stream_gemini_turns(
                     yield _format_sse("text", {"delta": chunk_text})
 
         final_text = "".join(accumulated_text_parts)
+        is_greeting = bool(messages and _is_greeting_only(str(messages[-1].get("content", ""))))
         verification = verify_figures(final_text, tool_results_for_guard)
-        if not verification.get("verified", True):
+        if not is_greeting and not verification.get("verified", True):
             yield _format_sse(
                 "notice",
                 {

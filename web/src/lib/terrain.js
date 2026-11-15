@@ -4,8 +4,15 @@ export const EXPLORE_CAMERA = { center: [-72.5, -13.2], zoom: 9.5, pitch: 65, be
 export const REGION_3D_CAMERAS = {
   peru: { center: [-72.5, -13.2], zoom: 9.2, pitch: 65, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   amazonia: { center: [-74.5, -8.4], zoom: 9.2, pitch: 65, bearing: -15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  sierra: { center: [-72.1, -13.5], zoom: 9.5, pitch: 65, bearing: -25, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  sierra: { center: [-72.545, -13.163], zoom: 10.6, pitch: 68, bearing: -28, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   costa: { center: [-79.8, -6.8], zoom: 9.3, pitch: 62, bearing: 15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  cusco: { center: [-72.545, -13.163], zoom: 11.2, pitch: 68, bearing: -30, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  madre_de_dios: { center: [-69.3, -12.6], zoom: 9.5, pitch: 65, bearing: -12, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  ucayali: { center: [-74.53, -8.38], zoom: 9.5, pitch: 65, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  puno: { center: [-70.02, -15.84], zoom: 9.6, pitch: 64, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  junin: { center: [-75.2, -11.5], zoom: 9.6, pitch: 65, bearing: -22, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  san_martin: { center: [-76.7, -6.5], zoom: 9.5, pitch: 64, bearing: -15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  loreto: { center: [-73.25, -3.75], zoom: 9.2, pitch: 62, bearing: -10, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
 };
 export const SATELLITE_ATTRIBUTION = "Sentinel-2 cloudless – https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2020)";
 
