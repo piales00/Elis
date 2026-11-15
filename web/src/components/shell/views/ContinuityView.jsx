@@ -6,6 +6,16 @@ import { EVIDENCE_DOCS } from "../../../content/evidence.js";
 import Icon from "../icons.jsx";
 
 const DEFAULT_SHUTDOWN = "2023-01";
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+function monthIndex(m) {
+  const [y, mo] = m.split("-").map(Number);
+  return y * 12 + (mo - 1);
+}
+
+function indexMonth(i) {
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, "0")}`;
+}
 
 function useContinuity(shutdown) {
   const [state, setState] = useState({ status: "loading", data: null, error: null });
@@ -15,7 +25,16 @@ function useContinuity(shutdown) {
     const id = setTimeout(() => {
       getContinuity({ shutdown })
         .then((data) => !cancelled && setState({ status: "ready", data, error: null }))
-        .catch((error) => !cancelled && setState({ status: error instanceof NoDataError ? "unavailable" : "error", data: null, error }));
+        .catch((error) =>
+          !cancelled &&
+          setState((s) =>
+            error instanceof NoDataError
+              ? { status: "unavailable", data: null, error }
+              : s.data
+                ? { status: "ready", data: s.data, error }
+                : { status: "error", data: null, error },
+          ),
+        );
     }, 250);
     return () => {
       cancelled = true;
@@ -116,18 +135,48 @@ export default function ContinuityView({ region, period, onSelectPeriod }) {
           </span>
           <span className="text-sm font-semibold">{t("cont.toggle")}</span>
         </button>
-        <label className={`flex items-center gap-2 text-xs font-semibold text-muted ${on ? "" : "opacity-50"}`}>
-          {t("cont.from")}
+        <div className={`grid min-w-[16rem] flex-1 gap-2 ${on ? "" : "opacity-50"}`}>
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor="cont-shutdown" className="text-xs font-semibold text-muted">
+              {t("cont.from")}
+            </label>
+            <span className="font-head text-sm font-bold tabular-nums">{monthLabel(t, shutdown)}</span>
+          </div>
           <input
-            type="month"
-            className="fc-input h-8 px-2 text-sm font-normal text-fg"
-            value={shutdown}
-            min={minMonth}
-            max={maxMonth}
+            id="cont-shutdown"
+            type="range"
+            className="fc-range w-full accent-[var(--accent)]"
+            min={monthIndex(minMonth) + 1}
+            max={monthIndex(maxMonth)}
+            step={1}
+            value={monthIndex(shutdown)}
             disabled={!on}
-            onChange={(e) => e.target.value && e.target.value > minMonth && e.target.value <= maxMonth && setShutdown(e.target.value)}
+            aria-valuetext={monthLabel(t, shutdown)}
+            onChange={(e) => {
+              const next = indexMonth(Number(e.target.value));
+              if (MONTH_RE.test(next) && next > minMonth && next <= maxMonth) setShutdown(next);
+            }}
           />
-        </label>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("cont.presets")}>
+            {[
+              { id: "drift", month: "2023-01", label: t("cont.preset.drift") },
+              { id: "y2020", month: "2020-01", label: t("cont.preset.early") },
+              { id: "now", month: maxMonth, label: t("cont.preset.latest") },
+            ].map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                disabled={!on}
+                aria-pressed={shutdown === p.month}
+                onClick={() => setShutdown(p.month)}
+                className={`fc-press rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${shutdown === p.month ? "border-accent bg-accent text-on-accent" : "border-line bg-surface-2 text-muted hover:text-fg"}`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <p className="m-0 text-[11.5px] leading-snug text-muted">{t("cont.howto")}</p>
+        </div>
         <span className="ml-auto text-xs text-muted" aria-live="polite">
           {state.status === "loading" || state.status === "refreshing" ? t("status.loading") : ""}
         </span>
