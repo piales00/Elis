@@ -106,6 +106,19 @@ export function mapPadding(map) {
   const el = map?.getContainer?.();
   const w = el?.clientWidth ?? 800;
   const h = el?.clientHeight ?? 600;
-  if (w < 640) return { top: Math.min(60, h * 0.18), bottom: Math.min(36, h * 0.1), left: 16, right: 16 };
-  return { top: Math.min(72, h * 0.12), bottom: Math.min(64, h * 0.1), left: 40, right: 64 };
+  let top = w < 640 ? Math.min(60, h * 0.18) : Math.min(72, h * 0.12);
+  const bar = el?.closest(".fc-stage")?.querySelector(".fc-overlay-top");
+  if (bar && el) {
+    const box = el.getBoundingClientRect();
+    let used = 0;
+    let bottom = 0;
+    for (const child of bar.querySelectorAll(":scope > *")) {
+      const r = child.getBoundingClientRect();
+      used += r.width;
+      bottom = Math.max(bottom, r.bottom - box.top);
+    }
+    if (used > w * 0.85) top = Math.min(Math.max(top, bottom + 12), h * 0.3);
+  }
+  if (w < 640) return { top, bottom: Math.min(36, h * 0.1), left: 16, right: 16 };
+  return { top, bottom: Math.min(64, h * 0.1), left: 40, right: 64 };
 }

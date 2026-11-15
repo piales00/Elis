@@ -463,7 +463,7 @@ export default function App() {
         )}
       </aside>
 
-      <main className="fc-stage" aria-label={t("map.stage")}>
+      <main className="fc-stage @container" aria-label={t("map.stage")}>
         <MapBoundary>
         <Suspense fallback={<div className="fc-skel h-full w-full rounded-none" />}>
           <MapView
@@ -557,18 +557,19 @@ export default function App() {
           </div>
         </div>
 
-        {tour && (
-          <div className="fc-overlay-tour">
-            <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={() => setTour(null)}
-              onDone={() => {
-                setTour(null);
-                setView("explore");
-                setPanelOpen(true);
-              }}
-            />
-          </div>
-        )}
       </main>
+
+      {tour && (
+        <div className="fc-overlay-tour">
+          <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={() => setTour(null)}
+            onDone={() => {
+              setTour(null);
+              setView("explore");
+              setPanelOpen(true);
+            }}
+          />
+        </div>
+      )}
 
       <footer className="fc-ribbon-wrap" aria-label={t("ribbon.label")}>
         <TimeRibbon

@@ -65,7 +65,7 @@ export default function LayerSwitcher(props) {
 
   return (
     <div ref={wrap} data-tour="layers" className="pointer-events-auto relative">
-      <div className="hidden flex-col items-end gap-2 xl:flex">
+      <div className="hidden flex-col items-end gap-2 @[54rem]:flex">
         <div className="fc-float flex items-center gap-1.5 rounded-xl p-1.5">
           <LayerOptions {...props} />
         </div>
@@ -81,14 +81,14 @@ export default function LayerSwitcher(props) {
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
-        className="fc-float fc-press flex h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold xl:hidden"
+        className="fc-float fc-press flex h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold @[54rem]:hidden"
       >
         <Icon name="layers" size={18} />
         {t(`layers.${props.layer}`)}
         <Icon name="chevron" size={14} />
       </button>
       {open && (
-        <div className="fc-float fc-pop absolute right-0 top-full z-30 mt-2 grid w-[min(20rem,calc(100vw-2rem))] gap-2 rounded-xl p-2 xl:hidden [&_.fc-seg]:flex-wrap">
+        <div className="fc-float fc-pop absolute right-0 top-full z-30 mt-2 grid w-[min(20rem,calc(100vw-2rem))] gap-2 rounded-xl p-2 @[54rem]:hidden [&_.fc-seg]:flex-wrap">
           <LayerOptions {...props} />
           {props.layer === "cells" && (
             <>

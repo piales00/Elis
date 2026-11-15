@@ -1086,7 +1086,7 @@ body {
   right: 24px;
   bottom: 24px;
   left: auto;
-  visibility: visible;
+  margin: 0;
   z-index: 60;
 }
 .fc-link {
@@ -1333,10 +1333,10 @@ th.text-right .fc-th-btn {
   z-index: 3;
 }
 .fc-overlay-tour {
-  position: absolute;
-  left: 0;
-  right: 56px;
-  bottom: 16px;
+  grid-area: stage;
+  align-self: end;
+  position: relative;
+  margin: 0 56px 16px 12px;
   display: flex;
   justify-content: flex-end;
   pointer-events: none;
@@ -1711,6 +1711,7 @@ th.text-right .fc-th-btn {
   }
   .fc-overlay-tour,
   .fc-app[data-wide] .fc-overlay-tour {
+    margin: 0;
     position: fixed;
     left: 0;
     right: 0;
