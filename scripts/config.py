@@ -139,6 +139,87 @@ FORECAST_SEASON_ORIGIN = 7
 FORECAST_OOS_YEAR = 2026
 FORECAST_DEMO_TRAIN_YEARS = (2003, 2011)
 FORECAST_DEMO_TEST_YEARS = (2013, 2025)
+
+UNDER_CACHE_VERSION = 2
+UNDER_FIT_MAXITER = 600
+UNDER_SIM_BOUNDS = {
+    "mu": (-3.0, 4.0), "sigma": (0.3, 2.5), "delta_a": (-2.0, 3.0),
+    "tau_a": (0.1, 2.0), "tau_s": (0.1, 2.0),
+    "a_a": (-15.0, 5.0), "b_a": (0.1, 5.0), "pmax_a": (0.2, 0.999),
+    "a_s": (-15.0, 5.0), "b_s": (0.1, 5.0), "pmax_s": (0.2, 0.999),
+    "t0": (10.0, 400.0), "kappa": (0.0, 1.2),
+}
+
+UNDER_SIM = {'TAU_S': 0.4,
+ 'START': {'mu': 1.0,
+           'sigma': 1.0,
+           'delta_a': 1.0,
+           'tau_a': 0.6,
+           'tau_s': 0.4,
+           'a_a': -5.0,
+           'b_a': 2.0,
+           'pmax_a': 0.9,
+           'a_s': -2.0,
+           'b_s': 2.5,
+           'pmax_s': 0.9,
+           't0': 80.0,
+           'kappa': 0.5},
+ 'LOG_FRP_REF': 1.6094379124341003,
+ 'NOAA20_LAG': 50.0,
+ 'NOAA20_JITTER': 0.7,
+ 'OBSCURATION_SHARED_MINUTES': 30.0,
+ 'FIT_SAMPLE': 40000,
+ 'SMOOTH_WIDTH': 0.05,
+ 'REPLICATE_ACTIVE': 12000,
+ 'REPLICATE_DAYS': 2920,
+ 'REPLICATE_YEARS': 8,
+ 'REPLICATES': 20,
+ 'SLOW_REPLICATES': 25,
+ 'CALIBRATION_STARTS': (0.0, 0.2),
+ 'SIGMA_GRID': (0.5, 0.7, 0.9, 1.1, 1.4, 1.8, 2.3),
+ 'LIFETIME_MULTIPLIERS': (0.6, 1.6),
+ 'MIXTURE': {'weight': 0.3, 'shift': -2.0, 'scale': 0.7},
+ 'OBSCURATION': 0.15,
+ 'ACCEPTABLE_LOSS_RATIO': 2.0,
+ 'PASS_BIAS': 0.1,
+ 'PASS_COVERAGE': 0.8,
+ 'SCALES': {'probability': 0.01, 'cdf': 0.01, 'corr': 0.02, 'diff': 0.03, 'ratio': 0.005},
+ 'DEFAULT_GAP': {'mean': 5.0, 'sd': 35.0, 'limit': 100.0, 'residual_sd': 2.0}}
+
+UNDER_ESTIMATOR = {'STABILITY_YEARS': (2018, 2022),
+ 'NOAA20_LAG': 50.0,
+ 'LOG_BIN': 0.1,
+ 'LOG_BIN_THREE': 0.2,
+ 'GAP_BIN': 5.0,
+ 'GH_NODES': 32,
+ 'HESSIAN_STEP': 0.0001,
+ 'FRP_FLOOR': 0.1,
+ 'S_CLASS_EDGES': (5.0, 20.0),
+ 'A_CLASS_EDGES': (10.0, 30.0),
+ 'COINCIDENCE_GAP_EDGES': (0.0, 20.0, 40.0, 60.0, inf),
+ 'FRP_QUANTILES': (0.1, 0.25, 0.5, 0.75, 0.9),
+ 'DRY_MONTHS': (7, 8, 9, 10, 11),
+ 'BOOTSTRAP': 200,
+ 'LATENT_CLASS_STARTS': 4,
+ 'LATENT_CLASS_DRAWS': 30,
+ 'MAX_UNSEEN_SHARE': 0.99,
+ 'PAD': 2048,
+ 'A2_START': [1.0,
+              0.0,
+              1.0,
+              -0.5108256237659907,
+              -0.6931471805599453,
+              -5.0,
+              0.6931471805599453,
+              2.0,
+              -2.0,
+              0.9162907318741551,
+              2.0],
+ 'LOG_FRP_REF': 1.6094379124341003}
+UNDER_TIME_LIMIT_SECONDS = 1190
+
+UNDER_SEED_BLOCK = 50
+UNDER_SLOW_SEED_OFFSET = 25
 ENSO_DIR = EXTERNAL_DIR / "enso"
 ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
 ICEN_URL = "http://met.igp.gob.pe/datos/ICEN.txt"
