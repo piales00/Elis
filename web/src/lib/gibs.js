@@ -1,8 +1,8 @@
 import { VectorTile } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
 
-export const GIBS_ATTRIBUTION = "Imagery: NASA GIBS / Worldview";
-export const FIRMS_ATTRIBUTION = "Detections: NASA FIRMS via GIBS";
+export const GIBS_ATTRIBUTION = "NASA GIBS / Worldview";
+export const FIRMS_ATTRIBUTION = "NASA FIRMS / GIBS";
 export const DEFAULT_IMAGERY_DAY = { year: 2024, month: 9, day: 10 };
 export const RASTER_MAX_ZOOM = 9;
 export const FOOTPRINT_MIN_ZOOM = 8;

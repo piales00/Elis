@@ -130,6 +130,7 @@ export default {
   "map.status.unavailable": "No data for this period.",
   "map.status.nodata": "No map data for this period.",
   "map.status.empty": "No active cells in this period and region.",
+  "map.legend.terrain": "Smoothed cell activity · not burned area. Satellite basemap: 2020.",
   "map.terrain": "3D terrain",
   "map.drop": "Drop to explore",
   "map.dropHelp": "Drag the pin onto Peru, or press Enter to fly to the map center. In 3D, double-click a location or select a cell and choose Fly here.",

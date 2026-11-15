@@ -64,7 +64,7 @@ export default function LayerSwitcher(props) {
   }, [open]);
 
   return (
-    <div ref={wrap} data-tour="layers" className="pointer-events-auto relative">
+    <div ref={wrap} data-tour="layers" className="pointer-events-auto relative ml-auto max-w-full shrink-0">
       <div className="hidden flex-col items-end gap-2 @[54rem]:flex">
         <div className="fc-float flex items-center gap-1.5 rounded-xl p-1.5">
           <LayerOptions {...props} />

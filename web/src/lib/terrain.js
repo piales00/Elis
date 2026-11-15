@@ -57,7 +57,7 @@ export function setRelief(map, enabled) {
         encoding: "terrarium",
         tileSize: 256,
         maxzoom: 14,
-        attribution: "Terrain: Mapzen/AWS Terrain Tiles",
+        attribution: "Mapzen / AWS Terrain Tiles",
       });
       map.addLayer({
         id: "explore-hillshade",
