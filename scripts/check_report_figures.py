@@ -100,7 +100,7 @@ def report_values():
         row = next(r for r in s if r['region']=='peru' and r['year']==y and r['month']==mo)
         for k in ('estimated','est_low','est_high'): put(f'month_{y}_{mo}_{k}', row[k], 0)
     ranges = json.loads(RANGES.read_text())
-    assert ranges['series_sha256'] == hashlib.sha256((ROOT/'data/processed/series.json').read_bytes()).hexdigest(), 'Rebuild seasonal ranges for changed series'
+    assert ranges['series_sha256'] == hashlib.sha256((ROOT/'data/processed/series.json').read_bytes().replace(b'\r\n', b'\n')).hexdigest(), 'Rebuild seasonal ranges for changed series'
     for r in f['out_of_sample']['rows']:
         if r['lead']==1 and r['published_method'] and r['level'] in ('country','macro'):
             for k in ('median','low','high','observed'): put(f"oos_{r['region']}_{k}", r[k], 0)
@@ -183,7 +183,7 @@ def main():
     assert checker.seen == expected.keys(), f'Missing checked values: {expected.keys()-checker.seen}'
     provenance = json.loads((RANGES.parent / 'provenance.json').read_text())
     for relative, expected_hash in provenance.items():
-        assert hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() == expected_hash, f'Regenerate figures: {relative}'
+        assert hashlib.sha256((ROOT / relative).read_bytes().replace(b'\r\n', b'\n')).hexdigest() == expected_hash, f'Regenerate figures: {relative}'
     interim = ROOT / 'data/interim'
     if (interim / 'sensitivity.json').exists():
         for name, digest in json.loads(EXPORTS.read_text())['sources'].items():

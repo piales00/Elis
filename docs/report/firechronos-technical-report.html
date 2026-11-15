@@ -4,13 +4,97 @@
 <style>
 @page { size:A4; margin:17mm 19mm 17mm; }
 * { box-sizing:border-box; } body { color:#202020; font-family:Georgia,'Times New Roman',serif; font-size:10pt; line-height:1.34; margin:0; }
-main { max-width:172mm; margin:auto; } h1 { font-size:24pt; line-height:1.15; margin:12pt 0; font-weight:normal; } h2 {font-size:15pt; margin:0 0 9pt;} h3 {font-size:11.5pt; margin:11pt 0 5pt;} p {margin:0 0 8pt;} h2,h3 {break-after:avoid;} .page {break-before:page;} .meta {font-size:9pt;color:#555;} .authors {font-size:12pt;} .abstract {border-top:1px solid #777;border-bottom:1px solid #777;padding:12pt 0;margin:16pt 0;} .abstract h2 {font-size:12pt;} table {width:100%;border-collapse:collapse;font-size:9pt; margin:8pt 0 10pt;break-inside:avoid;} th,td {padding:4pt 4pt;text-align:right;border-bottom:1px solid #ddd;} th:first-child,td:first-child {text-align:left;} thead {border-top:1px solid #555;border-bottom:1px solid #555;} caption {text-align:left;font-size:9pt;margin-bottom:6pt;} figure {margin:9pt 0;break-inside:avoid;} img {width:100%;display:block;} figcaption {font-size:9pt;line-height:1.3;margin-top:6pt;} .equation {display:flex;align-items:center;justify-content:center;gap:10pt;padding:3pt 0;break-inside:avoid;font-size:9.5pt;} .equation .katex-display {margin:0;flex:1;} .eqno {flex:0 0 auto;font-size:9.5pt;} table.symbols td, table.symbols th {text-align:left;} table.symbols td:first-child {white-space:nowrap;width:30%;} .appendix table {font-size:8.3pt;} .appendix th,.appendix td {padding:2.4pt 3pt;} .katex {font-size:1.02em;} .twocol {display:flex;gap:10pt;align-items:flex-start;} .twocol>* {flex:1;} .refs p {font-size:9pt; padding-left:14pt;text-indent:-14pt;margin-bottom:8pt;} a {color:#235872;text-decoration:none;overflow-wrap:anywhere;} code {font-size:8.5pt;} .note {font-size:9pt;} @media screen {body {padding:30px 12px;} .page {margin-top:45px;}}
+main { max-width:172mm; margin:auto; } h1 { font-size:24pt; line-height:1.15; margin:12pt 0; font-weight:normal; } h2 {font-size:15pt; margin:0 0 9pt;} h3 {font-size:11.5pt; margin:11pt 0 5pt;} p {margin:0 0 8pt;} h2,h3 {break-after:avoid;} .page {break-before:page;} .meta {font-size:9pt;color:#555;} .authors {font-size:12pt;} .abstract {border-top:1px solid #777;border-bottom:1px solid #777;padding:12pt 0;margin:16pt 0;} .abstract h2 {font-size:12pt;} table {width:100%;border-collapse:collapse;font-size:9pt; margin:8pt 0 10pt;break-inside:avoid;} th,td {padding:4pt 4pt;text-align:right;border-bottom:1px solid #ddd;} th:first-child,td:first-child {text-align:left;} thead {border-top:1px solid #555;border-bottom:1px solid #555;} caption {text-align:left;font-size:9pt;margin-bottom:6pt;} figure {margin:9pt 0;break-inside:avoid;} img {width:100%;display:block;} figcaption {font-size:9pt;line-height:1.3;margin-top:6pt;} .equation {display:flex;align-items:center;justify-content:center;gap:10pt;padding:3pt 0;break-inside:avoid;font-size:9.5pt;} .equation .katex-display {margin:0;flex:1;} .eqno {flex:0 0 auto;font-size:9.5pt;} table.symbols td, table.symbols th {text-align:left;} table.symbols td:first-child {white-space:nowrap;width:30%;} .appendix table {font-size:8.3pt;} .appendix th,.appendix td {padding:2.4pt 3pt;} .katex {font-size:1.02em;} .twocol {display:flex;gap:10pt;align-items:flex-start;} .twocol>* {flex:1;} .refs p {font-size:9pt; padding-left:14pt;text-indent:-14pt;margin-bottom:8pt;} a {color:#235872;text-decoration:none;overflow-wrap:anywhere;} code {font-size:8.5pt;} .note {font-size:9pt;}
+.cover { height:252mm; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(160deg,#0a130f 0%,#102019 58%,#162920 100%); color:#ecf2ee; padding:14mm 16mm 12mm; border-radius:4mm; border:1px solid #284235; break-inside:avoid; break-after:page; -webkit-print-color-adjust:exact; print-color-adjust:exact; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; position:relative; overflow:hidden; }
+.cover::before { content:""; position:absolute; right:-30mm; top:-25mm; width:120mm; height:120mm; background:radial-gradient(circle,rgba(235,82,1,0.22) 0%,rgba(88,184,216,0.08) 48%,transparent 72%); pointer-events:none; }
+.cover-top { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(155,176,163,0.28); padding-bottom:8pt; font-size:8.5pt; letter-spacing:0.08em; text-transform:uppercase; color:#9bb0a3; }
+.cover-brand { display:inline-flex; align-items:center; gap:8pt; font-weight:800; font-size:13pt; letter-spacing:-0.02em; color:#ecf2ee; text-transform:none; }
+.cover-hero { margin:12pt 0 8pt; }
+.cover-kicker { display:inline-block; background:rgba(235,82,1,0.16); border:1px solid rgba(255,138,76,0.45); color:#ff8a4c; font-size:8pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3pt 8pt; border-radius:999px; margin-bottom:8pt; }
+.cover h1.cover-title { font-family:Georgia,'Times New Roman',serif; font-size:25pt; line-height:1.12; font-weight:bold; color:#ffffff; margin:0 0 8pt; letter-spacing:-0.015em; }
+.cover-sub { font-size:10.3pt; line-height:1.42; color:#c5d3ca; max-width:144mm; margin:0; }
+.cover-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:7pt; margin:10pt 0; }
+.cover-card { background:rgba(15,27,22,0.86); border:1px solid rgba(155,176,163,0.26); border-radius:3mm; padding:7pt 8pt; }
+.cover-card-val { font-size:13.5pt; font-weight:800; color:#58b8d8; line-height:1.1; margin-bottom:3pt; }
+.cover-card-val.accent { color:#ff8a4c; }
+.cover-card-val.viirs { color:#5fd3a5; }
+.cover-card-val.forecast { color:#b79ced; }
+.cover-card-lbl { font-size:7.4pt; line-height:1.28; color:#c5d3ca; }
+.cover-fig { background:#ffffff; border-radius:2.5mm; padding:5pt 6pt 4pt; border:1px solid rgba(155,176,163,0.35); margin:2pt 0 8pt; }
+.cover-fig img { max-height:46mm; width:100%; object-fit:contain; }
+.cover-fig-cap { font-size:7.3pt; color:#334139; margin-top:3pt; text-align:center; }
+.cover-team { display:grid; grid-template-columns:repeat(2,1fr); gap:5pt 14pt; background:rgba(15,27,22,0.75); border:1px solid rgba(155,176,163,0.24); border-radius:3mm; padding:8pt 10pt; margin-bottom:8pt; }
+.cover-member { font-size:8.2pt; line-height:1.32; color:#c5d3ca; }
+.cover-member strong { color:#ffffff; font-size:9pt; display:block; }
+.cover-foot { display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(155,176,163,0.28); padding-top:7pt; font-size:7.8pt; color:#9bb0a3; line-height:1.35; }
+.cover-foot a { color:#58b8d8; }
+@media screen {body {padding:30px 12px;} .page {margin-top:45px;} .cover {height:auto; min-height:252mm; margin-bottom:45px;}}
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){renderMathInElement(document.body,{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:true});document.documentElement.dataset.math='ready';});</script>
 </head><body><main>
+<section class="cover" aria-label="Report cover">
+  <div>
+    <div class="cover-top">
+      <span class="cover-brand">
+        <svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true">
+          <rect width="28" height="28" rx="7" fill="#15241d" stroke="#31503f"/>
+          <path d="M14.6 5.5c.4 3.1-1.8 4.8-2.6 7.1-.6 1.7.2 3.3 1.9 3.6-.9-1.4-.3-2.9 1.2-3.9 1.4 1.9 2.3 3.7 1.7 5.8-.5 1.9-2.3 3.4-4.5 3.4-2.8 0-4.9-2.2-4.6-5.2.3-3.4 3.8-5.7 6.9-10.8Z" fill="#ff6a1a"/>
+          <circle cx="19.5" cy="9" r="2" fill="#5fd3a5"/>
+        </svg>
+        Elis · FireChronos Peru
+      </span>
+      <span>NASA Space Apps Challenge 2026 · Technical Report</span>
+    </div>
+    <div class="cover-hero">
+      <span class="cover-kicker">Challenge: Harmonization of MODIS and VIIRS Hot Spots</span>
+      <h1 class="cover-title">Elis: Harmonizing the Fire Record of Peru, 2000–2026</h1>
+      <p class="cover-sub">A 27-year comparable record of active fire in 0.1° fire cell-days using simultaneous-overpass Chapman capture–recapture, 500-replicate block-bootstrap intervals, hierarchical three-list dependence diagnostics, post-MODIS continuity emulation, and verified AI decision support.</p>
+    </div>
+    <div class="cover-metrics">
+      <div class="cover-card">
+        <div class="cover-card-val">3.77%</div>
+        <div class="cover-card-lbl">Held-out annual Aqua vs. VIIRS reconstruction error (2021–2024), down from 333.90% naive sum</div>
+      </div>
+      <div class="cover-card">
+        <div class="cover-card-val viirs">r = 0.748</div>
+        <div class="cover-card-lbl">External annual correlation with independent MapBiomas Fuego Landsat burned area (2001–2025)</div>
+      </div>
+      <div class="cover-card">
+        <div class="cover-card-val accent">AUC 0.756</div>
+        <div class="cover-card-lbl">Post-MODIS VIIRS→Aqua continuity emulator accuracy (0.4% pre-drift annual bias, 2013–2022)</div>
+      </div>
+      <div class="cover-card">
+        <div class="cover-card-val forecast">RPSS 0.426</div>
+        <div class="cover-card-lbl">National 1-month-lead seasonal forecast skill over climatology (Aug–Oct 2026: 24,392 vs. 22,955 observed)</div>
+      </div>
+    </div>
+    <div class="cover-fig">
+      <img src="figures/record.svg" alt="Preview of raw detections versus harmonized fire cell-days in Peru, 2003 to 2025">
+      <div class="cover-fig-cap">Monthly raw satellite detections (top) vs. harmonized fire cell-days with 90% confidence intervals (bottom) across the 2012 VIIRS transition in Peru.</div>
+    </div>
+  </div>
+  <div>
+    <div class="cover-team">
+      <div class="cover-member"><strong>Piero Pérez</strong>Methods, Capture–Recapture Calibration, Validation &amp; Seasonal Forecasting</div>
+      <div class="cover-member"><strong>Jossep Hurtado</strong>FIRMS Satellite Data Engineering, DuckDB Pipeline &amp; Public API</div>
+      <div class="cover-member"><strong>Samuel Ortega</strong>Cartographic Interface, 3D Relief Visualization &amp; Interaction Design</div>
+      <div class="cover-member"><strong>Valentino Llamocca</strong>Ask Elis AI Agent, 40s Mission HUD &amp; Deterministic Figure Verification</div>
+    </div>
+    <div class="cover-foot">
+      <div>
+        <strong>Team Log N + 1 · Lima, Peru</strong><br>
+        Unit of analysis: <em>0.1° × 0.1° (~11 km) fire cell-days</em> with 90% ranges · Snapshot: 15 November 2026
+      </div>
+      <div style="text-align:right">
+        Live App: <a href="https://elis-peru.vercel.app">elis-peru.vercel.app</a><br>
+        Repository: <a href="https://github.com/piales00/Elis">github.com/piales00/Elis</a>
+      </div>
+    </div>
+  </div>
+</section>
 <header><p class="meta">NASA Space Apps 2026 · Harmonization of MODIS and VIIRS Hot Spots<br>Technical research article · Data snapshot: 15 November 2026 · Not peer reviewed</p>
 <h1>Elis: Harmonizing the Fire Record of Peru, <span style="white-space:nowrap">2000–2026</span></h1>
 <p class="authors">Piero Pérez, Jossep Hurtado, Samuel Ortega, Valentino Llamocca</p><p>Team Log N + 1 · Peru</p></header>
@@ -155,9 +239,9 @@ main { max-width:172mm; margin:auto; } h1 { font-size:24pt; line-height:1.15; ma
 <p>Seasonal outlooks add useful probabilistic context where they outperform climatology, with a fallback elsewhere. Dependence, shared omissions, early bridging, Aqua drift and provisional NRT data remain material limitations. The priority for subsequent validation is genuinely prospective scoring, rolling-origin seasonal evaluation and additional observations that constrain common sensor failures.</p>
 <h2>Data and code availability</h2>
 <p>Source code and processed products: <a href="https://github.com/piales00/Elis">github.com/piales00/Elis</a>. Application: <a href="https://elis-peru.vercel.app">elis-peru.vercel.app</a>. API: <a href="https://elis-api.onrender.com">elis-api.onrender.com</a>. Public live feed: <a href="https://github.com/piales00/elis-live">github.com/piales00/elis-live</a>. Raw FIRMS downloads and intermediate model artifacts are not versioned. The API serves precomputed products; it does not rerun the heavy estimation on each request.</p>
-<p>Numerical provenance is attached to visible HTML values and checked by <code>scripts/check_report_figures.py</code> against the processed JSON. Seasonal reconstruction ranges are exported from aligned intermediate replicates to <code>docs/report/figures/season-ranges.json</code>, with source and series hashes. Regenerate this export with <code>--aggregate-ranges</code> when intermediates are available. Small exports of intermediate products used by Figures 2, 3, 5 and 10 and Appendix Tables A2–A4 are stored in <code>docs/report/figures/report-exports.json</code> with SHA-256 hashes of their sources. Figures are reproducible with <code>scripts/build_report_figures.py</code> (matplotlib); commands are listed in Appendix A.1. Technical notes 01–07 document experimental analyses whose full intermediates are not included in the public snapshot.</p>
+<p>Numerical provenance is attached to visible HTML values and checked by <code>scripts/check_report_figures.py</code> against the processed JSON. Seasonal reconstruction ranges are exported from aligned intermediate replicates to <code>docs/report/figures/season-ranges.json</code>, with source and series hashes. Regenerate this export with <code>--aggregate-ranges</code> when intermediates are available. Small exports of intermediate products used by Figures 2, 3, 5 and 10 and Appendix Tables A2–A4 are stored in <code>docs/report/figures/report-exports.json</code> with SHA-256 hashes of their sources. Figures are reproducible with <code>scripts/build_report_figures.py</code> (matplotlib); commands are listed in Appendix A.1. Technical notes 01–08 document experimental analyses and the Ask Elis assistant architecture (<code>docs/methods/08-elis-assistant-and-hud.md</code>).</p>
 <h2>Use of AI tools</h2>
-<p>AI assistants supported programming and manuscript drafting. The authors remain responsible for the methods, numerical checks and interpretation. The application assistant, Ask Elis, uses Google Gemini with tools over processed data; figures are verified against the processed data through tool-result checks. This verification can flag unsupported numbers but does not guarantee that generated interpretations are correct.</p>
+<p>AI assistants supported programming and manuscript drafting. The authors remain responsible for the methods, numerical checks and interpretation. The application assistant, Ask Elis, uses Google Gemini (<code>gemini-3.1-flash-lite</code> with automatic retry/backoff, <code>gemini-3.5-flash-lite</code> model cascade, and deterministic offline fallback to <code>chat-presets.json</code>) with five read-only tools over processed data and a 40-second guided Mission Control HUD; every figure is verified against the processed data through <code>verify_figures()</code> tool-result checks. This verification can flag unsupported numbers but does not guarantee that generated interpretations are correct.</p>
 <h2>References</h2><div class="refs">
 <p>Alencar, A. A. C., Arruda, V. L. S., da Silva, W. V., et al. (2022). Long-term Landsat-based monthly burned area dataset for the Brazilian biomes using deep learning. <em>Remote Sensing, 14</em>, 2510. <a href="https://doi.org/10.3390/rs14112510">https://doi.org/10.3390/rs14112510</a>.</p>
 <p>Andela, N., et al. (2019). The Global Fire Atlas of individual fire size, duration, speed and direction. <em>Earth System Science Data, 11</em>, 529–552. <a href="https://essd.copernicus.org/articles/11/529/2019/">https://essd.copernicus.org/articles/11/529/2019/</a>.</p>

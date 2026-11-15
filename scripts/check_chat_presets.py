@@ -11,7 +11,7 @@ def build():
     sources = {}
     datasets = {}
     for name in ('series', 'forecast', 'methodology', 'continuity'):
-        content = (ROOT / f'data/processed/{name}.json').read_bytes()
+        content = (ROOT / f'data/processed/{name}.json').read_bytes().replace(b'\r\n', b'\n')
         sources[name] = hashlib.sha256(content).hexdigest()
         datasets[name] = json.loads(content)
     series = datasets['series']
