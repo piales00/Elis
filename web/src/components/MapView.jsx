@@ -5,6 +5,7 @@ import { useI18n } from "../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../lib/hooks.js";
 import { useGibsLayers } from "./imagery/useGibsLayers.js";
 import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, mapPadding, tuneBasemap } from "../lib/mapStyle.js";
+import { containsPoint, setRelief } from "../lib/terrain.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -21,6 +22,57 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const popupRef = useRef(null);
   const live = useRef({});
   const [ready, setReady] = useState(false);
+  const [terrain, setTerrain] = useState(false);
+  const [drag, setDrag] = useState(null);
+  const dragRef = useRef(null);
+  const terrainRef = useRef(false);
+
+  const changeTerrain = (enabled, move = true) => {
+    const map = mapRef.current;
+    if (!map?.getLayer("country-fill")) return;
+    setRelief(map, enabled);
+    terrainRef.current = enabled;
+    setTerrain(enabled);
+    map.doubleClickZoom[enabled ? "disable" : "enable"]();
+    if (move) {
+      const camera = { pitch: enabled ? 60 : 0 };
+      if (prefersReducedMotion()) map.jumpTo(camera);
+      else map.easeTo({ ...camera, duration: 700 });
+    }
+  };
+
+  const flyHere = (point) => {
+    const map = mapRef.current;
+    const country = live.current.regions?.features.find((f) => f.properties.id === "peru");
+    if (!map || !containsPoint(country, point)) return;
+    changeTerrain(true, false);
+    popupRef.current?.remove();
+    const camera = { center: point, zoom: 10, pitch: 65, bearing: 15, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
+    if (prefersReducedMotion()) map.jumpTo(camera);
+    else map.flyTo({ ...camera, duration: 1800 });
+  };
+
+  const resetView = () => {
+    const map = mapRef.current;
+    const country = live.current.regions?.features.find((f) => f.properties.id === "peru");
+    if (!map || !country) return;
+    changeTerrain(false, false);
+    popupRef.current?.remove();
+    const bounds = featureBounds(country);
+    const options = { padding: fill ? mapPadding(map) : 32, pitch: 0, bearing: 0 };
+    if (prefersReducedMotion()) map.jumpTo({ ...map.cameraForBounds(bounds, options), ...options });
+    else map.fitBounds(bounds, { ...options, duration: 700 });
+  };
+
+  const finishDrop = (e) => {
+    if (dragRef.current !== e.pointerId) return;
+    dragRef.current = null;
+    setDrag(null);
+    const map = mapRef.current;
+    const box = map.getContainer().getBoundingClientRect();
+    if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) return;
+    flyHere(map.unproject([e.clientX - box.left, e.clientY - box.top]));
+  };
 
   live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady, focus };
   const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
@@ -40,6 +92,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: BASE_STYLE_URL,
+      maxPitch: 75,
       bounds: featureBounds(regions.features.find((f) => f.properties.id === "peru") ?? regions.features[0]),
       fitBoundsOptions: { padding: 32 },
       attributionControl: { compact: true },
@@ -122,7 +175,13 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       live.current.onReady?.(map);
     });
 
-    const showCell = (e) => {
+    map.on("resetview", resetView);
+    map.on("dblclick", (e) => {
+      if (!terrainRef.current) return;
+      flyHere(e.lngLat);
+    });
+
+    const showCell = (e, persistent = false) => {
       const f = e.features?.[0];
       if (!f) return;
       const { t: tt, formatNumber: fmt } = live.current;
@@ -140,16 +199,24 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         row.textContent = `${tt(`metric.${key}`)}: ${raw === null || raw === undefined || raw === "null" ? tt("series.na") : fmt(raw)}`;
         node.append(row);
       }
+      if (persistent) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "fc-btn mt-2";
+        button.textContent = tt("map.flyHere");
+        button.addEventListener("click", () => flyHere({ lng: Number(p.lon), lat: Number(p.lat) }));
+        node.append(button);
+      }
       popupRef.current.setLngLat(e.lngLat).setDOMContent(node).addTo(map);
     };
 
     map.on("mousemove", "cells-fill", (e) => {
       map.getCanvas().style.cursor = "pointer";
-      showCell(e);
+      if (!popupRef.current.isOpen() || !popupRef.current.getElement()?.querySelector("button")) showCell(e);
     });
     map.on("mouseleave", "cells-fill", () => {
       map.getCanvas().style.cursor = "";
-      popupRef.current.remove();
+      if (!popupRef.current.getElement()?.querySelector("button")) popupRef.current.remove();
     });
     map.on("mouseenter", "regions-fill", () => {
       map.getCanvas().style.cursor = "pointer";
@@ -160,7 +227,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     map.on("click", (e) => {
       const cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
       if (cell.length) {
-        showCell({ features: cell, lngLat: e.lngLat });
+        showCell({ features: cell, lngLat: e.lngLat }, true);
         live.current.onCellSelect?.(cell[0].properties);
         return;
       }
@@ -168,7 +235,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       const hit =
         map.queryRenderedFeatures(e.point, { layers: ["regions-fill"] })[0] ??
         map.queryRenderedFeatures(e.point, { layers: ["country-fill"] })[0];
-      if (hit) live.current.onRegionSelect(hit.properties.id);
+      if (hit && !terrainRef.current) live.current.onRegionSelect(hit.properties.id);
     });
 
     return () => {
@@ -237,11 +304,48 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       />
       {!fill && <button
         type="button"
-        onClick={() => fit(prefersReducedMotion() ? 0 : 600)}
+        onClick={resetView}
         className="btn-icon absolute left-3 top-3 font-medium"
       >
         {t("map.reset")}
       </button>}
+      <div className={`absolute right-3 z-[6] flex flex-col items-end gap-2 ${fill ? "top-36" : "top-24"}`}>
+        <button type="button" disabled={!ready} aria-pressed={terrain} aria-label={t("map.terrain")} title={t("map.terrain")} onClick={() => changeTerrain(!terrainRef.current)} className={`fc-float fc-press grid size-11 place-items-center rounded-xl text-sm font-bold ${terrain ? "!border-est !text-est" : ""}`}>
+          3D
+        </button>
+        <button
+          type="button"
+          disabled={!ready}
+          aria-label={t("map.drop")}
+          aria-describedby="explore-drop-help"
+          title={t("map.drop")}
+          className="fc-float grid size-11 touch-none select-none place-items-center rounded-xl text-est cursor-grab active:cursor-grabbing"
+          onPointerDown={(e) => {
+            if (!e.isPrimary || e.button !== 0) return;
+            e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            dragRef.current = e.pointerId;
+            setDrag({ x: e.clientX, y: e.clientY });
+          }}
+          onPointerMove={(e) => { if (dragRef.current === e.pointerId) setDrag({ x: e.clientX, y: e.clientY }); }}
+          onPointerUp={finishDrop}
+          onPointerCancel={() => { dragRef.current = null; setDrag(null); }}
+          onLostPointerCapture={() => { dragRef.current = null; setDrag(null); }}
+          onKeyDown={(e) => { if (e.key === "Escape") { dragRef.current = null; setDrag(null); } }}
+          onClick={(e) => { if (e.detail === 0) flyHere(mapRef.current.getCenter()); }}
+        >
+          <svg aria-hidden="true" viewBox="0 0 32 40" width="24" height="30" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 37S4 23 4 15a12 12 0 0 1 24 0c0 8-12 22-12 22Z" fill="var(--surface)" />
+            <path d="m10 20 6-12 6 12-6-3-6 3Z" fill="currentColor" strokeLinejoin="round" />
+            <circle cx="16" cy="26" r="1" />
+          </svg>
+        </button>
+        <span className="fc-float max-w-32 rounded-lg px-2 py-1 text-right text-xs">{t("map.drop")}</span>
+      </div>
+      <span id="explore-drop-help" className="sr-only">{t("map.dropHelp")}</span>
+      {drag && <div aria-hidden="true" className="pointer-events-none fixed z-[100] text-est" style={{ left: drag.x, top: drag.y, transform: "translate(-50%, -100%)" }}>
+        <svg viewBox="0 0 32 40" width="32" height="40" fill="var(--surface)" stroke="currentColor" strokeWidth="2"><path d="M16 37S4 23 4 15a12 12 0 0 1 24 0c0 8-12 22-12 22Z" /><path d="m10 20 6-12 6 12-6-3-6 3Z" fill="currentColor" /></svg>
+      </div>}
       {overZoom && (
         <p role="note" className="pointer-events-none absolute bottom-16 right-3 m-0 max-w-[16rem] rounded-xl border border-line bg-bg/90 px-3 py-2 text-xs">
           {t("imagery.zoomNote", { meters: imagery.raster.pixel ?? 375 })}
