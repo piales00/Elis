@@ -103,7 +103,7 @@ export default function ElisSpotlight({
 
   const missionChart = useMemo(() => {
     if (customTurn?.chart) return customTurn.chart;
-    if (mission.id === "artifact") return { ...saved.presets.jump_2012.chart, chart: "raw_vs_corrected" };
+    if (mission.id === "artifact") return { ...saved.presets.jump_2012.chart, chart: "raw_vs_corrected", granularity: "month" };
     if (mission.id === "amazon3d") return saved.presets.worst_amazon.chart;
     if (mission.id === "earlywarning") return saved.presets.forecast_next.chart;
     if (mission.id === "disagreement") return saved.continuity.chart;

@@ -14,7 +14,7 @@ export default function ChatChart({ chartData, onSyncView }) {
   }
 
   const { chart, title, unit = "fire cell-days", region, highlight_year, series } = chartData;
-  const isMonthly = chart === "year_vs_history" || chart === "forecast";
+  const isMonthly = chart === "year_vs_history" || chart === "forecast" || chartData.granularity === "month";
   const showRawOverlay = chart === "raw_vs_corrected";
   const monthNames = locale === "es" ? MONTH_SHORT_ES : MONTH_SHORT_EN;
 
