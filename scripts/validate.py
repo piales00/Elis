@@ -86,12 +86,17 @@ def main():
                      'modis_equiv_emulated', 'overpass', 'cells'):
             load_table(con, name)
         con.execute('CREATE TEMP TABLE series AS SELECT * FROM read_json_auto(?)', [str(config.PROCESSED_DIR / 'series.json')])
+        con.execute('CREATE TEMP TABLE bias_factors (region VARCHAR, month INTEGER, factor DOUBLE)')
+        con.executemany('INSERT INTO bias_factors VALUES (?,?,?)',
+                        [(r['region'], r['month'], r['factor']) for r in sensitivity['aqua_bias']['factors']])
         con.execute('''CREATE TEMP TABLE comparison AS
-            SELECT region,year,month,estimated_from_aqua AS predicted,estimated AS actual
-            FROM capture_segments WHERE mode='both'
+            WITH corrected AS (
+                SELECT region,year,month,estimated_from_aqua*factor AS predicted,estimated AS actual
+                FROM capture_segments JOIN bias_factors USING(region,month) WHERE mode='both'
+            )
+            SELECT * FROM corrected
             UNION ALL
-            SELECT ?,year,month,sum(estimated_from_aqua),sum(estimated)
-            FROM capture_segments WHERE mode='both' GROUP BY year,month
+            SELECT ?,year,month,sum(predicted),sum(actual) FROM corrected GROUP BY year,month
         ''', [config.NATIONAL])
         errors = records(con, '''
             SELECT region,avg(abs(predicted/actual-1))*100 AS error_pct_method
@@ -172,7 +177,7 @@ def main():
             'definitions': {
                 'chapman_bias': 'Synthetic correlated-detection test; not an empirical correction to Peru.',
                 'aqua_overpass': 'Median daytime cell-day local solar time; minutes after local midnight.',
-                'structural_error': 'Uncentered exp(log(predicted/reference)) residuals, sampled in whole year blocks shared across all regions and months. Aqua: test years; Terra: backcast years. Applied to pre-VIIRS years only, including mixed Terra/Aqua months. Zero predictions retain the limiting factor zero; no pseudocount. Interval endpoints include the unchanged point estimate.',
+                'structural_error': 'exp(log(predicted/reference)) residuals, sampled in whole year blocks shared across all regions and months. Aqua: calibration years 2013-2020 after the Aqua bias correction, rescaled so each region sums to its reference (test years 2021-2024 stay held out); Terra: uncentered backcast years. Applied to pre-VIIRS years only, including mixed Terra/Aqua months. Zero predictions retain the limiting factor zero; no pseudocount. Interval endpoints include the unchanged point estimate.',
                 'annual_range': 'Quantiles after summing aligned monthly and regional replicates; never a sum of interval endpoints.',
                 'validation': 'Aqua/VIIRS comparison uses identical jointly available days. Naive error compares raw detections with cell-day estimates and is not a same-unit accuracy metric.',
                 'periods': 'Monthly dominant reference; July of the Aqua start year includes a short Terra bridge. Availability substitutions remain in capture_segments.parquet.',

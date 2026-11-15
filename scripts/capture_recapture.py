@@ -55,6 +55,7 @@ if __name__ == "__main__":
     import numpy as np
     import pyarrow as pa
 
+    import aqua_bias
     import config
 
     started = perf_counter()
@@ -307,14 +308,26 @@ if __name__ == "__main__":
             return nv / probability["p2"], nv / p2, source
         if mode == "noaa20":
             return nn * noaa20_index[region]["ratio"] / probability["p2"], nn * noaa20_draws[region] / p2, "viirs_only"
+        factor = bias_factors[(region, month)] if year < config.VIIRS_START.year else 1.0
         if mode == "aqua":
-            return na / probability["p1"], na / p1, "modis_only"
-        return (nt * bridge[(region, month)]["ratio"] / probability["p1"],
-                nt * bridge_draws[(region, month)] / p1, "modis_only")
+            return factor * na / probability["p1"], factor * na / p1, "modis_only"
+        return (factor * nt * bridge[(region, month)]["ratio"] / probability["p1"],
+                factor * nt * bridge_draws[(region, month)] / p1, "modis_only")
 
     following = config.LAST_DATA_DATE + timedelta(days=1)
     partial = config.LAST_DATA_DATE if following.month == config.LAST_DATA_DATE.month else None
     segment_rows = segment_counts()
+    bias_monthly = {}
+    for region, year, month, mode, days, excluded_days, na, nv, nt, m, nn in segment_rows:
+        if mode == "both":
+            probability = record_index[(region, month, "aqua_snpp")]
+            totals = bias_monthly.setdefault((region, year, month), [0.0, 0.0])
+            totals[0] += na / probability["p1"]
+            totals[1] += nv / probability["p2"]
+    bias_rows = [dict(region=r, year=y, month=mo, predicted=p, actual=a)
+                 for (r, y, mo), (p, a) in sorted(bias_monthly.items())]
+    bias_summary = aqua_bias.measure(bias_rows, np.random.default_rng(config.SEED))
+    bias_factors = aqua_bias.correction_factors(bias_summary)
     dropped_months = set() if noaa20_stable else {(y, mo) for _, y, mo, mode, *_ in segment_rows if mode == "noaa20"}
     estimates, replicas, segments = {}, {}, []
     for region, year, month, mode, days, excluded_days, na, nv, nt, m, nn in segment_rows:
@@ -497,7 +510,7 @@ if __name__ == "__main__":
                     GROUP BY c.year, c.month ORDER BY c.year, c.month
                 """, [region, *config.TERRA_BACKCAST_TEST_YEARS]).fetchall()]
         backcast.append(dict(region=region, **error_summary(rows)))
-    diagnostics = []
+    diagnostics, corrected_diagnostics = [], []
     for start, end in (config.TEST_YEARS, *config.TEST_SPLIT_DRIFT):
         for region in config.REGIONS:
             rows = []
@@ -506,6 +519,14 @@ if __name__ == "__main__":
                     rows.append(dict(year=row["year"], month=row["month"],
                                      predicted=row["estimated_from_aqua"], actual=row["estimated"]))
             diagnostics.append(dict(region=region, start_year=start, end_year=end, **error_summary(rows)))
+            corrected_diagnostics.append(dict(region=region, start_year=start, end_year=end,
+                **error_summary(aqua_bias.corrected([dict(r, region=region) for r in rows], bias_factors))))
+    calibration_diagnostics = []
+    for region in config.REGIONS:
+        rows = [dict(r) for r in bias_rows if r["region"] == region
+                and config.AQUA_BIAS_YEARS[0] <= r["year"] <= config.AQUA_BIAS_YEARS[1]]
+        calibration_diagnostics.append(dict(region=region, start_year=config.AQUA_BIAS_YEARS[0],
+            end_year=config.AQUA_BIAS_YEARS[1], **error_summary(aqua_bias.corrected(rows, bias_factors))))
 
     periods = [("calibration", *config.CALIBRATION_YEARS),
                ("early_test", *config.TEST_SPLIT_DRIFT[0])]
@@ -603,6 +624,10 @@ if __name__ == "__main__":
         terra_backcast_test_years=config.TERRA_BACKCAST_TEST_YEARS,
         pooling=[r for r in records if r["pooled"] != "none"],
         frp=frp_results, type_sensitivity=type_comparison, test_diagnostics=diagnostics,
+        test_diagnostics_corrected=corrected_diagnostics, calibration_diagnostics=calibration_diagnostics,
+        aqua_bias=dict(years=list(config.AQUA_BIAS_YEARS), high_season=list(config.AQUA_BIAS_HIGH_SEASON),
+                       correction_enabled=config.AQUA_BIAS_CORRECTION, regions=list(bias_summary.values()),
+                       factors=[dict(region=r, month=mo, factor=f) for (r, mo), f in sorted(bias_factors.items())]),
         national_annual=national_annual, year_to_date=year_to_date,
         noaa20_ratio=noaa20_ratio, noaa20_ratio_max_cv=config.N20_RATIO_MAX_CV, noaa20_included=noaa20_stable,
         partial_through=str(partial) if partial else None, partial_window=window_rows,

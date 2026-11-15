@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 
 import config
 from build_series import connect, residual_factors
+import aqua_bias
 
 
 FIELDS = ('region', 'year', 'month', 'raw_modis', 'raw_viirs', 'raw_detections',
@@ -262,3 +263,36 @@ def test_history_and_calibration_exclude_2026():
     assert config.SNPP_END.year in years and min(years) == config.FIRST_YEAR
     ytd = {r['year']: r for r in sensitivity['year_to_date']}
     assert set(ytd) == set(range(config.VIIRS_START.year, config.SNPP_END.year + 1))
+
+
+def test_positive_estimates_lie_inside_their_range_unless_explained(outputs):
+    series, _ = outputs
+    sensitivity = json.loads((config.INTERIM_DIR/'sensitivity.json').read_text())
+    uncorrected = {r['region'] for r in sensitivity['aqua_bias']['regions'] if not r['significant']}
+    edges = {(r['region'], r['year'], r['month']) for r in series
+             if r['estimated'] > 0 and r['est_high'] > r['est_low']
+             and r['estimated'] in (r['est_low'], r['est_high'])}
+    assert all(y < config.VIIRS_START.year for _, y, _ in edges)
+    regional = {(y, m) for r, y, m in edges if r != config.NATIONAL}
+    for region, year, month in edges:
+        if year <= config.LOW_CONFIDENCE_UNTIL.year:
+            continue
+        if region == config.NATIONAL:
+            assert (year, month) in regional
+        else:
+            assert region in uncorrected and aqua_bias.season_of(month) == 'low', (region, year, month)
+
+
+def test_aqua_bias_measured_on_calibration_years_only():
+    sensitivity = json.loads((config.INTERIM_DIR/'sensitivity.json').read_text())
+    bias = sensitivity['aqua_bias']
+    assert bias['years'] == list(config.AQUA_BIAS_YEARS) == list(config.CALIBRATION_YEARS)
+    assert {r['region'] for r in bias['regions']} == set(config.REGIONS)
+    for row in bias['regions']:
+        assert {a['year'] for a in row['annual']} == set(range(config.AQUA_BIAS_YEARS[0], config.AQUA_BIAS_YEARS[1] + 1))
+        assert row['bias_low'] <= row['bias'] <= row['bias_high']
+    assert {(f['region'], f['month']) for f in bias['factors']} == {(r, m) for r in config.REGIONS for m in range(1, 13)}
+    for start, end in [config.TEST_YEARS, *config.TEST_SPLIT_DRIFT]:
+        before = {r['region']: r for r in sensitivity['test_diagnostics'] if (r['start_year'], r['end_year']) == (start, end)}
+        after = {r['region']: r for r in sensitivity['test_diagnostics_corrected'] if (r['start_year'], r['end_year']) == (start, end)}
+        assert set(before) == set(after) == set(config.REGIONS)

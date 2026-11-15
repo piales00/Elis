@@ -34,13 +34,20 @@ def write_json(path, value):
     path.write_text(json.dumps(value, separators=(',', ':'), allow_nan=False) + '\n')
 
 
+def centered(region):
+    predicted = sum(r['predicted'] for r in region['monthly'])
+    actual = sum(r['actual'] for r in region['monthly'])
+    scale = actual / predicted
+    return dict(region, monthly=[dict(r, predicted=r['predicted'] * scale) for r in region['monthly']])
+
+
 def residual_factors(sensitivity, sensor):
     source = config.STRUCTURAL_ERROR_SOURCE[sensor]
     if source == 'terra_backcast':
         rows = sensitivity['terra_backcast']
-    elif source == 'aqua_vs_viirs_test':
-        rows = [r for r in sensitivity['test_diagnostics']
-                if (r['start_year'], r['end_year']) == config.TEST_YEARS]
+    elif source == 'aqua_vs_viirs_calibration':
+        rows = [centered(r) for r in sensitivity['calibration_diagnostics']
+                if (r['start_year'], r['end_year']) == config.AQUA_BIAS_YEARS]
     else:
         raise ValueError(f'Unknown structural error source: {source}')
     factors = {}
@@ -71,6 +78,7 @@ def partial_history(con):
 def build_replicates(con, sensitivity):
     rng = np.random.default_rng(config.SEED)
     factors = {sensor: residual_factors(sensitivity, sensor) for sensor in ('aqua', 'terra')}
+    bias = {(r['region'], r['month']): r['factor'] for r in sensitivity['aqua_bias']['factors']}
     draws = {}
     for row in records(con, 'SELECT * FROM estimate_replicates WHERE region <> ? ORDER BY region,year,month,replicate', [config.NATIONAL]):
         key = (row['region'], row['year'], row['month'])
@@ -88,6 +96,7 @@ def build_replicates(con, sensitivity):
     for row in records(con, "SELECT * FROM capture_segments WHERE year < ? AND mode IN ('aqua','terra') ORDER BY year,month,region,mode", [config.VIIRS_START.year]):
         region, year, month, sensor = (row[k] for k in ('region', 'year', 'month', 'mode'))
         baseline = row['n1'] / probabilities[(region, month)] if sensor == 'aqua' else row['n_terra'] * bridges[(region, month)] / probabilities[(region, month)]
+        baseline = baseline * bias[(region, month)]
         factor = np.array([factors[sensor][0][(region, int(y), month)] for y in selected[(year, sensor)]])
         draws[(region, year, month)] += baseline * (factor - 1)
     for year, month in sorted({(y, m) for _, y, m in draws}):
