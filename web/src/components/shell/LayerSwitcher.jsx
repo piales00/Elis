@@ -80,7 +80,7 @@ export default function LayerSwitcher(props) {
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
-        className="fc-float fc-press flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold xl:hidden"
+        className="fc-float fc-press flex h-10 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold xl:hidden"
       >
         <Icon name="layers" size={18} />
         {t(`layers.${props.layer}`)}

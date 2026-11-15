@@ -196,9 +196,11 @@ export default function ExploreView({
             </fieldset>
           )}
           {cellView.gapKey && <p className="fc-note m-0">{t(cellView.gapKey)}</p>}
-          <button type="button" className="fc-btn justify-self-start" onClick={img.showImagery}>
-            {t("explore.toImagery", { date: img.dateLabel })}
-          </button>
+          {row && !row.is_forecast && (
+            <button type="button" className="fc-btn justify-self-start" onClick={img.showImagery}>
+              {t("explore.toImagery", { date: img.dateLabel })}
+            </button>
+          )}
           <MapCellTable cells={cellView.cells} metric={cellView.metric} />
         </>
       )}

@@ -23,6 +23,7 @@ import CommandPalette from "./components/shell/CommandPalette.jsx";
 import TourCard, { TOUR_STEPS } from "./components/shell/Tour.jsx";
 import Icon from "./components/shell/icons.jsx";
 import MapBoundary from "./components/shell/MapBoundary.jsx";
+import { useLabelContrast } from "./components/shell/useLabelContrast.js";
 import { useOutlookLayer } from "./components/shell/useOutlookLayer.js";
 import ExploreView from "./components/shell/views/ExploreView.jsx";
 import CompareView from "./components/shell/views/CompareView.jsx";
@@ -142,6 +143,8 @@ export default function App() {
     const id = requestAnimationFrame(() => fitTo(deptFeature));
     return () => cancelAnimationFrame(id);
   }, [outlook, deptFeature, fitTo]);
+
+  useLabelContrast(mapInstance, imagery && Boolean(img.raster));
 
   useOutlookLayer(mapInstance, {
     departments,
@@ -395,7 +398,7 @@ export default function App() {
         >
           <span aria-hidden="true" />
         </button>
-        <header className="fc-panel-head">
+        <header className={`fc-panel-head ${view === "ask" ? "lg:hidden" : ""}`}>
           <div className="min-w-0">
             <h2 id="fc-panel-title" className="m-0 font-head text-base font-extrabold">
               {panelTitle}
@@ -484,7 +487,7 @@ export default function App() {
               <Icon name="fit" size={17} />
             </button>
             {!tour && (
-              <button type="button" className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
+              <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
                 <Icon name="tour" size={17} />
                 <span className="hidden sm:inline">{t("tour.short")}</span>
               </button>

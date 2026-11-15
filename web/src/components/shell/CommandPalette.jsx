@@ -70,7 +70,7 @@ export default function CommandPalette({ open, onClose, items, yearItem }) {
             aria-controls="fc-palette-list"
             aria-activedescendant={results[cursor] ? `fc-cmd-${cursor}` : undefined}
             placeholder={t("palette.placeholder")}
-            className="h-12 min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-muted"
+            className="h-12 min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-muted focus-visible:outline-none"
           />
           <kbd className="fc-kbd">Esc</kbd>
         </div>

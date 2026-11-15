@@ -322,6 +322,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+@layer components {
 .fc-app {
   --rail-w: 76px;
   height: 100dvh;
@@ -454,25 +455,6 @@ body {
   overscroll-behavior: contain;
   padding: 18px 20px 28px;
 }
-.fc-panel .card,
-.fc-panel .card-soft {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-}
-.fc-panel .card.mt-6,
-.fc-panel section.mt-6 {
-  margin-top: 8px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-.fc-panel .eyebrow {
-  color: var(--muted);
-  letter-spacing: 0.02em;
-  text-transform: none;
-  font-weight: 600;
-}
 .fc-h {
   margin: 0 0 6px;
   padding: 0;
@@ -532,10 +514,10 @@ body {
 .fc-overlay-tour {
   position: absolute;
   left: 0;
-  right: 0;
+  right: 56px;
   bottom: 16px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   pointer-events: none;
   z-index: 6;
 }
@@ -889,6 +871,11 @@ body {
   .fc-overlay-bottom .fc-legend,
   .fc-overlay-bottom > div > div {
     font-size: 11px;
+    padding: 6px 8px;
+  }
+  .fc-overlay-bottom p.text-muted,
+  .fc-overlay-bottom p.hidden {
+    display: none;
   }
   .fc-map-message {
     top: 56px;
@@ -896,6 +883,8 @@ body {
   }
   .fc-overlay-tour {
     bottom: 8px;
+    right: 0;
+    justify-content: center;
   }
 }
 
@@ -908,4 +897,27 @@ body {
   .fc-tour-progress {
     display: none;
   }
+}
+}
+
+@layer utilities {
+.fc-panel .card,
+.fc-panel .card-soft {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.fc-panel .card.mt-6,
+.fc-panel section.mt-6 {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.fc-panel .eyebrow {
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-weight: 600;
+}
 }
