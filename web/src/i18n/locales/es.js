@@ -7,7 +7,7 @@ export default {
   "tour.hud.title": "Deja que Elis guíe el mapa",
   "tour.terrain.text": "Activa 3D para ver el relieve. Arrastra el pin Arrastra para explorar al mapa para volar a un lugar.",
   "tour.terrain.title": "Explora en 3D",
-  "tour.imagery.text": "En pantallas pequeñas abre el menú de capas: Color real, Térmico, Luces nocturnas y Cicatrices. Calor añade intensidad de detecciones.",
+  "tour.imagery.text": "Mira cómo el mapa cambia entre Celdas de actividad, Térmico, Color real y Cicatrices. Luces nocturnas y Calor están en el menú de capas, que se abre desde el mapa en pantallas pequeñas.",
   "tour.imagery.title": "Mira el contexto satelital",
   "tour.skip": "Omitir",
   "chat.preset.aboutElis": "¿Qué es Elis y qué hace esta app?",

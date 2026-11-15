@@ -283,15 +283,14 @@ export default function App() {
       setSub(DEFAULT_SUB.estimated);
       img.setHeat(false);
       img.clearCell();
+      img.setView("cells");
+      setPeriod({ year: 2024, month: 9 });
       if (s.layer) {
         img.setBase(s.layer);
-        img.setView("imagery");
         img.setDate({ year: 2024, month: 9, day: 10 });
-      } else {
-        img.setView("cells");
-        setPeriod({ year: 2024, month: 9 });
       }
       mapInstance?.fire("resetview");
+      if (s.id === "terrain") mapInstance?.fire("fly3d", { region: "cusco" });
       setLiveOpen(s.live ? "pinned" : null);
     },
     [img, selectRegion, mapInstance],
@@ -307,11 +306,25 @@ export default function App() {
     setSpotlightOpen(false);
     setAutopilot(false);
     setSheetExpanded(false);
+    selectRegion("peru");
+    setUnit("peru");
+    setGroup("estimated");
+    setSub(DEFAULT_SUB.estimated);
     img.setView("cells");
     img.setHeat(false);
+    img.clearCell();
     setRibbonMetric("estimated");
-    mapInstance?.fire("resetview");
-  }, [img, mapInstance]);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        mapInstance?.resize();
+        mapInstance?.fire("resetview", { instant: true });
+        setTimeout(() => {
+          mapInstance?.resize();
+          mapInstance?.fire("resetview", { instant: true });
+        }, 400);
+      }),
+    );
+  }, [img, mapInstance, selectRegion]);
 
   const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
 
@@ -344,6 +357,18 @@ export default function App() {
     if (tourStep === undefined || tourStep === null) return;
     applyStep(tourStep, tourAuto);
   }, [tourStep, tourAuto, tourRun]);
+
+  useEffect(() => {
+    if (tourStep === undefined || tourStep === null) return;
+    if (tourSteps(tourAuto)[tourStep]?.id !== "imagery") return;
+    const sequence = ["cells", "thermal", "truecolor", "swir"];
+    let i = 0;
+    const id = setInterval(() => {
+      i = (i + 1) % sequence.length;
+      setLayer(sequence[i]);
+    }, 1200);
+    return () => clearInterval(id);
+  }, [tourStep, tourAuto, tourRun, setLayer]);
 
   useEffect(() => {
     try {
