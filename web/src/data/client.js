@@ -12,7 +12,10 @@ class ApiDownError extends Error {}
 
 export const API_TIMEOUT_MS = 7000;
 export const API_RETRY_MS = 60000;
+const PROBE_RETRY_MS = 5000;
 const PROBE_TIMEOUT_MS = 45000;
+const BODY_TIMEOUT_MS = 30000;
+const HEALTH_CHECK_MS = 4000;
 const STATIC_BASE = `${import.meta.env.BASE_URL}data/`;
 
 export const staticUrl = (path) => `${STATIC_BASE}${path}`;
@@ -23,6 +26,21 @@ const inflight = new Set();
 let retryTimer = null;
 let mode = recentlyDown() ? "fallback" : "api";
 if (mode === "fallback") scheduleProbe(0);
+else if (!isMock) warmUp();
+
+function warmUp() {
+  fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) }).catch(() => {});
+}
+
+async function apiAlive() {
+  try {
+    const response = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(HEALTH_CHECK_MS) });
+    const body = response.ok ? await response.json() : null;
+    return body?.status === "ok";
+  } catch {
+    return false;
+  }
+}
 
 function recentlyDown() {
   if (isMock) return false;
@@ -64,19 +82,28 @@ function setMode(next) {
   for (const listener of listeners) listener(mode);
 }
 
-async function timedFetch(url, ms) {
+async function timedJson(url, headMs, bodyMs) {
   const controller = new AbortController();
   inflight.add(controller);
-  const timer = setTimeout(() => controller.abort(), ms);
+  let timer = setTimeout(() => controller.abort(), headMs);
   try {
-    return await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    timer = setTimeout(() => controller.abort(), bodyMs);
+    let body = null;
+    try {
+      body = await response.json();
+    } catch (error) {
+      if (controller.signal.aborted) throw error;
+    }
+    return { response, body };
   } finally {
     clearTimeout(timer);
     inflight.delete(controller);
   }
 }
 
-function scheduleProbe(delay = API_RETRY_MS) {
+function scheduleProbe(delay = PROBE_RETRY_MS) {
   clearTimeout(retryTimer);
   retryTimer = setTimeout(async () => {
     try {
@@ -94,33 +121,32 @@ function scheduleProbe(delay = API_RETRY_MS) {
 async function apiJson(path) {
   if (mode === "fallback") throw new ApiDownError("API unavailable");
   const url = `${API_BASE}${path}`;
-  let response;
+  let result;
   try {
-    response = await timedFetch(url, API_TIMEOUT_MS);
+    result = await timedJson(url, API_TIMEOUT_MS, BODY_TIMEOUT_MS);
   } catch {
-    setMode("fallback");
-    throw new ApiDownError(`No response from ${url}`);
+    throw await failure(`No response from ${url}`);
   }
-  let body;
-  try {
-    body = await response.json();
-  } catch {
-    setMode("fallback");
-    throw new ApiDownError(`Invalid response from ${url}`);
+  const { response, body } = result;
+  if (response.ok) {
+    if (body === null) throw await failure(`Invalid response from ${url}`);
+    return body;
   }
-  if (response.ok) return body;
-  if (response.status >= 500 && response.status !== 503) {
-    setMode("fallback");
-    throw new ApiDownError(`${response.status} from ${url}`);
-  }
-  if (!body || typeof body.detail === "undefined") {
-    setMode("fallback");
-    throw new ApiDownError(`${response.status} from ${url}`);
+  if ((response.status >= 500 && response.status !== 503) || !body || typeof body.detail === "undefined") {
+    throw await failure(`${response.status} from ${url}`);
   }
   const error = new Error(`${response.status} ${response.statusText} (${url})`);
   error.status = response.status;
   error.detail = body.detail;
   throw error;
+}
+
+async function failure(message) {
+  const error = new ApiDownError(message);
+  if (mode === "fallback") return error;
+  if (await apiAlive()) return error;
+  setMode("fallback");
+  return error;
 }
 
 async function withFallback(path, fallback) {
