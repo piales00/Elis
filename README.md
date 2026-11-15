@@ -185,7 +185,7 @@ We state them on purpose: a record that hides its limits is not more solid, only
 
 | Member | Role | Area | What they built |
 |---|---|---|---|
-| **Piero** | ![CEO](https://img.shields.io/badge/CEO%20%C2%B7%20CSO-1D4ED8?style=flat-square) | Data science | Model training, methodology, harmonization and validation of the record |
+| **Piero** | ![CEO](https://img.shields.io/badge/CEO%20%C2%B7%20-1D4ED8?style=flat-square) | Data science | Model training, methodology, harmonization and validation of the record |
 | **Jossep** | ![CTO](https://img.shields.io/badge/CTO-15803D?style=flat-square) | Data engineering | FIRMS download and processing, FastAPI endpoints, published files in `data/processed/` |
 | **Samuel** | ![CDO](https://img.shields.io/badge/CDO-7E22CE?style=flat-square) | Design and frontend | Design of the whole project: interface, maps, charts and user experience |
 | **Valentino** | ![CAIO](https://img.shields.io/badge/CAIO-C2410C?style=flat-square) | Conversational AI | Ask Elis chatbot: scientific copilot that answers questions about the record |
