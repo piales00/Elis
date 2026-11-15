@@ -253,6 +253,7 @@ El asistente usa Google Gemini por defecto en Render (`CHAT_PROVIDER=gemini`, mo
 | `GEMINI_API_KEY` | La clave de Google AI Studio. Solo aquí, nunca en Vercel ni en el código |
 | `CHAT_ENABLED` | `1` para encenderlo (`0` lo apaga y la web muestra solo las preguntas de ejemplo) |
 | `CHAT_DAILY_BUDGET_USD` | Tope diario de gasto estimado; por defecto `0.5` |
-| `CHAT_PRICE_INPUT_PER_MTOK`, `CHAT_PRICE_OUTPUT_PER_MTOK` | Precio por millón de tokens del modelo, según la página de precios de Google. Si se dejan vacíos, el control de gasto usa el precio de Claude Opus, que es mucho más alto, y el tope se alcanza antes: es seguro, pero corta el chat pronto |
+| `CHAT_PRICE_INPUT_PER_MTOK` | `0.25` (USD por 1M tokens de entrada en `gemini-3.1-flash-lite`, o `0.30` en `gemini-3.5-flash-lite`) |
+| `CHAT_PRICE_OUTPUT_PER_MTOK` | `1.50` (USD por 1M tokens de salida en `gemini-3.1-flash-lite`, o `2.50` en `gemini-3.5-flash-lite`) |
 
 Además, en la consola de Google AI Studio conviene fijar un límite de uso o de gasto en la propia cuenta.

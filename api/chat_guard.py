@@ -34,6 +34,18 @@ MODEL_PRICING_PER_MTOK: dict[str, dict[str, float]] = {
         "cache_read": 0.01,
         "cache_write": 0.125,
     },
+    "gemini-3.1-flash-lite": {
+        "input": 0.25,
+        "output": 1.50,
+        "cache_read": 0.025,
+        "cache_write": 0.25,
+    },
+    "gemini-3.5-flash-lite": {
+        "input": 0.30,
+        "output": 2.50,
+        "cache_read": 0.03,
+        "cache_write": 0.30,
+    },
 }
 
 
