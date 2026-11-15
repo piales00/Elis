@@ -23,7 +23,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const [ready, setReady] = useState(false);
 
   live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region };
-  useGibsLayers(mapRef.current, ready, imagery);
+  const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
 
   const fit = (duration) => {
     const map = mapRef.current;
@@ -210,6 +210,11 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       >
         {t("map.reset")}
       </button>
+      {overZoom && (
+        <p role="note" className="pointer-events-none absolute bottom-16 right-3 m-0 max-w-[16rem] rounded-xl border border-line bg-bg/90 px-3 py-2 text-xs">
+          {t("imagery.zoomNote", { meters: imagery.raster.pixel ?? 375 })}
+        </p>
+      )}
     </div>
   );
 }
