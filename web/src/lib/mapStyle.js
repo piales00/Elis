@@ -1,28 +1,52 @@
 export const CELL_COLORS = ["#7b3f5e", "#c4503f", "#ee8a3c", "#f7c35a", "#fff1c0"];
 export const CELL_BREAKS = [5, 10, 15, 20];
 export const CELL_OUTLINE_WIDTHS = [0.3, 0.4, 0.5, 0.6, 0.7];
-export const CELL_OUTLINE_COLOR = "#0b111b";
+export const BASEMAP = {
+  land: "#0c1612",
+  cover: "#0f1b16",
+  water: "#112d37",
+  waterway: "#2a5f6d",
+  boundary: "#2f4a3c",
+  line: "#1b2b23",
+  label: "#94a99c",
+  waterLabel: "#7fa6ac",
+  halo: "#0c1612",
+};
+export const CELL_OUTLINE_COLOR = BASEMAP.land;
+export const VECTOR_LABELS = { "text-color": BASEMAP.label, "text-halo-color": BASEMAP.halo, "text-halo-width": 1.4 };
 export const BASE_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 
 const HIDDEN_LAYERS = /^(aeroway|road_|highway_|railway|building|boundary_state|place_other|place_suburb|place_village|place_town|place_state)/;
 const KEPT_LABELS = ["place_city", "place_city_large", "place_state", "place_country_other", "place_country_minor", "place_country_major", "water_name"];
 
+const BASE_SOURCE = "openmaptiles";
+
+function basemapPaint(layer) {
+  if (layer.type === "background") return { "background-color": BASEMAP.land };
+  if (layer.source !== BASE_SOURCE) return null;
+  const sl = layer["source-layer"];
+  if (layer.type === "fill") {
+    if (sl === "water") return { "fill-color": BASEMAP.water };
+    if (sl === "landcover" || sl === "landuse" || sl === "park") return { "fill-color": BASEMAP.cover };
+    return { "fill-color": BASEMAP.land, "fill-outline-color": BASEMAP.line };
+  }
+  if (layer.type === "line") {
+    if (sl === "waterway") return { "line-color": BASEMAP.waterway };
+    if (sl === "boundary") return { "line-color": BASEMAP.boundary };
+    return { "line-color": BASEMAP.line };
+  }
+  if (layer.type === "symbol") {
+    if (sl === "water_name") return { "text-color": BASEMAP.waterLabel, "text-halo-color": BASEMAP.halo, "text-halo-width": 1.4 };
+    return VECTOR_LABELS;
+  }
+  return null;
+}
+
 export function tuneBasemap(map) {
-  const setPaint = (id, prop, value) => {
-    if (map.getLayer(id)) map.setPaintProperty(id, prop, value);
-  };
   for (const layer of map.getStyle().layers) {
     if (HIDDEN_LAYERS.test(layer.id)) map.setLayoutProperty(layer.id, "visibility", "none");
-  }
-  setPaint("background", "background-color", "#0b111b");
-  setPaint("water", "fill-color", "#101c2c");
-  setPaint("waterway", "line-color", "#16263b");
-  for (const id of ["landcover_wood", "landuse_park", "landuse_residential", "landcover_glacier"]) setPaint(id, "fill-color", "#0e1624");
-  for (const id of ["boundary_country_z0-4", "boundary_country_z5-"]) setPaint(id, "line-color", "#2a3a50");
-    for (const id of KEPT_LABELS) {
-    setPaint(id, "text-color", "#6b7b92");
-    setPaint(id, "text-halo-color", "#0b111b");
-    setPaint(id, "text-halo-width", 1.4);
+    const paint = basemapPaint(layer);
+    if (paint) for (const [prop, value] of Object.entries(paint)) map.setPaintProperty(layer.id, prop, value);
   }
   if (map.getLayer("place_city")) map.setLayerZoomRange("place_city", 6, 24);
   if (map.getLayer("water_name")) map.setLayerZoomRange("water_name", 3, 24);
