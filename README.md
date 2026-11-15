@@ -183,7 +183,14 @@ We state them on purpose: a record that hides its limits is not more solid, only
 
 **Log N + 1**, NASA Space Apps Challenge 2026.
 
-<table align="center"> <tr> <td align="center" valign="top" width="25%"> <br> <h3>Piero</h3> <img src="https://img.shields.io/badge/CEO%20%C2%B7%20CSO-1D4ED8?style=for-the-badge" alt="CEO and Chief Science Officer"><br> <sub><b>Chief Science Officer</b></sub><br> <sub>Data science</sub><br><br> Model training<br> Methodology<br> Harmonization and validation<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Jossep</h3> <img src="https://img.shields.io/badge/CTO-15803D?style=for-the-badge" alt="CTO"><br> <sub><b>Chief Technology Officer</b></sub><br> <sub>Data engineering</sub><br><br> FIRMS download and processing<br> FastAPI endpoints<br> Published data files<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Samuel</h3> <img src="https://img.shields.io/badge/CDO-7E22CE?style=for-the-badge" alt="CDO"><br> <sub><b>Chief Design Officer</b></sub><br> <sub>Design and frontend</sub><br><br> Design of the whole project<br> Interface, maps and charts<br> User experience<br><br> </td> <td align="center" valign="top" width="25%"> <br> <h3>Valentino</h3> <img src="https://img.shields.io/badge/CAIO-C2410C?style=for-the-badge" alt="CAIO"><br> <sub><b>Chief AI Officer</b></sub><br> <sub>Conversational AI</sub><br><br> Ask Elis chatbot<br> Scientific copilot<br> Answers about the record<br><br> </td> </tr> </table>
+| Member | Role | Area | What they built |
+|---|---|---|---|
+| **Piero** | ![CEO · CSO](https://img.shields.io/badge/CEO%20%C2%B7%20CSO-1D4ED8?style=flat-square) | Data science | Model training, methodology, harmonization and validation of the record |
+| **Jossep** | ![CTO](https://img.shields.io/badge/CTO-15803D?style=flat-square) | Data engineering | FIRMS download and processing, FastAPI endpoints, published files in `data/processed/` |
+| **Samuel** | ![CDO](https://img.shields.io/badge/CDO-7E22CE?style=flat-square) | Design and frontend | Design of the whole project: interface, maps, charts and user experience |
+| **Valentino** | ![CAIO](https://img.shields.io/badge/CAIO-C2410C?style=flat-square) | Conversational AI | Ask Elis chatbot: scientific copilot that answers questions about the record |
+
+<sub>CEO: Chief Executive Officer · CSO: Chief Science Officer · CTO: Chief Technology Officer · CDO: Chief Design Officer · CAIO: Chief AI Officer</sub>
 
 ## AI use
 
