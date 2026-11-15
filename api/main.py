@@ -60,6 +60,11 @@ def records(value: Any, filename: str) -> list[dict[str, Any]]:
     raise HTTPException(status_code=500, detail=f"{filename} has an invalid format.")
 
 
+@app.get("/health")
+def get_health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/regions")
 def get_regions() -> dict[str, Any]:
     value = read_json("regions.geojson")
