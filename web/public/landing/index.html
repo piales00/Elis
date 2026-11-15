@@ -1,140 +1,416 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0c1511">
-<title>Elis | Una historia mensual comparable del fuego en Perú, 2000–2026</title>
-<meta name="description" content="Elis armoniza detecciones MODIS y VIIRS de NASA FIRMS para estimar una historia mensual comparable de celdas-día con fuego en Perú, con incertidumbre del 90 %.">
+<meta name="theme-color" content="#0a130f">
+<meta name="color-scheme" content="dark">
+<title>Elis · One comparable fire record for Peru, 2000–2026</title>
+<meta name="description" content="Elis harmonizes NASA MODIS and VIIRS fire detections into one comparable record of fire in Peru, 2000–2026, in fire cell-days with 90% ranges. NASA Space Apps Challenge 2026, team Log N + 1.">
+<link rel="canonical" href="https://elis-peru.vercel.app/landing/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Elis | Fuego en Perú, 2000–2026">
-<meta property="og:description" content="Armonización de MODIS y VIIRS para comparar la actividad de fuego a lo largo del tiempo.">
-<meta property="og:image" content="og-image.svg">
+<meta property="og:site_name" content="Elis">
+<meta property="og:url" content="https://elis-peru.vercel.app/landing/">
+<meta property="og:title" content="Elis · One comparable fire record for Peru, 2000–2026">
+<meta property="og:description" content="Adding MODIS and VIIRS makes fire in Peru jump ×8.9 in 2012. Elis turns two satellite eras into one record you can compare, always with a 90% range.">
+<meta property="og:image" content="https://elis-peru.vercel.app/landing/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Elis: raw satellite detections jump ninefold in 2012 while the harmonized fire record stays comparable.">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" href="logo-elis.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Hanken+Grotesk:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="landing.css">
-<script src="landing.js" defer></script>
+<meta name="twitter:image" content="https://elis-peru.vercel.app/landing/og.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="176x176" href="/elis-mark.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="/landing/landing.css">
+<script src="/landing/landing.js" defer></script>
 </head>
 <body>
-<a class="skip" href="#main" data-i18n="skip">Saltar al contenido</a>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
 <header class="bar">
-  <a class="brand" href="#top" aria-label="Elis"><img src="logo-elis.png" alt="" width="26" height="36">Elis</a>
-  <nav aria-label="Principal"><a href="#problema" data-i18n="n1">Problema</a><a href="#metodo" data-i18n="n2">Método</a><a href="#resultados" data-i18n="n3">Resultados</a><a href="#limites" data-i18n="n4">Límites</a><a href="#equipo" data-i18n="n5">Equipo</a></nav>
-  <button id="lang" type="button" aria-label="Switch to English">EN</button>
-  <div class="progress" aria-hidden="true"><span></span></div>
-</header>
-<main id="main">
-<section class="hero" id="top" aria-labelledby="h1">
-  <canvas id="flame" aria-hidden="true"></canvas>
-  <div class="hero-copy">
-    <p class="kicker">Elis · NASA Space Apps Challenge 2026</p>
-    <h1 id="h1" data-i18n="h1">Un historial de fuego que sí se puede comparar.</h1>
-    <p class="lede" data-i18n="lede">Una historia mensual comparable del fuego en Perú, 2000–2026.</p>
-    <p class="row"><a class="btn" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="cta">Ver el repositorio</a><a class="btn ghost" href="#problema" data-i18n="cta2">Entender el problema</a></p>
-    <a class="finding" href="#resultados"><span data-i18n="fd"><b>3,5 %</b> diferencia media anual entre estimaciones en Perú, 2021–2024 (años reservados). Mide concordancia, no exactitud.</span></a>
-  </div>
-</section>
-<div class="ribbons" aria-label="NASA Space Apps Challenge. Harmonization of MODIS and VIIRS Hot Spots">
-  <div class="marquee m1" data-m="a"></div>
-  <div class="marquee m2" data-m="b"></div>
-</div>
-
-<section class="sec" id="problema" aria-labelledby="t1">
-  <h2 id="t1" data-i18n="t1">El cambio de sensor distorsiona la comparación.</h2>
-  <p data-i18n="p1">MODIS observa desde 2000 con píxeles de unos 1 km. VIIRS se suma en 2012 con píxeles de 375 m y detecta también fuegos más pequeños. Sumar ambas detecciones crea un salto artificial.</p>
-  <div class="duo"><figure class="chart" data-reveal>
-    <div class="cols" role="group" aria-label="Detecciones crudas en Perú: 10.375 en 2011 y 92.807 en 2012">
-      <button class="col" type="button" data-t="c1" style="--h:11.2%"><span class="val">10.375</span><span class="fill"></span><span class="cy">2011</span></button>
-      <button class="col hi" type="button" data-t="c2" style="--h:100%"><span class="val">92.807</span><span class="fill"></span><span class="cy">2012</span></button>
+  <div class="bar-in">
+    <a class="brand" href="#top"><img src="/landing/logo-elis.png" alt="" width="20" height="28">Elis</a>
+    <nav class="nav" aria-label="Sections" data-i18n-attr="aria-label:navLabel">
+      <a href="#resources" data-i18n="nRes">Resources</a>
+      <a href="#problem" data-i18n="nProb">Problem</a>
+      <a href="#method" data-i18n="nMeth">Method</a>
+      <a href="#results" data-i18n="nRes2">Results</a>
+      <a href="#tool" data-i18n="nTool">The tool</a>
+      <a href="#team" data-i18n="nTeam">Team</a>
+    </nav>
+    <div class="bar-act">
+      <button class="lang" id="lang" type="button" aria-label="Cambiar a español"><span aria-hidden="true">ES</span></button>
+      <a class="btn btn-sm" href="https://elis-peru.vercel.app" data-i18n="openApp">Open the app</a>
     </div>
-    <figcaption id="cn" aria-live="polite" data-i18n="c0">Detecciones crudas en Perú. Eso no significa que la actividad real se multiplicara por nueve. Toca una barra para ver más.</figcaption>
-    <p class="srcl" data-i18n="s11">Fuente: NASA FIRMS, detecciones crudas de MODIS y VIIRS sumadas por año en Perú. <a href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer">Ver cálculo en el repositorio</a>.</p>
-  </figure>
+  </div>
+</header>
 
-  <div><h3 data-i18n="t2">Dos satélites, dos resoluciones.</h3>
-  <figure class="pix" data-reveal>
-    <svg viewBox="0 0 380 170" role="img" aria-label="Un píxel MODIS de 1 km frente a una cuadrícula de píxeles VIIRS de 375 m sobre la misma zona; el fuego ocupa solo un píxel VIIRS.">
-      <rect class="pm" x="10" y="10" width="150" height="150"/><circle class="fire" cx="85" cy="85" r="9"/>
-      <g class="pv"><rect x="210" y="10" width="50" height="50"/><rect x="260" y="10" width="50" height="50"/><rect x="310" y="10" width="50" height="50"/><rect x="210" y="60" width="50" height="50"/><rect class="on" x="260" y="60" width="50" height="50"/><rect x="310" y="60" width="50" height="50"/><rect x="210" y="110" width="50" height="50"/><rect x="260" y="110" width="50" height="50"/><rect x="310" y="110" width="50" height="50"/></g>
-      <circle class="fire" cx="285" cy="85" r="9"/>
-    </svg>
-    <figcaption data-i18n="pc">Izquierda: MODIS promedia todo el kilómetro en un solo píxel. Derecha: VIIRS (cuadrícula aproximada) separa el fuego en un píxel más fino, por eso ve fuegos más pequeños.</figcaption>
-  </figure></div></div>
-</section>
+<main id="main">
 
-<section class="sec alt" id="metodo" aria-labelledby="t3">
-  <h2 id="t3" data-i18n="t3">Captura y recaptura de Chapman.</h2>
-  <p data-i18n="p3">Captura y recaptura es un método de la ecología: si dos observadores ven en parte los mismos casos, el solapamiento indica cuántos no vio ninguno. Se compara qué celdas-día detecta cada sensor y cuáles detectan ambos. Ese solapamiento permite estimar la parte que los dos pudieron pasar por alto. Se calcula por región y mes, con un rango de incertidumbre del 90 %.</p>
-  <div class="vrow"><figure class="venn" data-reveal>
-    <svg viewBox="0 0 400 200" role="img" aria-label="Dos conjuntos que se solapan: celdas-día vistas por MODIS, por VIIRS y por ambos. Un anillo discontinuo exterior representa el total estimado con su rango. Ejemplo ilustrativo sin cifras.">
-      <ellipse class="est" cx="200" cy="100" rx="185" ry="92"/>
-      <circle class="ca" cx="160" cy="100" r="68"/><circle class="cb" cx="240" cy="100" r="68"/>
-      <text x="125" y="104">MODIS</text><text x="275" y="104">VIIRS</text><text x="200" y="104" class="both">∩</text>
-    </svg>
-    <figcaption data-i18n="vc">Ejemplo ilustrativo, sin cifras. Anillo exterior: total estimado, con su rango del 90 %. Fórmula: N̂ = (n₁+1)(n₂+1)/(m+1) − 1, donde m son las celdas-día vistas por ambos sensores.</figcaption>
-  </figure>
-  <ol class="steps"><li data-reveal data-i18n="v1">Cada sensor registra las celdas-día donde ve fuego.</li><li data-reveal data-i18n="v2">Se cuentan las que ven ambos: el solapamiento.</li><li data-reveal data-i18n="v3">Con esa proporción se estima lo que se pasó por alto, con rango del 90 %.</li></ol></div>
-  <h3 data-i18n="t4">Datos y fuentes</h3>
-  <ul class="cards sens">
-    <li data-reveal><b>MODIS Terra</b><span data-i18n="s1">Desde 2000, ≈1 km</span></li>
-    <li data-reveal><b>MODIS Aqua</b><span data-i18n="s1">Desde 2000, ≈1 km</span></li>
-    <li data-reveal><b>VIIRS Suomi-NPP</b><span data-i18n="s2">Desde 2012, 375 m</span></li>
-    <li data-reveal><b>VIIRS NOAA-20</b><span data-i18n="s2b">375 m</span></li>
-    <li data-reveal><b>VIIRS NOAA-21</b><span data-i18n="s2b">375 m</span></li>
-    <li data-reveal><b data-i18n="g1">Grilla 0,1° por día</b><span data-i18n="g2">≈11 km; solo detecciones de vegetación</span></li>
-  </ul>
-  <p class="src" data-i18n="src">Fuente: NASA FIRMS (Fire Information for Resource Management System).</p>
-</section>
+<section class="hero" id="top" aria-labelledby="h1">
+  <div class="wrap">
+    <h1 id="h1" class="hero-title" data-i18n="h1">One comparable fire record for Peru, 2000–2026.</h1>
+    <div class="hero-row">
+      <p class="hero-sub" data-i18n="heroSub">Our answer to the NASA Space Apps 2026 challenge <em>Harmonization of MODIS and VIIRS Hot Spots</em>. Two satellite eras become one record you can compare year to year, in fire cell-days and always with a 90% range.</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg" href="https://elis-peru.vercel.app"><span data-i18n="openApp">Open the app</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        <a class="btn btn-lg btn-ghost" href="#video" data-video-cta><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><span data-i18n="watch">Watch the 30 s video</span></a>
+      </div>
+    </div>
 
-<section class="sec" id="mapa" aria-labelledby="t9">
-  <div class="maps">
-    <div><h2 id="t9" data-i18n="t9">Perú en tres regiones.</h2><p data-i18n="p9">Elis estima la actividad por región y mes: Costa, Andes y Amazonía. El mapa muestra puntos de calor de ejemplo que cambian con las estaciones, de 2000 a 2026.</p><p class="ilu" data-i18n="ilu">Animación ilustrativa: no son datos reales.</p>
-    <ul class="qs"><li data-i18n="q1"><b>2000–2026</b><span>período mensual</span></li><li data-i18n="q2"><b>5</b><span>sensores NASA FIRMS</span></li><li data-i18n="q3"><b>0,1°</b><span>grilla por día (≈11 km)</span></li><li data-i18n="q4"><b>90 %</b><span>rango de incertidumbre</span></li></ul></div>
-    <div class="mapbox"><canvas id="map" role="img" aria-label="Mapa estilizado de Perú con Costa, Andes y Amazonía y puntos de calor de ejemplo que cambian mes a mes entre 2000 y 2026. Animación ilustrativa."></canvas><p class="yr" aria-hidden="true"><b id="yr">2000</b></p></div>
+    <figure class="hc" id="heroChart">
+      <div class="hc-head">
+        <p class="hc-title" data-i18n="hcTitle">Peru, every year compared with 2011</p>
+        <ul class="hc-legend">
+          <li class="lg-raw" data-i18n="lgRaw">Raw detections, MODIS + VIIRS added</li>
+          <li class="lg-est" data-i18n="lgEst">Elis harmonized record, 90% range</li>
+        </ul>
+      </div>
+      <div class="hc-plot" tabindex="0" role="img" aria-label="Line chart, 2003 to 2025, indexed to 2011. Raw detections jump from 1 to 8.9 times in 2012 and reach 28.9 times in 2024. The harmonized record moves only from 1 to 1.39 times in 2012 and stays between 1 and 1.94 times." data-i18n-attr="aria-label:hcAria">
+        <div class="hc-y" aria-hidden="true"><span style="top:0%">×30</span><span style="top:33.33%">×20</span><span style="top:66.67%">×10</span><span style="top:96.67%">×1</span></div>
+        <div class="hc-canvas">
+<svg class="hc-svg" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs><linearGradient id="fire" gradientUnits="userSpaceOnUse" x1="0" y1="400" x2="0" y2="13.333333333333314"><stop offset="0" stop-color="#7b3fb8"/><stop offset=".25" stop-color="#d2324a"/><stop offset=".6" stop-color="#f2711f"/><stop offset="1" stop-color="#ffd166"/></linearGradient>
+<linearGradient id="fireA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2711f" stop-opacity=".34"/><stop offset="1" stop-color="#7b3fb8" stop-opacity="0"/></linearGradient></defs>
+<g class="hc-grid"><line x1="0" x2="1000" y1="386.7" y2="386.7"/><line x1="0" x2="1000" y1="266.7" y2="266.7"/><line x1="0" x2="1000" y1="133.3" y2="133.3"/><line x1="0" x2="1000" y1="0.0" y2="0.0"/></g>
+<line class="hc-era" x1="409.1" x2="409.1" y1="0" y2="400"/>
+<path class="hc-area" d="M0.0 381.8 L45.5 386.5 L90.9 373.0 L136.4 384.7 L181.8 378.7 L227.3 383.7 L272.7 386.4 L318.2 376.1 L363.6 386.7 L409.1 280.7 L454.5 309.0 L500.0 318.4 L545.5 298.9 L590.9 268.7 L636.4 319.0 L681.8 240.8 L727.3 202.4 L772.7 145.2 L818.2 224.0 L863.6 168.4 L909.1 108.3 L954.5 14.9 L1000.0 202.4 L1000 400 L0 400 Z"/>
+<path class="hc-band" d="M0.0 377.2 L45.5 382.1 L90.9 367.8 L136.4 379.9 L181.8 375.5 L227.3 380.3 L272.7 383.1 L318.2 372.0 L363.6 383.5 L409.1 380.5 L454.5 383.8 L500.0 385.0 L545.5 382.1 L590.9 377.3 L636.4 384.7 L681.8 383.5 L727.3 381.8 L772.7 374.9 L818.2 382.8 L863.6 377.4 L909.1 379.8 L954.5 376.7 L1000.0 385.4 L1000.0 386.7 L954.5 378.6 L909.1 381.4 L863.6 379.4 L818.2 384.3 L772.7 377.2 L727.3 383.2 L681.8 385.0 L636.4 386.0 L590.9 379.2 L545.5 383.4 L500.0 386.3 L454.5 385.2 L409.1 382.0 L363.6 389.2 L318.2 382.3 L272.7 389.1 L227.3 387.3 L181.8 384.6 L136.4 387.0 L90.9 379.8 L45.5 388.7 L0.0 385.5 Z"/>
+<path class="hc-est" d="M0.0 381.6 L45.5 385.5 L90.9 374.2 L136.4 383.8 L181.8 380.3 L227.3 384.0 L272.7 386.3 L318.2 377.7 L363.6 386.7 L409.1 381.4 L454.5 384.7 L500.0 385.8 L545.5 382.9 L590.9 378.5 L636.4 385.5 L681.8 384.4 L727.3 382.6 L772.7 376.3 L818.2 383.7 L863.6 378.6 L909.1 380.8 L954.5 377.9 L1000.0 386.2" pathLength="1"/>
+<path class="hc-raw" d="M0.0 381.8 L45.5 386.5 L90.9 373.0 L136.4 384.7 L181.8 378.7 L227.3 383.7 L272.7 386.4 L318.2 376.1 L363.6 386.7 L409.1 280.7 L454.5 309.0 L500.0 318.4 L545.5 298.9 L590.9 268.7 L636.4 319.0 L681.8 240.8 L727.3 202.4 L772.7 145.2 L818.2 224.0 L863.6 168.4 L909.1 108.3 L954.5 14.9 L1000.0 202.4" pathLength="1"/>
+</svg>
+          <span class="hc-dot raw" style="left:40.91%;top:70.18%" aria-hidden="true"></span>
+          <span class="hc-dot est" style="left:40.91%;top:95.36%" aria-hidden="true"></span>
+          <span class="hc-guide" id="hcGuide" hidden></span>
+          <span class="hc-era-l" style="left:40.91%" data-i18n="eraL">VIIRS joins</span>
+          <div class="hc-note hc-note-raw" style="left:40.91%;top:70.18%"><b>×8.9</b><span data-i18n="noteRaw">in one year. The sensor changed, not the fire.</span></div>
+          <div class="hc-note hc-note-est" style="left:40.91%;top:95.36%"><b>×1.39</b><span data-i18n="noteEst">harmonized</span></div>
+          <div class="hc-tip" id="hcTip" hidden></div>
+        </div>
+        <div class="hc-x" aria-hidden="true"><span style="left:0%">2003</span><span style="left:40.91%">2012</span><span style="left:77.27%">2020</span><span style="left:100%">2025</span></div>
+      </div>
+      <figcaption class="hc-cap" data-i18n="hcCap">Each series divided by its own 2011 value. Raw detections are NASA FIRMS hot spots summed across sensors; the harmonized record is in fire cell-days. Full years 2003–2025 from <code>/data/series.json</code>.</figcaption>
+    </figure>
   </div>
 </section>
 
-<section class="sec alt" id="resultados" aria-labelledby="t5">
-  <h2 id="t5" data-i18n="t5">Resultados</h2>
-  <p data-i18n="p5">Calibración del método: 2013–2020. Comparación en años reservados: 2021–2024. Diferencia media anual entre estimaciones: mide concordancia, no exactitud frente a un censo completo de incendios.</p>
-  <ul class="cards reg">
-    <li data-reveal><span class="num" data-n="3.5" data-d="1" data-s="%"></span><h3 data-i18n="r1">Perú</h3><i class="meter" style="--w:10%"></i></li>
-    <li data-reveal><span class="num" data-n="11.3" data-d="1" data-s="%"></span><h3 data-i18n="r2">Amazonía</h3><i class="meter" style="--w:32%"></i></li>
-    <li data-reveal><span class="num" data-n="7.0" data-d="1" data-s="%"></span><h3 data-i18n="r3">Andes</h3><i class="meter" style="--w:20%"></i></li>
-    <li data-reveal><span class="num" data-n="32.0" data-d="1" data-s="%"></span><h3 data-i18n="r4">Costa</h3><i class="meter" style="--w:91%"></i></li>
-  </ul>
-  <article class="emu" data-reveal>
-    <h3 data-i18n="e0">Comprobación aparte: emulador de aprendizaje automático (2021–2024)</h3>
-    <div class="stats"><div><span class="num" data-n="0.756" data-d="3"></span><small>AUC</small></div><div><span class="num" data-n="0.104" data-d="3"></span><small>Brier</small></div><div><span class="num" data-n="16.8" data-d="1" data-s="%"></span><small data-i18n="e1">error mensual (línea base: 17,5 %)</small></div></div>
-    <p data-i18n="e2">Estima qué celdas-día VIIRS habría detectado MODIS Aqua. Estas métricas describen al emulador y no validan por sí solas la estimación principal, que es estadística.</p>
-  </article>
-  <p class="srcl" data-i18n="s12">Fuente: comparación en años reservados (2021–2024) calculada por el equipo con datos de NASA FIRMS. <a href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer">Ver cálculo en el repositorio</a>.</p>
-  <p class="row ctas"><a class="btn" href="https://elis-blond.vercel.app/" target="_blank" rel="noreferrer" data-i18n="ctaB">Abrir la app interactiva</a><a class="btn ghost" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="ctaA">Ver datos y código</a><a class="btn ghost" href="#metodo" data-i18n="ctaC">Método paso a paso</a></p>
+<section class="sec" id="resources" aria-labelledby="tRes">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tRes" data-i18n="tRes">Everything we built, one click away.</h2>
+      <p data-i18n="pRes">The live app, the demo video, the paper, the code, the API and a public feed of daily predictions that cannot be edited after the fact.</p>
+    </div>
+
+    <div class="res-top">
+      <div class="res-video" id="video">
+        <div class="vid" id="vid" data-state="empty">
+          <div class="vid-empty">
+            <span class="vid-play" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <p class="vid-t" data-i18n="vidSoon">Video coming soon</p>
+            <p class="vid-s" data-i18n="vidSub">A 30-second walk through the app: the false jump, the fix, the map.</p>
+          </div>
+        </div>
+        <p class="res-label"><span data-i18n="vidLabel">Demo video</span><span class="res-meta">30 s</span></p>
+      </div>
+
+      <a class="res-app" href="https://elis-peru.vercel.app">
+        <img src="/landing/shots/explore.webp" alt="" width="1440" height="900" loading="lazy" decoding="async">
+        <span class="res-app-body">
+          <span class="res-app-t" data-i18n="appT">Open the app</span>
+          <span class="res-app-s" data-i18n="appS">Map, charts, outlook and Ask Elis. No sign-up.</span>
+          <span class="res-url">elis-peru.vercel.app<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
+        </span>
+      </a>
+    </div>
+
+    <ul class="res-list">
+      <li><a class="res-row" href="/firechronos-technical-report.pdf">
+        <svg class="i res-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+        <span class="res-txt"><b data-i18n="rPaper">Technical paper</b><span data-i18n="rPaperS">Method, validation and limits in one PDF.</span></span>
+        <span class="res-meta">PDF</span></a></li>
+      <li><a class="res-row" href="https://github.com/piales00/Elis/tree/main/docs/methods">
+        <svg class="i res-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></svg>
+        <span class="res-txt"><b data-i18n="rNotes">Methods notes</b><span data-i18n="rNotesS">Eight short notes, every number traced to a file.</span></span>
+        <span class="res-meta">GitHub</span></a></li>
+      <li><a class="res-row" href="https://github.com/piales00/Elis">
+        <svg class="i res-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-5 4 5 4M16 8l5 4-5 4M13.5 5l-3 14"/></svg>
+        <span class="res-txt"><b data-i18n="rRepo">Source code</b><span data-i18n="rRepoS">Python, DuckDB, FastAPI and the web app, all open.</span></span>
+        <span class="res-meta">GitHub</span></a></li>
+      <li><a class="res-row" href="https://github.com/piales00/elis-live">
+        <svg class="i res-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/><path d="M12 13.2V21"/></svg>
+        <span class="res-txt"><b data-i18n="rLive">Live feed</b><span data-i18n="rLiveS">A sealed prediction every day, scored once the satellites report.</span></span>
+        <span class="res-meta">GitHub</span></a></li>
+      <li class="res-api">
+        <a class="res-row" href="https://elis-api.onrender.com/docs">
+          <svg class="i res-i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/></svg>
+          <span class="res-txt"><b data-i18n="rApi">Public API</b><span data-i18n="rApiS">The same files the app reads, as JSON. Free, no key.</span></span>
+          <span class="res-meta">REST</span></a>
+        <div class="code">
+          <pre><code id="curl">curl "https://elis-api.onrender.com/series?region=peru&amp;from=2024&amp;to=2024"</code></pre>
+          <button class="copy" type="button" data-copy="curl" aria-label="Copy command" data-i18n-attr="aria-label:copy"><svg class="i i-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></svg><svg class="i i-ok" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+        </div>
+        <p class="code-note" data-i18n="apiNote">The free server sleeps when idle; the first request can take about a minute.</p>
+      </li>
+    </ul>
+  </div>
 </section>
 
-<section class="sec" id="limites" aria-labelledby="t6">
-  <h2 id="t6" data-i18n="t6">Límites del método</h2>
-  <ul class="lim">
-    <li data-i18n="l1">La unidad es «celdas-día con fuego estimadas»: una celda de 0,1° con al menos un fuego de vegetación en un día.</li>
-    <li data-i18n="l2">No equivale al número de incendios ni a hectáreas quemadas.</li>
-    <li data-i18n="l3">La comparación de 2021–2024 mide concordancia entre estimaciones, no exactitud frente a un censo completo.</li>
-    <li data-i18n="l4">Elis no afirma que la estimación sea la actividad real de fuego; la incertidumbre viaja con cada valor.</li>
-  </ul>
+<section class="sec sec-alt" id="problem" aria-labelledby="tProb">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tProb" data-i18n="tProb">Add the satellites, and fire seems to explode.</h2>
+      <p data-i18n="pProb">MODIS has watched Peru since 2000 with pixels of about 1 km. VIIRS joined in 2012 with 375 m pixels and sees smaller fires. Add their hot spots together and 2012 looks like a catastrophe. It was a new instrument.</p>
+    </div>
+    <div class="prob">
+      <figure class="bars" data-reveal>
+        <div class="bars-plot" role="img" aria-label="Raw detections in Peru: 10,375 in 2011 with MODIS only, 92,807 in 2012 with VIIRS added." data-i18n-attr="aria-label:barsAria">
+          <div class="bar-col"><span class="bar-v" data-n="10375">10,375</span><span class="bar-f" style="--h:11.18%"></span><span class="bar-y">2011</span><span class="bar-k" data-i18n="bk1">MODIS only</span></div>
+          <div class="bar-col hot"><span class="bar-v" data-n="92807">92,807</span><span class="bar-f" style="--h:100%"></span><span class="bar-y">2012</span><span class="bar-k" data-i18n="bk2">MODIS + VIIRS</span></div>
+          <p class="bars-x"><b>×8.9</b><span data-i18n="barsX">in raw detections, in one year</span></p>
+        </div>
+        <figcaption data-i18n="barsCap">Raw NASA FIRMS detections summed over Peru. Same country, same kind of year, a different set of eyes.</figcaption>
+      </figure>
+
+      <figure class="pix" data-reveal>
+        <svg viewBox="0 0 420 210" role="img" aria-label="Left: one MODIS pixel of 1 km with a small fire inside, too small to stand out. Right: the same square divided into VIIRS pixels of 375 m; the fire fills one of them." data-i18n-attr="aria-label:pixAria">
+          <rect class="px-m" x="10" y="20" width="170" height="170" rx="2"/>
+          <circle class="px-fire" cx="118" cy="128" r="9"/>
+          <g class="px-v">
+            <rect x="240" y="20" width="170" height="170" rx="2"/>
+            <path d="M303.75 20v170M367.5 20v170M240 83.75h170M240 147.5h170"/>
+            <rect class="px-on" x="303.75" y="83.75" width="63.75" height="63.75"/>
+          </g>
+          <circle class="px-fire" cx="348" cy="128" r="9"/>
+          <text x="95" y="14" class="px-t">MODIS · 1 km</text>
+          <text x="325" y="14" class="px-t">VIIRS · 375 m</text>
+        </svg>
+        <figcaption data-i18n="pixCap">The same small fire. In a 1 km MODIS pixel it is diluted; in a 375 m VIIRS pixel it fills the frame. About seven VIIRS pixels fit in one MODIS pixel, so VIIRS catches fires MODIS never could.</figcaption>
+      </figure>
+    </div>
+  </div>
 </section>
 
-<section class="sec alt" id="equipo" aria-labelledby="t7">
-  <h2 id="t7" data-i18n="t7">Equipo</h2>
-  <ul class="team" id="team"></ul>
+<section class="sec" id="method" aria-labelledby="tMeth">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tMeth" data-i18n="tMeth">Count what both satellites see, then estimate what both miss.</h2>
+      <p data-i18n="pMeth">A trick from ecology, tuned for satellites. The unit is the <b>fire cell-day</b>: a 0.1° cell, about 11 km, on a date with at least one detection.</p>
+    </div>
+    <ol class="steps">
+      <li class="step" data-reveal>
+        <svg class="step-art" viewBox="0 0 220 120" aria-hidden="true">
+          <circle class="c-aqua" cx="88" cy="60" r="42"/><circle class="c-snpp" cx="132" cy="60" r="42"/>
+          <path class="c-both" d="M110 24.2a42 42 0 0 1 0 71.6a42 42 0 0 1 0-71.6z"/>
+          <text x="62" y="64">Aqua</text><text x="140" y="64">S-NPP</text>
+        </svg>
+        <span class="step-n">1</span>
+        <h3 data-i18n="s1T">Capture–recapture, on simultaneous passes</h3>
+        <p data-i18n="s1P">Fires that both satellites catch reveal how many neither saw. We calibrate Chapman's estimator only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart. Then they agree on 80% of Aqua's cell-days, against 55–58% at 20–60 minutes.</p>
+        <p class="formula">N̂ = (n₁+1)(n₂+1) / (m+1) − 1</p>
+      </li>
+      <li class="step" data-reveal>
+        <svg class="step-art" viewBox="0 0 220 120" aria-hidden="true">
+          <circle class="c-aqua" cx="86" cy="50" r="34"/><circle class="c-snpp" cx="134" cy="50" r="34"/><circle class="c-n20" cx="110" cy="84" r="34"/>
+          <text x="58" y="42">Aqua</text><text x="134" y="42">S-NPP</text><text x="110" y="106" text-anchor="middle">NOAA-20</text>
+        </svg>
+        <span class="step-n">2</span>
+        <h3 data-i18n="s2T">A Bayesian three-list check, with 90% ranges</h3>
+        <p data-i18n="s2P">Two lists cannot tell whether both sensors miss the same fires. A third can. A Bayesian log-linear model over Aqua, S-NPP and NOAA-20 finds every pair positively dependent, so our record is a <b>lower bound</b>, about 10–15% low in simulation. We report it with its range and apply no correction.</p>
+      </li>
+      <li class="step" data-reveal>
+        <svg class="step-art" viewBox="0 0 220 120" aria-hidden="true">
+          <path class="t-axis" d="M12 96h196"/>
+          <path class="t-modis" d="M12 62h132"/>
+          <path class="t-emu" d="M144 62h64"/>
+          <path class="t-viirs" d="M64 80h144"/>
+          <path class="t-end" d="M144 30v74"/>
+          <text x="12" y="54">MODIS</text><text x="150" y="54" class="t-emu-l">emulated</text><text x="64" y="76" dy="18">VIIRS</text><text x="144" y="22" text-anchor="middle">2027</text>
+        </svg>
+        <span class="step-n">3</span>
+        <h3 data-i18n="s3T">A MODIS emulator for the years after MODIS</h3>
+        <p data-i18n="s3P">Terra and Aqua are expected to end their science missions in 2027. A gradient-boosting model predicts which VIIRS cell-days MODIS would have seen (AUC 0.76; 3.2% annual error, 2013–2022), so the MODIS-scale series keeps going. Switch MODIS off and the harmonized record does not change.</p>
+      </li>
+    </ol>
+  </div>
 </section>
-<section class="final" aria-labelledby="t8">
-  <h2 id="t8" data-i18n="t8">Todo el código y el método, abiertos.</h2>
-  <a class="btn" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="cta">Ver el repositorio</a> <a class="btn ghost" href="https://elis-blond.vercel.app/" target="_blank" rel="noreferrer" data-i18n="ctaB">Abrir la app interactiva</a>
+
+<section class="sec sec-alt" id="results" aria-labelledby="tResu">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tResu" data-i18n="tResu">It holds up on years it never saw.</h2>
+      <p data-i18n="pResu">Calibrated on 2013–2020, tested on 2021–2024. We rebuild Peru twice, once from Aqua alone and once from VIIRS alone, and measure the yearly gap between the two.</p>
+    </div>
+
+    <div class="duel" data-reveal>
+      <div class="duel-row">
+        <span class="duel-k" data-i18n="dNaive">Adding detections</span>
+        <span class="duel-track"><span class="duel-bar naive" style="--w:100%"></span></span>
+        <span class="duel-v naive-v" data-i18n="vNaive">334%</span>
+      </div>
+      <div class="duel-row">
+        <span class="duel-k" data-i18n="dElis">Elis</span>
+        <span class="duel-track"><span class="duel-bar elis" style="--w:1.14%"></span></span>
+        <span class="duel-v elis-v" data-i18n="vElis">3.8%</span>
+      </div>
+      <p class="duel-cap" data-i18n="duelCap">Mean annual gap between two independent reconstructions of Peru, held-out years 2021–2024.</p>
+      <table class="reg">
+        <caption class="sr" data-i18n="regCap">Annual gap by macroregion</caption>
+        <thead><tr><th scope="col" data-i18n="thReg">Region</th><th scope="col" data-i18n="thElis">Elis</th><th scope="col" data-i18n="thNaive">Adding detections</th></tr></thead>
+        <tbody>
+          <tr><th scope="row" data-i18n="rgAma">Amazon</th><td data-i18n="vAma">2.3%</td><td data-i18n="vAmaN">361%</td></tr>
+          <tr><th scope="row" data-i18n="rgAnd">Andes</th><td data-i18n="vAnd">7.0%</td><td data-i18n="vAndN">337%</td></tr>
+          <tr><th scope="row" data-i18n="rgCos">Coast</th><td data-i18n="vCos">9.0%</td><td data-i18n="vCosN">199%</td></tr>
+        </tbody>
+      </table>
+      <p class="note" data-i18n="duelNote">This measures agreement between two independent reconstructions, not accuracy against a census of fires.</p>
+    </div>
+
+    <div class="fc" data-reveal>
+      <p class="fc-tag"><span class="fc-dot" aria-hidden="true"></span><span data-i18n="fcTag">Forecast · tested out of sample</span></p>
+      <h3 class="fc-t" data-i18n="fcT">In July 2026 we forecast the August–October season: <b>24,392</b> fire cell-days. The satellites then counted <b>22,955</b>.</h3>
+      <div class="fc-scale" role="img" aria-label="Forecast median 24,392 with a 90% range from 18,848 to 31,568. Climatology median 27,301 with a range from 18,224 to 35,565. Observed 22,955, inside both ranges and closer to the forecast." data-i18n-attr="aria-label:fcAria">
+        <div class="fc-line clim" style="--a:14.65%;--b:93.48%;--m:55.91%"><span class="fc-lab" data-i18n="fcClim">Climatology</span></div>
+        <div class="fc-line model" style="--a:17.49%;--b:75.31%;--m:42.69%"><span class="fc-lab" data-i18n="fcModel">Elis forecast, 90% range</span></div>
+        <span class="fc-obs" style="--x:36.16%"><span data-i18n="fcObs">Observed</span></span>
+        <div class="fc-ticks" aria-hidden="true"><span style="left:22.73%">20,000</span><span style="left:45.45%">25,000</span><span style="left:68.18%">30,000</span><span style="left:90.91%">35,000</span></div>
+      </div>
+      <p class="fc-cap" data-i18n="fcCap">Range 18,848–31,568, issued one month ahead. The 2026 observation is near-real-time data, still provisional. Forecasts are always shown apart from observations, in violet.</p>
+    </div>
+
+    <div class="ledger" data-reveal>
+      <p><b class="ld-n">15<span data-i18n="of20"> of 20</span></b><span data-i18n="ld1">departments where the one-month outlook beats climatology in a 2003–2025 leave-one-year-out backtest. Elsewhere we publish climatology and say so.</span></p>
+      <p><b class="ld-n" data-i18n="ld2n">0.75</b><span data-i18n="ld2">correlation between the record and MapBiomas Fuego burned area, an independent Landsat product we never trained on.</span></p>
+    </div>
+    <p class="src" data-i18n="resSrc">Sources: <code>data/processed/methodology.json</code> and <code>forecast.json</code> in the repository.</p>
+  </div>
 </section>
+
+<section class="sec" id="tool" aria-labelledby="tTool">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tTool" data-i18n="tTool">A tool people can use, not just a number.</h2>
+      <p data-i18n="pTool">Every month since 2000 on a map, satellite imagery for any day, an outlook for the coming season and an assistant that answers from the data. In English and Spanish.</p>
+    </div>
+  </div>
+  <div class="tool">
+    <div class="wrap">
+      <div class="tabs" role="tablist" aria-label="App screens" data-i18n-attr="aria-label:tabsLabel" id="tabs"></div>
+    </div>
+    <div class="track" id="track" tabindex="0" aria-label="App screenshots" data-i18n-attr="aria-label:trackLabel">
+      <figure class="shot" data-tab="Explore" data-tab-es="Explorar">
+        <img src="/landing/shots/explore.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Elis Explore view: map of Peru in September 2024 with harmonized fire cell-days per 11 km cell and the national estimate of 15,520 with its 90% range." data-i18n-attr="alt:a1">
+        <figcaption data-i18n="c1"><b>Explore.</b> Any month since 2000 on the map, with the estimate, its 90% range and what each sensor saw.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="3D" data-tab-es="3D">
+        <img src="/landing/shots/3d.webp" width="1440" height="900" loading="lazy" decoding="async" alt="3D terrain view over the southern Andes in September 2024, with fire activity cells draped over the relief." data-i18n-attr="alt:a2">
+        <figcaption data-i18n="c2"><b>3D terrain.</b> September 2024 over the Andes: where the fire sits in the relief.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="Thermal" data-tab-es="Térmica">
+        <img src="/landing/shots/thermal.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Thermal infrared imagery from NASA GIBS for 10 September 2024 with each MODIS and VIIRS detection plotted." data-i18n-attr="alt:a3">
+        <figcaption data-i18n="c3"><b>Thermal.</b> NASA GIBS infrared for 10 September 2024, with every MODIS and VIIRS detection of the day.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="True colour" data-tab-es="Color real">
+        <img src="/landing/shots/truecolour.webp" width="1440" height="900" loading="lazy" decoding="async" alt="True colour satellite image of Peru on 10 September 2024 showing smoke and clouds, with fire detections." data-i18n-attr="alt:a4">
+        <figcaption data-i18n="c4"><b>True colour.</b> The same day as seen from space, smoke included.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="Compare" data-tab-es="Comparar">
+        <img src="/landing/shots/compare.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Compare view: raw detections jump as satellites launch, while the harmonized fire cell-days stay comparable." data-i18n-attr="alt:a5">
+        <figcaption data-i18n="c5"><b>Compare.</b> Raw against harmonized: switch satellites on as they launched and watch the false jumps disappear.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="Continuity" data-tab-es="Continuidad">
+        <img src="/landing/shots/continuity.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Continuity view: a simulated MODIS shutdown in January 2023, with emulated Aqua from VIIRS continuing the MODIS-scale series." data-i18n-attr="alt:a6">
+        <figcaption data-i18n="c6"><b>Continuity.</b> Simulate the end of MODIS; the emulator carries the MODIS scale forward.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="Outlook" data-tab-es="Pronóstico">
+        <img src="/landing/shots/outlook.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Season outlook for August to October 2027 by department, in violet, with class probabilities and the national climatology range." data-i18n-attr="alt:a7">
+        <figcaption data-i18n="c7"><b>Outlook.</b> The 2027 season by department, as probabilities. Climatology wherever the model has no skill.</figcaption>
+      </figure>
+      <figure class="shot" data-tab="Ask Elis" data-tab-es="Pregúntale a Elis">
+        <img src="/landing/shots/ask.webp" width="1440" height="900" loading="lazy" decoding="async" alt="Ask Elis assistant answering a question about the worst fire seasons in the Amazon, with a chart of harmonized annual activity." data-i18n-attr="alt:a8">
+        <figcaption data-i18n="c8"><b>Ask Elis.</b> Plain-language questions, answered from the processed files with the figures checked.</figcaption>
+      </figure>
+    </div>
+    <div class="wrap tool-nav">
+      <button class="arrow" type="button" data-dir="-1" aria-label="Previous screen" data-i18n-attr="aria-label:prev"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="arrow" type="button" data-dir="1" aria-label="Next screen" data-i18n-attr="aria-label:next"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-alt" id="scope" aria-labelledby="tScope">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tScope" data-i18n="tScope">What the numbers mean, and what they don't.</h2>
+    </div>
+    <div class="scope">
+      <div>
+        <h3 class="scope-h is" data-i18n="isH">What Elis reports</h3>
+        <ul class="scope-l">
+          <li data-i18n="is1"><b>Fire cell-days.</b> A 0.1° cell, about 11 km, on a date with at least one detection.</li>
+          <li data-i18n="is2"><b>A range on every estimate.</b> 90% unless stated otherwise.</li>
+          <li data-i18n="is3"><b>A lower bound.</b> The sensors miss some fires together; simulation puts the record about 10–15% low. No correction passed our tests, so none is applied.</li>
+          <li data-i18n="is4"><b>Confidence that changes with time.</b> 2000–2002 rests on Terra and early Aqua and has wide ranges; August–November 2026 is provisional near-real-time data.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="scope-h not" data-i18n="notH">What Elis does not claim</h3>
+        <ul class="scope-l">
+          <li data-i18n="not1"><b>Not a count of fires,</b> and not hectares burned.</li>
+          <li data-i18n="not2"><b>Not a forecast dressed as data.</b> Outlooks are labelled and drawn apart from observations.</li>
+          <li data-i18n="not3"><b>Not a census check.</b> Validation measures agreement between independent reconstructions.</li>
+          <li data-i18n="not4"><b>Not causes.</b> Elis says where and when fire activity was unusual, not why.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="team" aria-labelledby="tTeam">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="tTeam" data-i18n="tTeam">Team Log N + 1.</h2>
+      <p data-i18n="pTeam">Four students from Lima, four different skills, 36 hours.</p>
+    </div>
+    <ul class="team">
+      <li><img src="/landing/team/piero.jpg" alt="Portrait of Piero Pérez" width="240" height="240" loading="lazy" decoding="async"><h3>Piero Pérez</h3><p class="role" data-i18n="roleP">Methods &amp; statistics</p><p data-i18n="doP">Capture–recapture, validation and the outlook.</p></li>
+      <li><img src="/landing/team/jossep.jpg" alt="Portrait of Jossep Hurtado" width="240" height="240" loading="lazy" decoding="async"><h3>Jossep Hurtado</h3><p class="role" data-i18n="roleJ">Data &amp; API</p><p data-i18n="doJ">FIRMS pipeline, DuckDB and the public API.</p></li>
+      <li><img src="/landing/team/samuel.jpg" alt="Portrait of Samuel Ortega" width="240" height="240" loading="lazy" decoding="async"><h3>Samuel Ortega</h3><p class="role" data-i18n="roleS">Web &amp; design</p><p data-i18n="doS">The app, the map and how it all reads.</p></li>
+      <li><img src="/landing/team/valentino.jpg" alt="Portrait of Valentino Llamocca" width="240" height="240" loading="lazy" decoding="async"><h3>Valentino Llamocca</h3><p class="role" data-i18n="roleV">AI assistant</p><p data-i18n="doV">Ask Elis and its number checks.</p></li>
+    </ul>
+    <p class="close" data-i18n="close">Peruvian students. If it works here, it can work anywhere.</p>
+    <p class="close-cta"><a class="btn btn-lg" href="https://elis-peru.vercel.app"><span data-i18n="openApp">Open the app</span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></p>
+  </div>
+</section>
+
+<section class="sec sec-credits" id="credits" aria-labelledby="tCred">
+  <div class="wrap">
+    <h2 id="tCred" class="cred-h" data-i18n="tCred">Data and credits</h2>
+    <ul class="cred">
+      <li><a href="https://firms.modaps.eosdis.nasa.gov/">NASA FIRMS</a><span data-i18n="cr1">MODIS and VIIRS active fire detections</span></li>
+      <li><a href="https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api">NASA GIBS</a><span data-i18n="cr2">True colour, thermal and night imagery</span></li>
+      <li><a href="https://power.larc.nasa.gov/">NASA POWER</a><span data-i18n="cr3">Monthly precipitation for drought indices</span></li>
+      <li><a href="https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt">NOAA ONI</a><span data-i18n="cr4">El Niño–Southern Oscillation index</span></li>
+      <li><a href="https://www.igp.gob.pe/">ENFEN ICEN</a><span data-i18n="cr5">Coastal El Niño index, via IGP</span></li>
+      <li><a href="https://peru.mapbiomas.org/">MapBiomas Fuego</a><span data-i18n="cr6">Burned area used for validation</span></li>
+      <li><a href="https://www.gob.pe/inei">INEI</a><span data-i18n="cr7">Department boundaries</span></li>
+      <li><a href="https://s2maps.eu/">Sentinel-2 cloudless by EOX</a><span data-i18n="cr8">Satellite basemap</span></li>
+    </ul>
+    <p class="ai" data-i18n="ai"><b>Use of AI.</b> The Ask Elis assistant uses Google Gemini over our processed data files, and every figure it returns is checked against those files before it is shown.</p>
+  </div>
+</section>
+
 </main>
-<footer>
-  <p data-i18n="foot">Proyecto para NASA Space Apps Challenge 2026, reto «Harmonization of MODIS and VIIRS Hot Spots».</p>
-  <p data-i18n="foot2">Créditos: NASA Space Apps Challenge y datos de NASA FIRMS (MODIS y VIIRS).</p>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="brand foot-brand"><img src="/landing/logo-elis.png" alt="" width="20" height="28">Elis</p>
+    <p data-i18n="foot">A NASA Space Apps Challenge 2026 project, challenge <em>Harmonization of MODIS and VIIRS Hot Spots</em>. Not an official NASA product.</p>
+    <a class="foot-top" href="#top" data-i18n="top">Back to top</a>
+  </div>
 </footer>
 </body>
 </html>

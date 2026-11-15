@@ -1,53 +1,324 @@
-const CONFIG={team:[{n:"Samuel Ortega",p:"team/samuel.jpg",r:"CDO",l:""},{n:"Piero Perez",p:"team/piero.jpg",r:"CEO",l:""},{n:"Valentino Llamocca",p:"team/valentino.jpg",r:"CAIO",l:""},{n:"Jossep Hurtado",p:"team/jossep.jpg",r:"CSO",l:""}]};
-const EN={fd:"<b>3.5%</b> mean annual difference between estimates in Peru, 2021–2024 (held-out years). It measures agreement, not accuracy.",s11:"Source: NASA FIRMS, raw MODIS and VIIRS detections summed by year in Peru. <a href=\"https://github.com/piales00/Elis\" target=\"_blank\" rel=\"noreferrer\">See the calculation in the repository</a>.",s12:"Source: held-out comparison (2021–2024) computed by the team with NASA FIRMS data. <a href=\"https://github.com/piales00/Elis\" target=\"_blank\" rel=\"noreferrer\">See the calculation in the repository</a>.",ctaA:"See data and code",ctaB:"Open the interactive app",ctaC:"Step-by-step method",tm:"Team member",teamIntro:"Log N + 1, NASA Space Apps Challenge 2026.",teamNote:"CEO: Chief Executive Officer · CSO: Chief Science Officer · CTO: Chief Technology Officer · CDO: Chief Design Officer · CAIO: Chief AI Officer.",q1:"<b>2000–2026</b><span>monthly period</span>",q2:"<b>5</b><span>NASA FIRMS sensors</span>",q3:"<b>0.1°</b><span>grid per day (≈11 km)</span>",q4:"<b>90%</b><span>uncertainty range</span>",v1:"Each sensor records the cell-days where it sees fire.",v2:"We count those both see: the overlap.",v3:"That proportion estimates what was missed, with a 90% range.",h1:"A fire history you can actually compare.",t9:"Peru in three regions.",p9:"Elis estimates activity by region and month: Coast, Andes and Amazon. The map shows example hot spots that change with the seasons, from 2000 to 2026.",skip:"Skip to content",n1:"Problem",n2:"Method",n3:"Results",n4:"Limits",n5:"Team",lede:"A comparable monthly history of fire in Peru, 2000–2026.",cta:"View the repository",cta2:"Understand the problem",ilu:"Illustrative animation: not real data.",t1:"A change of sensor distorts the comparison.",p1:"MODIS has observed since 2000 with pixels of about 1 km. VIIRS joined in 2012 with 375 m pixels and also detects smaller fires. Adding both detections creates an artificial jump.",c0:"Raw detections in Peru. This does not mean real activity grew ninefold. Tap a bar to learn more.",t2:"Two satellites, two resolutions.",pc:"Left: MODIS averages the whole kilometre into one pixel. Right: VIIRS (approximate grid) separates the fire into a finer pixel, which is why it sees smaller fires.",t3:"Chapman capture–recapture.",p3:"Capture–recapture is a method from ecology: when two observers partly see the same cases, the overlap shows how many neither saw. We compare which cell-days each sensor detects and which both detect. That overlap lets us estimate what both may have missed. It is computed by region and month, with a 90% uncertainty range.",vc:"Illustrative example, no figures. Outer ring: estimated total with its 90% range. Formula: N̂ = (n₁+1)(n₂+1)/(m+1) − 1, where m is the cell-days seen by both sensors.",t4:"Data and sources",s1:"Since 2000, ≈1 km",s2:"Since 2012, 375 m",s2b:"375 m",g1:"0.1° grid per day",g2:"≈11 km; vegetation detections only",src:"Source: NASA FIRMS (Fire Information for Resource Management System).",t5:"Results",p5:"Method calibration: 2013–2020. Held-out years comparison: 2021–2024. Mean annual difference between estimates: it measures agreement, not accuracy against a complete fire census.",r1:"Peru",r2:"Amazon",r3:"Andes",r4:"Coast",e0:"Separate check: machine-learning emulator (2021–2024)",e1:"monthly error (baseline: 17.5%)",e2:"It estimates which VIIRS cell-days MODIS Aqua would have detected. These metrics describe the emulator and do not validate the main estimate on their own; that estimate is statistical.",t6:"Method limits",l1:"The unit is “estimated fire cell-days”: a 0.1° cell with at least one vegetation fire on a day.",l2:"It does not equal the number of fires or burned hectares.",l3:"The 2021–2024 comparison measures agreement between estimates, not accuracy against a complete census.",l4:"Elis does not claim the estimate is the real fire activity; uncertainty travels with each value.",t7:"Team",t8:"All the code and method, open.",foot:"Project for NASA Space Apps Challenge 2026, challenge “Harmonization of MODIS and VIIRS Hot Spots”.",foot2:"Credits: NASA Space Apps Challenge and NASA FIRMS data (MODIS and VIIRS)."};
-const NOTE={es:{c1:"2011: 10.375 detecciones crudas, solo MODIS.",c2:"2012: 92.807 detecciones crudas, con VIIRS sumado. Es un cambio de instrumento, no un aumento real de la actividad."},en:{c1:"2011: 10,375 raw detections, MODIS only.",c2:"2012: 92,807 raw detections, with VIIRS added. It is an instrument change, not a real increase in activity."}};
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-const ES={tm:"Integrante del equipo"};$$("[data-i18n]").forEach(e=>ES[e.dataset.i18n]=e.innerHTML);
-let lang="es",pick="";const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const nf=(v,d)=>v.toLocaleString(lang==="es"?"es-ES":"en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
-const fmt=(e,v)=>{e.textContent=nf(v,+e.dataset.d||0)+(e.dataset.s?(lang==="es"?" %":"%"):"")};
-function marquees(){const mk=(t,s)=>{const x=Array(8).fill(`<span>${t}</span><span aria-hidden="true">${s}</span>`).join("");return `<span class="track">${x}</span><span class="track" aria-hidden="true">${x}</span>`};
- $('[data-m=a]').innerHTML=mk("NASA SPACE APPS CHALLENGE","✦");$('[data-m=b]').innerHTML=mk("HARMONIZATION OF MODIS AND VIIRS HOT SPOTS","●")}
-function team(){$("#team").innerHTML=CONFIG.team.map(m=>`<li tabindex="0"><img class="av" src="${m.p}" alt="Foto de ${m.n}" width="96" height="96" loading="lazy"><h3>${m.n}</h3><p class="role">${m.r}</p>${m.l?`<a href="${m.l}" target="_blank" rel="noreferrer">Link</a>`:""}</li>`).join("");
- $$("#team li").forEach(li=>{li.onpointermove=e=>{const r=li.getBoundingClientRect();li.style.setProperty("--ry",((e.clientX-r.left)/r.width-.5)*14+"deg");li.style.setProperty("--rx",-((e.clientY-r.top)/r.height-.5)*14+"deg")};li.onpointerleave=()=>{li.style.setProperty("--rx","0deg");li.style.setProperty("--ry","0deg")}})}
-function setLang(l){lang=l;document.documentElement.lang=l;$$("[data-i18n]").forEach(e=>e.innerHTML=(l==="en"?EN:ES)[e.dataset.i18n]);
- const b=$("#lang");b.textContent=l==="es"?"EN":"ES";b.setAttribute("aria-label",l==="es"?"Switch to English":"Cambiar a español");
- $$(".num.done").forEach(e=>fmt(e,+e.dataset.n));$$(".val").forEach((e,i)=>e.textContent=nf(i?92807:10375,0));
- if(pick)$("#cn").textContent=NOTE[l][pick];$("#cn").setAttribute("data-i18n",pick?"":"c0");team()}
-$$(".col").forEach(c=>c.onclick=()=>{pick=c.dataset.t;$("#cn").removeAttribute("data-i18n");$("#cn").textContent=NOTE[lang][pick]});
-$("#lang").onclick=()=>setLang(lang==="es"?"en":"es");
-marquees();team();
-function count(e){const n=+e.dataset.n;e.classList.add("done");if(rm){fmt(e,n);return}const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/1300);fmt(e,n*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s)})(t0)}
-$$("[data-reveal]").forEach(e=>e.classList.add("rv"));
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;e.target.classList.add("is-visible");$$(".num",e.target).forEach(count);io.unobserve(e.target)}),{threshold:.2});
-$$("[data-reveal]").forEach(e=>io.observe(e));
-$$(".emu .num,.reg .num").forEach(e=>e.textContent="–");
-addEventListener("scroll",()=>{const h=document.documentElement;h.style.setProperty("--p",h.scrollTop/Math.max(1,h.scrollHeight-innerHeight))},{passive:true});
-/* Mapa estilizado de Perú (contorno aproximado, ilustrativo) con puntos de calor */
-const PE=[[-81.2,-4.7],[-80.3,-3.4],[-78.8,-4.8],[-78.2,-3.4],[-75.5,-1.5],[-75.2,-0.1],[-73.4,-1.3],[-72,-2.4],[-70.3,-4.2],[-70.5,-7],[-73,-9],[-70.6,-11],[-69.6,-11],[-68.7,-12.6],[-69.5,-14.5],[-69,-16.3],[-69.5,-17.5],[-70.4,-18.3],[-71.4,-17.3],[-73,-16.2],[-75.2,-15.2],[-76.4,-13.5],[-77.9,-11.5],[-79.2,-8.5],[-80.5,-6.5]];
-const inside=(x,y)=>{let c=false;for(let i=0,j=PE.length-1;i<PE.length;j=i++){const[a,b]=PE[i],[p,q]=PE[j];if((b>y)!==(q>y)&&x<(p-a)*(y-b)/(q-b)+a)c=!c}return c};
-let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
-const pts=[];while(pts.length<150){const x=-81.3+rnd()*12.6,y=-rnd()*18.4;if(inside(x,y))pts.push({x,y,u:rnd(),z:1+rnd()*2,c:(rnd()*4)|0})}
-function stage(id,draw){const cv=$(id),cx=cv.getContext("2d"),st={W:0,H:0,mx:0,my:0,tx:0,ty:0,vis:true};
- const size=()=>{const d=Math.min(devicePixelRatio||1,2);st.W=cv.clientWidth;st.H=cv.clientHeight;cv.width=st.W*d;cv.height=st.H*d;cx.setTransform(d,0,0,d,0,0)};
- const run=t=>{st.mx+=(st.tx-st.mx)*.07;st.my+=(st.ty-st.my)*.07;cx.clearRect(0,0,st.W,st.H);draw(cx,st,t)};
- size();addEventListener("resize",()=>{size();rm&&run(5000)});
- cv.parentElement.addEventListener("pointermove",e=>{const r=cv.getBoundingClientRect();st.tx=(e.clientX-r.left)/r.width-.5;st.ty=(e.clientY-r.top)/r.height-.5},{passive:true});
- new IntersectionObserver(e=>st.vis=e[0].isIntersecting).observe(cv);return {run,st}}
-/* Círculo de brasa del hero: brillo decorativo con partículas */
-const P=Array.from({length:110},()=>({a:rnd()*6.28,r:rnd(),s:.2+rnd()*.6,z:1+rnd()*2}));
-const hero=stage("#flame",(cx,{W,H,mx,my},t)=>{const R=Math.min(W,H)*.34,x=W/2+mx*50,y=H/2+my*40,pu=1+.03*Math.sin(t/500);cx.globalCompositeOperation="lighter";cx.globalAlpha=.6;
- let g=cx.createRadialGradient(x,y,R*.1,x,y,R*2.2*pu);g.addColorStop(0,"rgba(255,140,50,.35)");g.addColorStop(1,"rgba(255,80,20,0)");cx.fillStyle=g;cx.fillRect(0,0,W,H);
- g=cx.createRadialGradient(x-R*.1,y-R*.1,0,x,y,R*pu);g.addColorStop(0,"rgba(255,246,214,.95)");g.addColorStop(.35,"rgba(255,184,77,.8)");g.addColorStop(.75,"rgba(255,90,30,.45)");g.addColorStop(1,"rgba(83,173,203,.35)");cx.fillStyle=g;cx.beginPath();cx.arc(x,y,R*pu,0,6.283);cx.fill();
- for(const p of P){p.a+=rm?0:.0015*p.s;const d=R*(1.05+p.r*1.2+.08*Math.sin(t/700+p.a*5));cx.fillStyle=p.r<.3?"rgba(83,173,203,.7)":"rgba(255,170,70,.75)";cx.beginPath();cx.arc(x+Math.cos(p.a)*d-mx*20*p.z,y+Math.sin(p.a)*d-my*20*p.z,p.z,0,6.283);cx.fill()}
- cx.globalAlpha=1;cx.globalCompositeOperation="source-over"});
-/* Mapa de Perú (contorno aproximado, ilustrativo) con puntos de calor */
-const TOT=27*12,COL=["160,70,130","208,74,58","238,138,60","245,196,83"];
-const peru=stage("#map",(cx,{W,H,mx,my},t)=>{const m=rm?8.5:(t/150)%TOT,s=Math.min(W/13.2,H/19)*.95,ox=(W-13*s)/2,oy=(H-18.6*s)/2,X=(lo,la)=>[ox+(lo+81.5)*s,oy-la*s];
- cx.beginPath();PE.forEach(([a,b],i)=>{const[x,y]=X(a,b);i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.closePath();cx.fillStyle="rgba(83,173,203,.08)";cx.fill();cx.strokeStyle="rgba(83,173,203,.8)";cx.lineWidth=2;cx.stroke();
- cx.fillStyle="rgba(174,184,200,.9)";cx.font="600 13px 'Hanken Grotesk',sans-serif";
- [["Costa","Coast",-80.6,-9.5],["Andes","Andes",-76.2,-11],["Amazonía","Amazon",-71.5,-6.5]].forEach(([a,b,lo,la])=>{const[x,y]=X(lo,la);cx.fillText(lang==="es"?a:b,x,y)});
- const f=.15+.8*(1+Math.cos((m%12-8.5)/12*6.283))/2;cx.globalCompositeOperation="lighter";
- for(const p of pts){const a=.9*Math.max(0,Math.min(1,(f-p.u)*6));if(!a)continue;const[x,y]=X(p.x,p.y),px=x-mx*14*p.z,py=y-my*14*p.z,g=cx.createRadialGradient(px,py,0,px,py,p.z*7);g.addColorStop(0,`rgba(${COL[p.c]},${a})`);g.addColorStop(1,`rgba(${COL[p.c]},0)`);cx.fillStyle=g;cx.beginPath();cx.arc(px,py,p.z*7,0,6.283);cx.fill()}
- cx.globalCompositeOperation="source-over";$("#yr").textContent=rm?"2000–2026":2000+Math.floor(m/12)});
-if(rm){hero.run(5000);peru.run(5000)}else{let t0=0;(function loop(t){if(!t0)t0=t;if(!document.hidden)for(const s of [hero,peru])s.st.vis&&s.run(t-t0);requestAnimationFrame(loop)})(0)}
+const VIDEO_URL = "";
+
+const ANNUAL = [[2003,14125,44608,35313,55407],[2004,10527,35351,27461,43425],[2005,21016,62776,49033,78332],[2006,11880,39336,31617,48824],[2007,16603,47934,37465,59638],[2008,12671,38879,30919,47758],[2009,10575,33354,26563,41066],[2010,18588,54139,43045,68150],[2011,10375,32397,26161,40014],[2012,92807,45117,43618,47407],[2013,70826,37222,35865,39465],[2014,63459,34417,33224,36330],[2015,78640,41528,40218,43578],[2016,102178,52342,50548,55143],[2017,63032,35345,34130,37270],[2018,123896,37925,36529,40176],[2019,153745,42206,40826,44338],[2020,198258,57573,55485,60918],[2021,136960,39538,38130,41826],[2022,180188,52063,50151,54889],[2023,226950,46742,45132,49176],[2024,299657,53743,51908,56620],[2025,153749,33493,32212,35480]];
+
+const ES = {
+  skip: "Saltar al contenido",
+  navLabel: "Secciones",
+  nRes: "Recursos", nProb: "Problema", nMeth: "Método", nRes2: "Resultados", nTool: "La herramienta", nTeam: "Equipo",
+  openApp: "Abrir la app",
+  h1: "Un historial del fuego en Perú que sí se puede comparar, 2000–2026.",
+  heroSub: "Nuestra respuesta al reto de NASA Space Apps 2026 <em>Harmonization of MODIS and VIIRS Hot Spots</em>. Dos eras de satélites se vuelven un solo registro comparable año a año, en celdas-día con fuego y siempre con un rango del 90 %.",
+  watch: "Ver el video de 30 s",
+  hcTitle: "Perú, cada año comparado con 2011",
+  lgRaw: "Detecciones crudas, MODIS + VIIRS sumados",
+  lgEst: "Registro armonizado de Elis, rango del 90 %",
+  hcAria: "Gráfico de líneas, 2003 a 2025, con 2011 como base. Las detecciones crudas saltan de 1 a 8,9 veces en 2012 y llegan a 28,9 veces en 2024. El registro armonizado pasa solo de 1 a 1,39 veces en 2012 y se mantiene entre 1 y 1,94 veces.",
+  eraL: "Llega VIIRS",
+  noteRaw: "en un año. Cambió el sensor, no el fuego.",
+  noteEst: "armonizado",
+  hcCap: "Cada serie dividida entre su propio valor de 2011. Las detecciones crudas son puntos de calor de NASA FIRMS sumados entre sensores; el registro armonizado está en celdas-día con fuego. Años completos 2003–2025 de <code>/data/series.json</code>.",
+  tRes: "Todo lo que construimos, a un clic.",
+  pRes: "La app en vivo, el video, el informe, el código, la API y un registro público de predicciones diarias que no se pueden editar después.",
+  vidSoon: "Video muy pronto",
+  vidSub: "Un recorrido de 30 segundos por la app: el salto falso, la corrección, el mapa.",
+  vidLabel: "Video de demostración",
+  appT: "Abrir la app",
+  appS: "Mapa, gráficos, pronóstico y Pregúntale a Elis. Sin registro.",
+  rPaper: "Informe técnico", rPaperS: "Método, validación y límites en un PDF.",
+  rNotes: "Notas de método", rNotesS: "Ocho notas breves; cada cifra apunta a su archivo.",
+  rRepo: "Código fuente", rRepoS: "Python, DuckDB, FastAPI y la app web, todo abierto.",
+  rLive: "Registro en vivo", rLiveS: "Una predicción sellada cada día, evaluada cuando llegan los datos del satélite.",
+  rApi: "API pública", rApiS: "Los mismos archivos que lee la app, en JSON. Gratis y sin clave.",
+  copy: "Copiar comando", copied: "Copiado",
+  apiNote: "El servidor gratuito se duerme si no se usa; la primera petición puede tardar cerca de un minuto.",
+  tProb: "Sumas los satélites y el fuego parece estallar.",
+  pProb: "MODIS observa Perú desde 2000 con píxeles de 1 km. VIIRS se sumó en 2012 con píxeles de 375 m y ve fuegos más pequeños. Si sumas sus puntos de calor, 2012 parece una catástrofe. Fue un instrumento nuevo.",
+  barsAria: "Detecciones crudas en Perú: 10.375 en 2011 solo con MODIS, 92.807 en 2012 con VIIRS sumado.",
+  bk1: "Solo MODIS", bk2: "MODIS + VIIRS",
+  barsX: "en detecciones crudas, en un año",
+  barsCap: "Detecciones crudas de NASA FIRMS sumadas en Perú. Mismo país, un año parecido, otros ojos.",
+  pixAria: "Izquierda: un píxel MODIS de 1 km con un fuego pequeño dentro, que no destaca. Derecha: el mismo cuadrado dividido en píxeles VIIRS de 375 m; el fuego llena uno de ellos.",
+  pixCap: "El mismo fuego pequeño. En un píxel MODIS de 1 km se diluye; en un píxel VIIRS de 375 m llena el cuadro. En un píxel MODIS caben unos siete de VIIRS, por eso VIIRS detecta fuegos que MODIS nunca vería.",
+  tMeth: "Contamos lo que ven ambos satélites y estimamos lo que ninguno vio.",
+  pMeth: "Un truco de la ecología, ajustado a satélites. La unidad es la <b>celda-día con fuego</b>: una celda de 0,1°, unos 11 km, en una fecha con al menos una detección.",
+  s1T: "Captura y recaptura, en pasadas simultáneas",
+  s1P: "Los fuegos que ven ambos satélites revelan cuántos no vio ninguno. Calibramos el estimador de Chapman solo en días en que Aqua MODIS y S-NPP VIIRS pasan con menos de 20 minutos de diferencia. Así coinciden en el 80 % de las celdas-día de Aqua, frente al 55–58 % con 20–60 minutos.",
+  s2T: "Un control bayesiano de tres listas, con rangos del 90 %",
+  s2P: "Con dos listas no se sabe si ambos sensores pierden los mismos fuegos. Con tres sí. Un modelo log-lineal bayesiano con Aqua, S-NPP y NOAA-20 encuentra dependencia positiva en cada par, así que nuestro registro es un <b>límite inferior</b>, entre 10 y 15 % bajo según la simulación. Lo informamos con su rango y sin aplicar corrección.",
+  s3T: "Un emulador de MODIS para cuando MODIS ya no esté",
+  s3P: "Se espera que Terra y Aqua terminen su misión científica en 2027. Un modelo de gradient boosting predice qué celdas-día de VIIRS habría visto MODIS (AUC 0,76; error anual del 3,2 %, 2013–2022), así la serie a escala MODIS continúa. Si apagas MODIS, el registro armonizado no cambia.",
+  tResu: "Funciona en años que nunca vio.",
+  pResu: "Calibrado en 2013–2020 y probado en 2021–2024. Reconstruimos Perú dos veces, una solo con Aqua y otra solo con VIIRS, y medimos la diferencia anual entre ambas.",
+  dNaive: "Sumar detecciones", dElis: "Elis",
+  vNaive: "334 %", vElis: "3,8 %",
+  duelCap: "Diferencia anual media entre dos reconstrucciones independientes de Perú, años de prueba 2021–2024.",
+  regCap: "Diferencia anual por macrorregión",
+  thReg: "Región", thElis: "Elis", thNaive: "Sumar detecciones",
+  rgAma: "Amazonía", rgAnd: "Andes", rgCos: "Costa",
+  vAma: "2,3 %", vAmaN: "361 %", vAnd: "7,0 %", vAndN: "337 %", vCos: "9,0 %", vCosN: "199 %",
+  duelNote: "Mide la concordancia entre dos reconstrucciones independientes, no la exactitud frente a un censo de incendios.",
+  fcTag: "Pronóstico · probado fuera de muestra",
+  fcT: "En julio de 2026 pronosticamos la temporada de agosto a octubre: <b>24.392</b> celdas-día con fuego. Los satélites contaron después <b>22.955</b>.",
+  fcAria: "Mediana pronosticada 24.392 con un rango del 90 % de 18.848 a 31.568. Mediana climatológica 27.301 con un rango de 18.224 a 35.565. Observado 22.955, dentro de ambos rangos y más cerca del pronóstico.",
+  fcClim: "Climatología",
+  fcModel: "Pronóstico de Elis, rango del 90 %",
+  fcObs: "Observado",
+  fcCap: "Rango 18.848–31.568, emitido con un mes de anticipación. La observación de 2026 viene de datos casi en tiempo real, todavía provisionales. Los pronósticos siempre se muestran aparte de lo observado, en violeta.",
+  of20: " de 20",
+  ld1: "departamentos donde el pronóstico a un mes le gana a la climatología en una validación 2003–2025 dejando un año fuera. En el resto publicamos la climatología y lo decimos.",
+  ld2n: "0,75",
+  ld2: "de correlación entre el registro y el área quemada de MapBiomas Fuego, un producto Landsat independiente que nunca usamos para entrenar.",
+  resSrc: "Fuentes: <code>data/processed/methodology.json</code> y <code>forecast.json</code> en el repositorio.",
+  tTool: "Una herramienta para usar, no solo una cifra.",
+  pTool: "Cada mes desde 2000 en un mapa, imágenes satelitales de cualquier día, un pronóstico de la próxima temporada y un asistente que responde con los datos. En inglés y en español.",
+  tabsLabel: "Pantallas de la app", trackLabel: "Capturas de la app", prev: "Pantalla anterior", next: "Pantalla siguiente",
+  a1: "Vista Explorar de Elis: mapa de Perú en septiembre de 2024 con celdas-día con fuego armonizadas por celda de 11 km y la estimación nacional de 15.520 con su rango del 90 %.",
+  a2: "Vista 3D del relieve sobre los Andes del sur en septiembre de 2024, con las celdas de actividad de fuego sobre el terreno.",
+  a3: "Imagen infrarroja térmica de NASA GIBS del 10 de septiembre de 2024 con cada detección MODIS y VIIRS.",
+  a4: "Imagen satelital en color real de Perú el 10 de septiembre de 2024 con humo y nubes, y las detecciones de fuego.",
+  a5: "Vista Comparar: las detecciones crudas saltan al lanzarse los satélites, mientras las celdas-día armonizadas siguen siendo comparables.",
+  a6: "Vista Continuidad: un apagado simulado de MODIS en enero de 2023, con Aqua emulado desde VIIRS que continúa la serie a escala MODIS.",
+  a7: "Pronóstico de la temporada de agosto a octubre de 2027 por departamento, en violeta, con probabilidades por clase y el rango climatológico nacional.",
+  a8: "El asistente Pregúntale a Elis responde sobre las peores temporadas de fuego en la Amazonía, con un gráfico de la actividad anual armonizada.",
+  c1: "<b>Explorar.</b> Cualquier mes desde 2000 en el mapa, con la estimación, su rango del 90 % y lo que vio cada sensor.",
+  c2: "<b>Relieve 3D.</b> Septiembre de 2024 sobre los Andes: dónde se ubica el fuego en el terreno.",
+  c3: "<b>Térmica.</b> Infrarrojo de NASA GIBS del 10 de septiembre de 2024, con cada detección MODIS y VIIRS del día.",
+  c4: "<b>Color real.</b> El mismo día visto desde el espacio, humo incluido.",
+  c5: "<b>Comparar.</b> Crudo frente a armonizado: activa los satélites según se lanzaron y mira cómo desaparecen los saltos falsos.",
+  c6: "<b>Continuidad.</b> Simula el fin de MODIS; el emulador mantiene la escala MODIS.",
+  c7: "<b>Pronóstico.</b> La temporada 2027 por departamento, en probabilidades. Climatología donde el modelo no tiene habilidad.",
+  c8: "<b>Pregúntale a Elis.</b> Preguntas en lenguaje sencillo, respondidas con los archivos procesados y las cifras verificadas.",
+  tScope: "Qué significan las cifras, y qué no.",
+  isH: "Lo que Elis informa",
+  is1: "<b>Celdas-día con fuego.</b> Una celda de 0,1°, unos 11 km, en una fecha con al menos una detección.",
+  is2: "<b>Un rango en cada estimación.</b> Del 90 %, salvo que se indique otro.",
+  is3: "<b>Un límite inferior.</b> Los sensores pierden algunos fuegos a la vez; la simulación sitúa el registro entre 10 y 15 % bajo. Ninguna corrección pasó nuestras pruebas, así que no aplicamos ninguna.",
+  is4: "<b>Una confianza que cambia con el tiempo.</b> 2000–2002 se apoya en Terra y en el inicio de Aqua, con rangos amplios; agosto–noviembre de 2026 son datos provisionales casi en tiempo real.",
+  notH: "Lo que Elis no afirma",
+  not1: "<b>No es un conteo de incendios</b> ni de hectáreas quemadas.",
+  not2: "<b>No es un pronóstico disfrazado de dato.</b> Los pronósticos van etiquetados y separados de lo observado.",
+  not3: "<b>No es una comprobación contra un censo.</b> La validación mide la concordancia entre reconstrucciones independientes.",
+  not4: "<b>No da causas.</b> Elis dice dónde y cuándo la actividad de fuego fue inusual, no por qué.",
+  tTeam: "Equipo Log N + 1.",
+  pTeam: "Cuatro estudiantes de Lima, cuatro habilidades distintas, 36 horas.",
+  roleP: "Métodos y estadística", doP: "Captura y recaptura, validación y pronóstico.",
+  roleJ: "Datos y API", doJ: "Flujo de datos de FIRMS, DuckDB y la API pública.",
+  roleS: "Web y diseño", doS: "La app, el mapa y cómo se lee todo.",
+  roleV: "Asistente de IA", doV: "Pregúntale a Elis y su verificación de cifras.",
+  close: "Estudiantes peruanos. Si funciona aquí, puede funcionar en cualquier lugar.",
+  tCred: "Datos y créditos",
+  cr1: "Detecciones de fuego activo MODIS y VIIRS",
+  cr2: "Imágenes en color real, térmicas y nocturnas",
+  cr3: "Precipitación mensual para índices de sequía",
+  cr4: "Índice de El Niño–Oscilación del Sur",
+  cr5: "Índice Costero El Niño, vía IGP",
+  cr6: "Área quemada usada para validar",
+  cr7: "Límites departamentales",
+  cr8: "Mapa base satelital",
+  ai: "<b>Uso de IA.</b> El asistente Pregúntale a Elis usa Google Gemini sobre nuestros archivos de datos procesados, y cada cifra que devuelve se verifica contra esos archivos antes de mostrarse.",
+  foot: "Proyecto de NASA Space Apps Challenge 2026, reto <em>Harmonization of MODIS and VIIRS Hot Spots</em>. No es un producto oficial de la NASA.",
+  top: "Volver arriba",
+  tipRaw: "Detecciones crudas", tipEst: "Armonizado", tipUnit: "celdas-día", tipRange: "rango del 90 %",
+  langBtn: "EN", langAria: "Switch to English"
+};
+const EN_EXTRA = { copied: "Copied", tipRaw: "Raw detections", tipEst: "Harmonized", tipUnit: "fire cell-days", tipRange: "90% range", langBtn: "ES", langAria: "Cambiar a español" };
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+document.documentElement.classList.add("js");
+
+const EN = { ...EN_EXTRA };
+$$("[data-i18n]").forEach(e => { EN[e.dataset.i18n] = e.innerHTML; });
+$$("[data-i18n-attr]").forEach(e => e.dataset.i18nAttr.split(";").forEach(p => { const [a, k] = p.split(":"); EN[k] = e.getAttribute(a); }));
+
+let lang = "en";
+const t = k => (lang === "es" ? ES : EN)[k] ?? EN[k] ?? "";
+const nf = (v, d = 0) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true });
+const fmt = v => lang === "es" && v >= 1000 && v < 10000 ? String(v).replace(/(\d)(\d{3})$/, "$1.$2") : nf(v);
+
+function setLang(l, save) {
+  lang = l;
+  document.documentElement.lang = l;
+  $$("[data-i18n]").forEach(e => { const v = t(e.dataset.i18n); if (v) e.innerHTML = v; });
+  $$("[data-i18n-attr]").forEach(e => e.dataset.i18nAttr.split(";").forEach(p => { const [a, k] = p.split(":"); const v = t(k); if (v) e.setAttribute(a, v); }));
+  $$(".bar-v").forEach(e => { e.textContent = fmt(+e.dataset.n); });
+  $$(".fc-ticks span").forEach((e, i) => { e.textContent = fmt([20000, 25000, 30000, 35000][i]); });
+  const b = $("#lang");
+  b.firstElementChild.textContent = t("langBtn");
+  b.setAttribute("aria-label", t("langAria"));
+  buildTabs();
+  if (save) { try { localStorage.setItem("elis.landing.lang", l); } catch {} }
+}
+
+function initialLang() {
+  try {
+    const q = new URLSearchParams(location.search).get("lang");
+    if (q === "es" || q === "en") return q;
+    const s = localStorage.getItem("elis.landing.lang");
+    if (s === "es" || s === "en") return s;
+  } catch {}
+  return "en";
+}
+
+$("#lang").addEventListener("click", () => setLang(lang === "es" ? "en" : "es", true));
+
+function youTubeId(u) {
+  const m = String(u).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+function initVideo() {
+  const id = youTubeId(VIDEO_URL);
+  if (!id) return;
+  const box = $("#vid");
+  box.dataset.state = "ready";
+  box.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "vid-btn";
+  btn.type = "button";
+  btn.setAttribute("aria-label", lang === "es" ? "Reproducir el video" : "Play the video");
+  btn.style.backgroundImage = `url(https://i.ytimg.com/vi/${id}/hqdefault.jpg)`;
+  btn.innerHTML = '<span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span>';
+  const play = () => {
+    const f = document.createElement("iframe");
+    f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+    f.title = "Elis demo video";
+    f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    f.allowFullscreen = true;
+    box.replaceChildren(f);
+  };
+  btn.addEventListener("click", play);
+  box.append(btn);
+}
+
+$$("[data-copy]").forEach(b => b.addEventListener("click", async () => {
+  const txt = $("#" + b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(txt); } catch {
+    const r = document.createRange(); r.selectNodeContents($("#" + b.dataset.copy));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  b.classList.add("done");
+  b.setAttribute("aria-label", t("copied"));
+  clearTimeout(b._t);
+  b._t = setTimeout(() => { b.classList.remove("done"); b.setAttribute("aria-label", t("copy")); }, 1600);
+}));
+
+const track = $("#track");
+const shots = $$(".shot", track);
+let active = 0;
+function buildTabs() {
+  const box = $("#tabs");
+  box.innerHTML = "";
+  shots.forEach((s, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tab";
+    b.role = "tab";
+    b.id = "tab-" + i;
+    b.textContent = lang === "es" ? s.dataset.tabEs : s.dataset.tab;
+    b.setAttribute("aria-selected", i === active ? "true" : "false");
+    b.tabIndex = i === active ? 0 : -1;
+    b.addEventListener("click", () => go(i));
+    box.append(b);
+  });
+}
+function go(i, focus) {
+  i = Math.max(0, Math.min(shots.length - 1, i));
+  const pad = parseFloat(getComputedStyle(track).scrollPaddingInlineStart) || 0;
+  track.scrollTo({ left: shots[i].offsetLeft - pad, behavior: reduce.matches ? "auto" : "smooth" });
+  mark(i);
+  if (focus) $("#tab-" + i)?.focus();
+}
+function mark(i) {
+  active = i;
+  $$(".tab").forEach((b, j) => { b.setAttribute("aria-selected", j === i ? "true" : "false"); b.tabIndex = j === i ? 0 : -1; });
+  const tab = $("#tab-" + i);
+  if (tab) { const box = $("#tabs"); box.scrollTo({ left: tab.offsetLeft - box.clientWidth / 2 + tab.clientWidth / 2, behavior: "smooth" }); }
+  $$(".arrow").forEach(a => { a.disabled = (a.dataset.dir === "-1" && i === 0) || (a.dataset.dir === "1" && i === shots.length - 1); });
+}
+$("#tabs").addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") { e.preventDefault(); go(active + 1, true); }
+  if (e.key === "ArrowLeft") { e.preventDefault(); go(active - 1, true); }
+});
+$$(".arrow").forEach(a => a.addEventListener("click", () => go(active + +a.dataset.dir)));
+let st;
+track.addEventListener("scroll", () => {
+  clearTimeout(st);
+  st = setTimeout(() => {
+    const pad = parseFloat(getComputedStyle(track).scrollPaddingInlineStart) || 0;
+    let best = 0, d = Infinity;
+    shots.forEach((s, i) => { const x = Math.abs(s.offsetLeft - pad - track.scrollLeft); if (x < d) { d = x; best = i; } });
+    if (best !== active) mark(best);
+  }, 90);
+}, { passive: true });
+
+function chart() {
+  const fig = $("#heroChart"), canvas = $(".hc-canvas", fig), plot = $(".hc-plot", fig), tip = $("#hcTip"), guide = $("#hcGuide");
+  const base = ANNUAL.find(r => r[0] === 2011);
+  let cur = -1;
+  const show = i => {
+    if (i < 0) { tip.hidden = true; guide.hidden = true; cur = -1; return; }
+    cur = i;
+    const [y, raw, est, lo, hi] = ANNUAL[i];
+    const x = i / (ANNUAL.length - 1) * 100;
+    guide.hidden = false; guide.style.left = x + "%";
+    const d = lang === "es" ? "," : ".";
+    const r1 = (raw / base[1]).toFixed(1).replace(".", d), r2 = (est / base[2]).toFixed(2).replace(".", d);
+    tip.innerHTML = `<b>${y}</b><span class="t-raw">${t("tipRaw")}: ${fmt(raw)} · ×${r1}</span><br><span class="t-est">${t("tipEst")}: ${fmt(est)} ${t("tipUnit")} · ×${r2}</span><br>${t("tipRange")}: ${fmt(lo)}–${fmt(hi)}`;
+    tip.hidden = false;
+    const w = canvas.clientWidth, tw = tip.offsetWidth, px = x / 100 * w;
+    tip.style.left = Math.max(0, Math.min(w - tw, px < w / 2 ? px + 12 : px - tw - 12)) + "px";
+  };
+  canvas.addEventListener("pointermove", e => {
+    const r = canvas.getBoundingClientRect();
+    show(Math.round((e.clientX - r.left) / r.width * (ANNUAL.length - 1)));
+  });
+  canvas.addEventListener("pointerleave", () => show(-1));
+  plot.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      const n = cur < 0 ? 9 : cur + (e.key === "ArrowRight" ? 1 : -1);
+      show(Math.max(0, Math.min(ANNUAL.length - 1, n)));
+    }
+    if (e.key === "Escape") show(-1);
+  });
+  plot.addEventListener("blur", () => show(-1));
+  if (!reduce.matches) {
+    const r = fig.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) fig.classList.add("play");
+  }
+}
+
+function reveal() {
+  if (reduce.matches || !("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    if (e.boundingClientRect.top > innerHeight * 0.55) e.target.classList.add("rv-in");
+    io.unobserve(e.target);
+  }), { rootMargin: "0px 0px -8% 0px" });
+  $$("[data-reveal]").forEach(el => {
+    if (el.getBoundingClientRect().top > innerHeight) io.observe(el);
+  });
+}
+
+function navState() {
+  const bar = $(".bar");
+  const links = $$(".nav a");
+  const secs = links.map(a => $(a.getAttribute("href")));
+  const on = () => {
+    bar.classList.toggle("scrolled", scrollY > 8);
+    let k = -1;
+    secs.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 120) k = i; });
+    links.forEach((a, i) => { a.classList.toggle("on", i === k); if (i === k) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+  };
+  addEventListener("scroll", on, { passive: true });
+  on();
+}
+
+setLang(initialLang(), false);
+initVideo();
+mark(0);
+chart();
+reveal();
+navState();
