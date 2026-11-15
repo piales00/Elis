@@ -180,14 +180,14 @@ export default function DataView({ regionIds, period, periods, forecast, apiNote
     });
 
   return (
-    <div className="grid gap-8">
+    <div className="@container grid gap-10">
       <section aria-labelledby="data-tables" className="grid gap-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 id="data-tables" className="m-0 font-head text-xl font-extrabold">
+            <h3 id="data-tables" className="m-0 font-head text-2xl font-extrabold tracking-[-0.02em]">
               {t("data.title")}
             </h3>
-            <p className="m-0 mt-1 max-w-[70ch] text-sm text-muted">{t("data.lede")}</p>
+            <p className="m-0 mt-2 max-w-[68ch] text-[15px] leading-relaxed text-muted">{t("data.lede")}</p>
           </div>
           <div role="tablist" aria-label={t("data.title")} className="fc-seg">
             {TABS.map((k) => (
@@ -201,7 +201,7 @@ export default function DataView({ regionIds, period, periods, forecast, apiNote
         <div role="tabpanel" id={`data-panel-${tab}`} aria-labelledby={`data-tab-${tab}`} className="grid gap-4">
           {tab === "series" && (
             <>
-              <div className="fc-filters">
+              <div className="fc-filters fc-toolbar">
                 <Select label={t("series.region")} value={sRegion} onChange={setSRegion} options={[["all", t("data.allRegions")], ...regionIds.map((id) => [id, regionName(id)])]} />
                 <Select label={t("data.from")} value={from} onChange={(v) => setFrom(Number(v))} options={YEARS.map((y) => [y, y])} />
                 <Select label={t("data.to")} value={to} onChange={(v) => setTo(Number(v))} options={YEARS.map((y) => [y, y])} />
@@ -232,7 +232,7 @@ export default function DataView({ regionIds, period, periods, forecast, apiNote
 
           {tab === "cells" && (
             <>
-              <div className="fc-filters">
+              <div className="fc-filters fc-toolbar">
                 <Select label={t("year.label")} value={cYear} onChange={(v) => setCYear(Number(v))} options={YEARS.map((y) => [y, y])} />
                 <Select label={t("time.month")} value={cMonth} onChange={(v) => setCMonth(Number(v))} options={monthOptions.slice(1)} />
                 <Select label={t("series.region")} value={cRegion} onChange={setCRegion} options={[["all", t("data.allRegions")], ...MACROS.map((id) => [id, regionName(id)])]} />
@@ -262,7 +262,7 @@ export default function DataView({ regionIds, period, periods, forecast, apiNote
 
           {tab === "outlook" && (
             <>
-              <div className="fc-filters">
+              <div className="fc-filters fc-toolbar">
                 <Select label={t("data.col.level")} value={oLevel} onChange={setOLevel} options={[["all", t("data.any")], ["country", t("outlook.level.country")], ["macro", t("outlook.level.macro")], ["department", t("data.departments")]]} />
                 <Select label={t("data.col.method")} value={oMethod} onChange={setOMethod} options={[["all", t("data.any")], ["model", t("outlook.method.model.short")], ["climatology", t("outlook.method.climatology.short")], ["none", t("outlook.noForecast")]]} />
               </div>
