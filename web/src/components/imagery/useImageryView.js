@@ -78,7 +78,7 @@ export function useImageryView({ period, onPeriodChange, regions, region }) {
     setSatellite,
     heat,
     setHeat,
-    detections,
+    detections: { ...detections, raster },
     imagery,
     message,
     isError,

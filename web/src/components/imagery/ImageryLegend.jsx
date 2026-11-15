@@ -13,6 +13,7 @@ export default function ImageryLegend({ dateLabel, detections, regionLabel, heat
   return (
     <div className="rounded-xl border border-line bg-bg/90 px-3 py-2.5 text-xs">
       <p className="m-0 mb-2 font-head text-[13px] font-bold">{t("imagery.legend.title", { date: dateLabel, region: regionLabel })}</p>
+      {detections.raster && <p className="m-0 mb-2 text-muted">{t("imagery.legend.source", { source: detections.raster.sourceLabel, meters: detections.raster.pixel })}</p>}
       <ul className="m-0 grid list-none gap-1.5 p-0">
         <li className="flex items-center gap-2">
           <svg width="16" height="16" aria-hidden="true">
@@ -40,6 +41,7 @@ export default function ImageryLegend({ dateLabel, detections, regionLabel, heat
         </div>
       )}
       <p className="m-0 mt-2 hidden max-w-[20rem] text-muted sm:block">{t("imagery.legend.scale")}</p>
+      <p className="m-0 mt-2 max-w-[20rem] text-muted">{t("imagery.satellite.gaps")}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "../../lib/hooks.js";
 import { FIRE_COLORS, FOOTPRINT_MIN_ZOOM, GIBS_ATTRIBUTION, HEAT_MAX_FRP, HEAT_RAMP } from "../../lib/gibs.js";
+import "./gibsProtocol.js";
 
 const EMPTY = { type: "FeatureCollection", features: [] };
 const FIRE_LAYERS = ["fires-heat", "fires-viirs-fp", "fires-modis-fp", "fires-modis-fp-line", "fires-viirs-pt", "fires-modis-pt"];
@@ -85,7 +86,8 @@ function setVisibility(map, ids, visible) {
 
 export function useGibsLayers(map, ready, imagery, terrain = false) {
   const enabled = Boolean(imagery?.enabled);
-  const tileUrl = enabled ? imagery.raster?.tiles[0] ?? null : null;
+  const rasterLayers = enabled && imagery.raster ? [...(imagery.raster.gapFill ?? []).slice().reverse(), imagery.raster] : [];
+  const rasterKey = JSON.stringify(rasterLayers.map(({ tiles, maxZoom, attribution }) => ({ tiles, maxZoom, attribution })));
   const rasterMaxZoom = enabled ? imagery.raster?.maxZoom ?? null : null;
   const heat = enabled && Boolean(imagery?.heat);
   const [zoom, setZoom] = useState(null);
@@ -115,18 +117,25 @@ export function useGibsLayers(map, ready, imagery, terrain = false) {
 
   useEffect(() => {
     if (!ready || !map) return;
-    if (map.getLayer("gibs-imagery")) map.removeLayer("gibs-imagery");
-    if (map.getSource("gibs-imagery")) map.removeSource("gibs-imagery");
-    if (!tileUrl) return;
-    map.addSource("gibs-imagery", {
-      type: "raster",
-      tiles: [tileUrl],
-      tileSize: 256,
-      maxzoom: rasterMaxZoom,
-      attribution: `<a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">${GIBS_ATTRIBUTION}</a>`,
+    const layers = JSON.parse(rasterKey);
+    const ids = layers.map((_, i) => i === layers.length - 1 ? "gibs-imagery" : `gibs-imagery-fill-${i}`);
+    layers.forEach((layer, i) => {
+      map.addSource(ids[i], {
+        type: "raster",
+        tiles: layer.tiles,
+        tileSize: 256,
+        maxzoom: layer.maxZoom,
+        attribution: `<a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">${layer.attribution ?? GIBS_ATTRIBUTION}</a>`,
+      });
+      map.addLayer({ id: ids[i], type: "raster", source: ids[i], layout: { visibility: terrain ? "none" : "visible" }, paint: { "raster-fade-duration": 0 } }, map.getLayer("country-fill") ? "country-fill" : firstSymbol(map));
     });
-    map.addLayer({ id: "gibs-imagery", type: "raster", source: "gibs-imagery", layout: { visibility: terrain ? "none" : "visible" }, paint: { "raster-fade-duration": 0 } }, map.getLayer("country-fill") ? "country-fill" : firstSymbol(map));
-  }, [map, ready, tileUrl, rasterMaxZoom, terrain]);
+    return () => {
+      for (const id of ids.slice().reverse()) {
+        if (map.getLayer(id)) map.removeLayer(id);
+        if (map.getSource(id)) map.removeSource(id);
+      }
+    };
+  }, [map, ready, rasterKey, terrain]);
 
   useEffect(() => {
     if (!ready || !map || !map.getSource("fires-modis-pt")) return;
