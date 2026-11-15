@@ -5,7 +5,7 @@ import { CopyButton } from "./ApiCard.jsx";
 import Icon from "./icons.jsx";
 import { EVIDENCE_DOCS } from "../../content/evidence.js";
 
-export const LIVE_BRANCH = "https://github.com/piales00/firechronos-peru/tree/live-data";
+export const LIVE_BRANCH = "https://github.com/piales00/Elis/tree/live-data";
 const SAME_RUN_MS = 6 * 3600 * 1000;
 
 let cache = null;

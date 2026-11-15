@@ -4,7 +4,7 @@ import { API_BASE } from "../../config.js";
 import { isMock } from "../../data/client.js";
 import Icon from "./icons.jsx";
 
-const REPO = "https://github.com/piales00/firechronos-peru";
+const REPO = "https://github.com/piales00/Elis";
 const LANGS = [
   ["curl", "curl"],
   ["py", "Python"],
