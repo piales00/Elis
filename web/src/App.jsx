@@ -17,6 +17,7 @@ import HowWeCalculated from "./components/HowWeCalculated.jsx";
 import Coverage2026 from "./components/Coverage2026.jsx";
 import SeriesTable from "./components/SeriesTable.jsx";
 import DataSummary from "./components/DataSummary.jsx";
+import ChatPanel from "./components/chat/ChatPanel.jsx";
 
 export default function App() {
   const { t } = useI18n();
@@ -90,6 +91,15 @@ export default function App() {
       <footer className="border-t border-line px-4 py-8 sm:px-6">
         <p className="mx-auto m-0 max-w-[1180px] text-sm text-muted">{t("unit.note")}</p>
       </footer>
+      <ChatPanel
+        region={region}
+        series={series}
+        methodology={methodology}
+        onSyncView={({ region: nextRegion, year, month }) => {
+          if (nextRegion && regionIds.includes(nextRegion)) setRegion(nextRegion);
+          if (year && month) setPeriod({ year, month });
+        }}
+      />
     </>
   );
 }

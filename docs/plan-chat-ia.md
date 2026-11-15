@@ -224,3 +224,33 @@ Los pasos 2 a 4 se pueden hacer ya. Los pasos 6 y 7 esperan a que la web de Samu
 - El asistente responde sobre la serie y la metodología. No sabe de causas, hectáreas ni lugares por debajo de la macrorregión.
 - La verificación de cifras comprueba que un número exista en los datos consultados, no que la frase que lo rodea sea correcta.
 - Es un extra: si falla en vivo, los botones de ejemplo y el resto de la app no dependen del modelo.
+
+## 15. Estado de implementación y guía rápida para el equipo (Valentino)
+
+Todo el diseño de este documento ya está implementado y probado en la rama `feat/chat-ia`:
+
+### Qué se entregó
+1. **Contrato y reglas (`AGENTS.md`, `docs/contrato-datos.md`):**
+   - Declarada `POST /chat` (SSE) con CORS restringido a `POST` únicamente en `/chat` (el resto de rutas mantiene solo `GET`, conservando intactas todas las pruebas de `tests/test_api.py`).
+2. **Herramientas de solo lectura (`api/chat_tools.py` + `tests/test_chat_tools.py`):**
+   - Las 5 herramientas con esquema `strict: true`, `additionalProperties: false` y `region` en `("peru", "amazonia", "sierra", "costa")`: `get_series`, `compare_periods`, `rank_years`, `get_methodology` y `show_chart`.
+   - Manejo explícito de 2026 parcial (`2026-11-13`) y NRT provisional (`2026-08` a `2026-11`), comparación manzana-con-manzana `Jan-Oct` cuando se compara 2026 con otro año, y advertencia sobre intervalos anuales cuando no están las réplicas de `data/interim/`.
+3. **Verificador de cifras y límites (`api/chat_guard.py` + `tests/test_chat_guard.py`):**
+   - `verify_figures(text, tool_results)` comprueba cada cifra del texto frente a los resultados de herramientas del turno (con tolerancia de redondeo y conversión de proporciones a porcentajes), distinguiendo años y constantes del contrato (`0.1°`, `11 km`, `375 m`, `90%`) para evitar falsos positivos.
+   - Límites en memoria por IP (10 cada 10 min, 40 por día), tope de historial (12 mensajes, 600 caracteres) y tope diario global en dólares (`CHAT_DAILY_BUDGET_USD`, por defecto `5.0`).
+4. **Instrucciones, ruta SSE y evaluación (`api/chat_prompt.py`, `api/chat.py`, `tests/test_chat_api.py`, `evals/chat_questions.jsonl`):**
+   - Llamada asíncrona a `claude-opus-5-5` (configurable con `CHAT_MODEL`), `output_config={"effort": "low"}` (configurable con `CHAT_EFFORT`), `cache_control={"type": "ephemeral"}` y `fallbacks="default"` (`server-side-fallback-2026-07-01`).
+   - 25 preguntas de evaluación en `evals/chat_questions.jsonl` cubriendo dato directo, comparación, año parcial, baja confianza, fuera de alcance, unidad, trampa e inyección.
+5. **Panel web "Ask the data" (`web/src/data/chat.js`, `web/src/components/chat/ChatPanel.jsx`, `web/src/components/chat/ChatChart.jsx`):**
+   - Las 6 preguntas de ejemplo responden al instante con cifras verificadas de `series.json` y `methodology.json` y dibujan su gráfico incluso con `CHAT_ENABLED=0` o sin conexión al modelo.
+   - En vivo (`CHAT_ENABLED=1`), transmite eventos SSE (`tool`, `chart`, `text`, `notice`, `done`, `error`), muestra insignias de herramientas ejecutadas y verificación de cifras, enlaza a `#method` ("How we calculate it") y permite sincronizar la vista principal (`Sync with main view`).
+
+### Cómo ejecutar las pruebas (sin gastar saldo de API)
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_api.py tests/test_chat_tools.py tests/test_chat_guard.py tests/test_chat_api.py
+```
+
+### Variables de entorno para activar el modelo en vivo
+- `CHAT_ENABLED=1` (por defecto `0`; si vale `0` o falta la clave, `/chat` responde `503` y los 6 botones de ejemplo siguen funcionando en la web).
+- `ANTHROPIC_API_KEY=sk-ant-...` (solo en el servidor, nunca en el repositorio ni en el cliente web).
+- Opcionales: `CHAT_MODEL=claude-opus-5-5`, `CHAT_EFFORT=low`, `CHAT_DAILY_BUDGET_USD=5.0`.
