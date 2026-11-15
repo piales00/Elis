@@ -27,30 +27,11 @@ CI_TAILS = (0.05, 0.95)
 MAX_MONTHLY_ROWS = 48
 
 DECISION_PROFILES: dict[str, dict[str, Any]] = {
-    "amazonia": {
-        "sensor_pattern": "High MODIS-VIIRS agreement on continuous canopy fire fronts (in September VIIRS captures 84.9% of fire cell-days vs 21.5% for MODIS Aqua; multi-pixel deforestation fronts trigger both sensors).",
-        "fire_regime": "Continuous forest-frontier canopy and land-clearing fires (Tambopata, Manu, Ucayali, and Loreto corridors).",
-        "intervention_matrix": "INDECI/SERFOR T-60d aerial interdiction, SERNANP protected-area buffer patrols, and FEMA environmental prosecution in May-June (60 days before the Aug-Oct peak).",
-        "preventive_lead_days": 60,
-    },
-    "sierra": {
-        "sensor_pattern": "High sensor disagreement (VIIRS detects 4.1x more activity than MODIS because single-spot fragmented pasture burns have ~7% MODIS recall).",
-        "fire_regime": "Fragmented high-altitude agricultural and pasture burns (pajonal/ichu) in Andean valleys including Cusco, Sacred Valley, and Machu Picchu buffer zones.",
-        "intervention_matrix": "MIDAGRI/GORE community agricultural burn calendars and SERNANP perimeter firebreaks rather than costly aerial water-bombing; T-60d pre-positioning in May-June.",
-        "preventive_lead_days": 60,
-    },
-    "costa": {
-        "sensor_pattern": "Localized agro-industrial residue burns and seasonal dry-forest anomalies captured primarily by VIIRS 375 m.",
-        "fire_regime": "Agro-industrial stubble burns and northern dry-forest fire events.",
-        "intervention_matrix": "MIDAGRI/OEFA agricultural residue regulation and regional COER early alerts 60 days ahead of the dry season.",
-        "preventive_lead_days": 60,
-    },
-    "peru": {
-        "sensor_pattern": "National composite combining Amazonian canopy fronts and Andean fragmented pasture burns (true Chapman trend +0.18%/yr vs +16.77%/yr naive raw artifact).",
-        "fire_regime": "Dual national regime: Amazonian deforestation fronts + Andean agricultural pasture burns.",
-        "intervention_matrix": "MINAM Paris Agreement (NDC) bias-corrected carbon inventory + INDECI/SERFOR T-60d differentiated logistics across 25 departments.",
-        "preventive_lead_days": 60,
-    },
+    region: {
+        "sensor_pattern": "Compare MODIS and VIIRS detection probabilities for the same region and calendar month in methodology.json.",
+        "limitations": "Sensor disagreement does not identify fire causes or land cover. The outlook can inform preparedness planning, but is not an operational recommendation.",
+    }
+    for region in VALID_REGIONS
 }
 
 TOOLS: list[dict[str, Any]] = [
@@ -832,7 +813,7 @@ def tool_get_methodology(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bo
                 "probabilities": u.get("probabilities"),
                 "predictors": u.get("predictors"),
                 "pct_vs_hist_median": round(((float(u["median"]) - float(u["hist_median"])) / float(u["hist_median"])) * 100.0, 1) if u.get("median") is not None and u.get("hist_median") else None,
-                "alert_level": {"very_high": "CRITICAL / VERY HIGH", "high": "HIGH ALERT", "normal": "NORMAL / MODERATE", "low": "LOW"}.get(str(u.get("most_likely_class") or ""), "NORMAL / MODERATE"),
+                "alert_level": {"very_high": "VERY HIGH CLASS", "high": "HIGH CLASS", "normal": "NORMAL CLASS", "low": "LOW CLASS"}.get(str(u.get("most_likely_class") or ""), "UNAVAILABLE"),
                 "decision_profile": DECISION_PROFILES.get(u.get("macroregion") or u.get("region") or "peru", DECISION_PROFILES["peru"]),
             })
         return {

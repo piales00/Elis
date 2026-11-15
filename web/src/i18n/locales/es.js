@@ -339,6 +339,8 @@ export default {
   "month.10": "Oct",
   "month.11": "Nov",
   "month.12": "Dic",
+  "chat.autopilot": "Autopiloto de {seconds}s",
+  "chat.greeting": "Soy Elis, tu asistente del registro armonizado MODIS–VIIRS de fuego en Perú, 2000–2026. Explora el salto de sensores de 2012, el registro con su rango al 90 %, compara MODIS y VIIRS en una región y mes, consulta el pronóstico separado de lo observado o la continuidad tras MODIS con el emulador.",
   "chat.trigger": "Pregunta a Elis",
   "chat.title": "Pregunta a Elis",
   "chat.subtitle": "Respuestas y gráficos verificados sobre la serie armonizada 2000–2026.",

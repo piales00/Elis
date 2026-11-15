@@ -2042,3 +2042,28 @@ th.text-right .fc-th-btn {
     height: 32px;
   }
 }
+
+.fc-overlay-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.fc-elis-spotlight {
+  top: var(--elis-top, 144px);
+  bottom: 112px;
+  align-items: flex-end;
+}
+@media (max-width: 639px) {
+  .fc-overlay-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fc-elis-spotlight {
+    top: var(--elis-top, 152px);
+    bottom: 96px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .fc-app:has(.fc-elis-spotlight) {
+    grid-template-rows: auto 72svh auto minmax(0, 1fr) auto;
+  }
+}

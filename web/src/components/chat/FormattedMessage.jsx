@@ -41,19 +41,19 @@ export function detectAlertBadge(text, isEs = false) {
   const raw = String(text || "");
   if (/(very_high|VERY HIGH|muy alta|cr[ií]tica)/i.test(raw)) {
     return {
-      label: isEs ? "🚨 NIVEL CRÍTICO / MUY ALTO" : "🚨 CRITICAL / VERY HIGH ALERT",
+      label: isEs ? "CLASE MUY ALTA" : "VERY HIGH CLASS",
       cls: "border-danger/50 bg-danger/15 text-danger",
     };
   }
   if (/(HIGH ALERT|alerta alta|\bhigh class\b|categor[ií]a alta)/i.test(raw)) {
     return {
-      label: isEs ? "⚠️ ALERTA ALTA (T-60d)" : "⚠️ HIGH ALERT (T-60d)",
+      label: isEs ? "CLASE ALTA" : "HIGH CLASS",
       cls: "border-forecast/50 bg-forecast/15 text-forecast",
     };
   }
   if (/(normal class|categor[ií]a normal|niveles normales|NORMAL \/ MODERATE)/i.test(raw)) {
     return {
-      label: isEs ? "✓ NIVEL NORMAL / VIGILANCIA" : "✓ NORMAL / BASELINE MONITOR",
+      label: isEs ? "CLASE NORMAL" : "NORMAL CLASS",
       cls: "border-est/40 bg-est/10 text-est",
     };
   }

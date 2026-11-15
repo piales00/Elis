@@ -16,7 +16,7 @@ import MockBanner from "./components/MockBanner.jsx";
 import MapLegend from "./components/MapLegend.jsx";
 import ImageryLegend from "./components/imagery/ImageryLegend.jsx";
 import ChatPanel from "./components/chat/ChatPanel.jsx";
-import ElisSpotlight, { ELIS_MISSIONS } from "./components/chat/ElisSpotlight.jsx";
+import ElisSpotlight, { ELIS_MISSIONS, AUTOPILOT_SECONDS } from "./components/chat/ElisSpotlight.jsx";
 import { ElisMark } from "./components/shell/Rail.jsx";
 import Rail, { VIEWS } from "./components/shell/Rail.jsx";
 import TimeRibbon from "./components/shell/TimeRibbon.jsx";
@@ -76,6 +76,16 @@ const initial = readUrl();
 
 export default function App() {
   const { t, formatNumber } = useI18n();
+  const toolbarRef = useRef(null);
+  useEffect(() => {
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+    const resize = () => toolbar.parentElement.style.setProperty("--elis-top", `${toolbar.offsetTop + toolbar.offsetHeight + 12}px`);
+    const observer = new ResizeObserver(resize);
+    observer.observe(toolbar);
+    resize();
+    return () => observer.disconnect();
+  }, []);
   const [view, setView] = useState(initial.view);
   const [panelOpen, setPanelOpen] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -563,7 +573,7 @@ export default function App() {
         </Suspense>
         </MapBoundary>
 
-        <div className="fc-overlay fc-overlay-top">
+        <div ref={toolbarRef} className="fc-overlay fc-overlay-top">
           <div className="flex min-w-0 max-w-full flex-col items-start gap-2">
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {!panelOpen && (
@@ -588,6 +598,8 @@ export default function App() {
               <Icon name="fit" size={17} />
             </button>
             <LiveBadge state={liveOpen} onState={setLiveOpen} />
+            </div>
+            <div className="flex max-w-full flex-wrap items-center gap-2" data-elis-controls>
             <button
               type="button"
               onClick={() => {
@@ -615,15 +627,15 @@ export default function App() {
                   applyElisMission(ELIS_MISSIONS[0], true);
                 }
               }}
-              className={`fc-float fc-press hidden h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold sm:flex cursor-pointer ${
+              className={`fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold cursor-pointer ${
                 spotlightOpen && autopilot
                   ? "!border-forecast !bg-forecast !text-bg shadow-lg"
                   : "!border-forecast/50 text-forecast hover:!border-forecast"
               }`}
-              title="Run 60-Second Autonomous Copilot Briefing"
+              title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
             >
               <span>{spotlightOpen && autopilot ? "⏸" : "▶"}</span>
-              <span>60s Autopilot</span>
+              <span>{t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}</span>
             </button>
             {!tour && (
               <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
@@ -675,13 +687,13 @@ export default function App() {
           }}
           activeMissionId={activeMissionId}
           autopilot={autopilot}
+          onCompleteAutopilot={() => setAutopilot(false)}
           customTurn={projectedTurn}
           series={series}
           onSelectMission={(m, fromAutopilot = false) => applyElisMission(m, fromAutopilot ? true : false, !spotlightMinimized)}
           onToggleAutopilot={() => {
             if (!autopilot) {
-              setProjectedTurn(null);
-              setAutopilot(true);
+              applyElisMission(ELIS_MISSIONS[0], true);
             } else {
               setAutopilot(false);
             }
