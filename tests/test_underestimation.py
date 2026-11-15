@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+jax = pytest.importorskip("jax")
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
