@@ -183,12 +183,41 @@ We state them on purpose: a record that hides its limits is not more solid, only
 
 **Log N + 1**, NASA Space Apps Challenge 2026.
 
-| | Role |
-|---|---|
-| **Alessandro** | Scientific lead · Method and validation |
-| **Jossep** | Data and backend · Pipeline and API |
-| **Samuel** | Product and design · Frontend |
-| **Valentino** | Product owner · Strategy and communication |
+<table align="center">
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <h3>Piero</h3>
+      <b>CEO & Chief Science Officer</b><br>
+      <sub>Data science</sub><br><br>
+      Model training<br>
+      Methodology<br>
+      Harmonization and validation of the record
+    </td>
+    <td align="center" valign="top" width="25%">
+      <h3>Jossep</h3>
+      <b>CTO</b><br>
+      <sub>Data engineering</sub><br><br>
+      FIRMS download and processing<br>
+      FastAPI endpoints<br>
+      Published files in <code>data/processed/</code>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <h3>Samuel</h3>
+      <b>CDO (Chief Design Officer)</b><br>
+      <sub>Design and frontend</sub><br><br>
+      Design of the whole project<br>
+      Interface, maps and charts<br>
+      User experience
+    </td>
+    <td align="center" valign="top" width="25%">
+      <h3>Valentino</h3>
+      <b>CAIO (Chief AI Officer)</b><br>
+      <sub>Conversational AI</sub><br><br>
+      Ask Elis interactive chatbot<br>
+      Scientific copilot that answers questions about the record
+    </td>
+  </tr>
+</table>
 
 ## AI use
 
