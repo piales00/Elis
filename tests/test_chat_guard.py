@@ -110,3 +110,12 @@ def test_price_overrides_from_environment(monkeypatch):
     monkeypatch.setenv("CHAT_PRICE_INPUT_PER_MTOK", "0.1")
     monkeypatch.setenv("CHAT_PRICE_OUTPUT_PER_MTOK", "0.4")
     assert abs(compute_usage_cost_usd(usage, model="gemini-3.1-flash-lite") - 0.5) < 1e-9
+
+
+def test_fallback_keeps_its_own_pricing(monkeypatch):
+    from api.chat_guard import compute_usage_cost_usd
+    monkeypatch.setenv("CHAT_MODEL", "gemini-3.1-flash-lite")
+    monkeypatch.setenv("CHAT_FALLBACK_MODEL", "gemini-3.5-flash-lite")
+    monkeypatch.setenv("CHAT_PRICE_INPUT_PER_MTOK", "0.25")
+    monkeypatch.setenv("CHAT_PRICE_OUTPUT_PER_MTOK", "1.50")
+    assert compute_usage_cost_usd({"input_tokens": 1_000_000, "output_tokens": 1_000_000}, model="gemini-3.5-flash-lite") == 2.8

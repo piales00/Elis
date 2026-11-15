@@ -51,6 +51,9 @@ MODEL_PRICING_PER_MTOK: dict[str, dict[str, float]] = {
 
 def model_pricing(model: str) -> dict[str, float]:
     base = dict(MODEL_PRICING_PER_MTOK.get(model, MODEL_PRICING_PER_MTOK["claude-opus-5-5"]))
+    fallback = os.environ.get("CHAT_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip()
+    if model == fallback and model != os.environ.get("CHAT_MODEL", "gemini-3.1-flash-lite").strip():
+        return base
     for key in ("input", "output"):
         raw = os.environ.get(f"CHAT_PRICE_{key.upper()}_PER_MTOK", "").strip()
         if raw:

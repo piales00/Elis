@@ -1,4 +1,6 @@
 export default {
+  "chat.preset.aboutElis": "What is Elis and what does this app do?",
+  "chat.error.busy": "Elis is very busy right now. Here are verified answers you can open instantly.",
   "lang.name": "English",
   "lang.label": "Language",
   "app.title": "Elis — Harmonized fire record for Peru, 2000–2026",

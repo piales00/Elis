@@ -106,7 +106,12 @@ export default function ChatPanel({
 
   const runLiveQuestion = async (questionText) => {
     const trimmed = questionText.trim();
-    if (!trimmed || streaming || snapshot) return;
+    if (!trimmed || streaming) return;
+    if (/what (?:is elis|does (?:this app|elis) do|do you do)|purpose of (?:this app|elis)|qu[eé] (?:es elis|hace (?:elis|esta app))|para qu[eé] sirve/i.test(trimmed)) {
+      handlePresetClick(PRESET_QUESTIONS.find((preset) => preset.id === "about_elis"));
+      return;
+    }
+    if (snapshot) return;
 
     const userTurnId = `u-${Date.now()}`;
     const assistantTurnId = `a-${Date.now() + 1}`;
@@ -176,7 +181,7 @@ export default function ChatPanel({
               if (eventName === "error") {
                 return {
                   ...item,
-                  error: data.message || t("chat.error.generic"),
+                  error: t("chat.error.busy"),
                   done: true,
                 };
               }
@@ -206,7 +211,7 @@ export default function ChatPanel({
           item.id === assistantTurnId
             ? {
                 ...item,
-                error: err.message || t("chat.error.generic"),
+                error: t("chat.error.busy"),
                 done: true,
               }
             : item,
@@ -470,6 +475,13 @@ export default function ChatPanel({
                         >
                           {t("chat.retry")}
                         </button>
+                      </div>
+                      <div className="mt-3 flex flex-col gap-1.5">
+                        {PRESET_QUESTIONS.map((preset) => (
+                          <button key={preset.id} type="button" disabled={streaming} onClick={() => handlePresetClick(preset)} className="rounded border border-line bg-surface px-2 py-2 text-left text-fg cursor-pointer">
+                            {t(preset.key)}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}

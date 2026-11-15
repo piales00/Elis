@@ -1155,6 +1155,11 @@
           }
         ]
       }
+    },
+    "about_elis": {
+      "en": "Elis helps you explore a comparable history of fire in Peru by harmonizing MODIS and VIIRS satellite detections. Their different pixel sizes and detection capabilities create an artificial jump when raw records are combined. Explore the harmonized record with uncertainty ranges, compare the sensors, and inspect continuity after MODIS. Activity is measured in fire cell-days, not individual fires or hectares. Seasonal outlooks are shown separately from observations.",
+      "es": "Elis permite explorar una historia comparable del fuego en Perú al armonizar las detecciones satelitales MODIS y VIIRS. Sus distintos tamaños de píxel y capacidades de detección producen un salto artificial al combinar los registros crudos. Explora el registro armonizado con rangos de incertidumbre, compara sensores y revisa la continuidad tras MODIS. La actividad se mide en celdas-día con fuego, no en incendios individuales ni hectáreas. Los pronósticos se muestran separados de las observaciones.",
+      "chart": null
     }
   },
   "continuity": {

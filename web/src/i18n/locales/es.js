@@ -1,4 +1,6 @@
 export default {
+  "chat.preset.aboutElis": "¿Qué es Elis y qué hace esta app?",
+  "chat.error.busy": "Elis está muy ocupada ahora. Aquí tienes respuestas verificadas que puedes abrir al instante.",
   "lang.name": "Español",
   "lang.label": "Idioma",
   "app.title": "Elis — Registro armonizado del fuego en Perú, 2000–2026",

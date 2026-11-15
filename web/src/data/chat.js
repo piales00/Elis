@@ -2,6 +2,7 @@ import saved from "./chat-presets.json";
 import { API_BASE } from "../config.js";
 
 export const PRESET_QUESTIONS = [
+  { id: "about_elis", key: "chat.preset.aboutElis", defaultRegion: null },
   {
     id: "normal_2026",
     key: "chat.preset.normal2026",
