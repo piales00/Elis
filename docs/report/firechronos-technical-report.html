@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FireChronos Peru Technical Report</title>
+<meta name="description" content="Technical report: a comparable 2000–2026 record of fire in Peru from MODIS and VIIRS, with methods, results, validation and limits.">
+<style>
+:root {
+  --ink: #1d1d1f;
+  --muted: #555;
+  --rule: #d6d6d6;
+  --accent: #1f5f8b;
+  --warm: #b5452a;
+  --soft: #f4f6f8;
+}
+@page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+@page :first { margin: 0; }
+* { box-sizing: border-box; }
+html { background: #fff; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #fff;
+  font-family: "Charter", "Bitstream Charter", "Georgia", "Times New Roman", serif;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+main { max-width: 176mm; margin: 0 auto; padding: 0 16px; }
+h1, h2, h3, .sans, table, figcaption, .kpi, .meta {
+  font-family: "Helvetica Neue", "Inter", "Arial", sans-serif;
+}
+h2 {
+  font-size: 15pt;
+  margin: 0 0 6pt;
+  padding-top: 2pt;
+  border-top: 2px solid var(--ink);
+  break-after: avoid;
+}
+h2 .num { color: var(--accent); margin-right: 6pt; }
+h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+p { margin: 0 0 7pt; }
+ul { margin: 0 0 7pt; padding-left: 16pt; }
+li { margin-bottom: 2pt; }
+a { color: var(--accent); }
+section { margin-bottom: 14pt; }
+.page { break-before: page; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.6pt;
+  margin: 4pt 0 9pt;
+  break-inside: avoid;
+}
+th, td { text-align: left; padding: 3pt 5pt; border-bottom: 0.6pt solid var(--rule); vertical-align: top; }
+th { border-bottom: 1pt solid var(--ink); font-weight: 600; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr.hl td { background: var(--soft); font-weight: 600; }
+figure { margin: 6pt 0 10pt; break-inside: avoid; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
+.note {
+  font-family: "Helvetica Neue", "Inter", "Arial", sans-serif;
+  font-size: 8.8pt;
+  background: var(--soft);
+  border-left: 3pt solid var(--accent);
+  padding: 6pt 9pt;
+  margin: 6pt 0 9pt;
+  break-inside: avoid;
+}
+.note.warn { border-left-color: var(--warm); }
+.forecast-tag {
+  display: inline-block;
+  font-family: "Helvetica Neue", "Inter", "Arial", sans-serif;
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warm);
+  border: 1pt dashed var(--warm);
+  padding: 0 4pt;
+  margin-left: 4pt;
+  vertical-align: 2pt;
+}
+.cover {
+  height: 297mm;
+  padding: 34mm 22mm 24mm;
+  display: flex;
+  flex-direction: column;
+  background: #10202d;
+  color: #f3f1ec;
+  font-family: "Helvetica Neue", "Inter", "Arial", sans-serif;
+}
+.cover .eyebrow { font-size: 10pt; letter-spacing: 0.14em; text-transform: uppercase; color: #e8a27f; }
+.cover h1 { font-size: 34pt; line-height: 1.08; margin: 10mm 0 6mm; font-weight: 700; }
+.cover .sub { font-size: 14pt; line-height: 1.35; max-width: 140mm; color: #d4dbe1; }
+.cover .rule { height: 2px; background: #e8a27f; width: 40mm; margin: 12mm 0; }
+.cover dl { display: grid; grid-template-columns: 34mm 1fr; gap: 3mm 6mm; font-size: 11pt; margin: 0; }
+.cover dt { color: #9fb0bd; }
+.cover dd { margin: 0; }
+.cover .foot { margin-top: auto; font-size: 9pt; color: #9fb0bd; line-height: 1.5; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; margin: 8pt 0 10pt; }
+.kpi { border: 0.8pt solid var(--rule); padding: 6pt 8pt; break-inside: avoid; }
+.kpi b { display: block; font-size: 15pt; color: var(--accent); line-height: 1.1; }
+.kpi span { display: block; font-size: 8pt; color: var(--muted); margin-top: 2pt; }
+.meta { font-size: 8.5pt; color: var(--muted); }
+.refs li { font-size: 9pt; margin-bottom: 4pt; }
+@media screen {
+  body { background: #e9ecef; }
+  .cover { max-width: 210mm; margin: 0 auto; height: auto; min-height: 100vh; }
+  main { background: #fff; max-width: 210mm; padding: 16mm 17mm; }
+}
+@media screen and (max-width: 640px) {
+  .cover { padding: 24px 16px; }
+  .cover h1 { font-size: 26pt; }
+  .cover dl { grid-template-columns: 1fr; }
+  main { padding: 16px; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  table { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Technical report · NASA Space Apps Challenge 2026</div>
+  <h1>FireChronos Peru</h1>
+  <div class="sub">A comparable record of fire in Peru, 2000–2026, from MODIS and VIIRS hot spots, with its uncertainty stated.</div>
+  <div class="rule"></div>
+  <dl>
+    <dt>Team</dt><dd>Log N + 1</dd>
+    <dt>Challenge</dt><dd>Harmonization of MODIS and VIIRS Hot Spots</dd>
+    <dt>Date</dt><dd>2026-11-15</dd>
+    <dt>Unit</dt><dd>Fire cell-days (0.1° cell × date with at least one detection)</dd>
+  </dl>
+  <div class="foot">
+    Data: NASA FIRMS (MODIS Terra and Aqua, VIIRS S-NPP, NOAA-20, NOAA-21), NASA POWER, NASA GIBS, NOAA CPC ONI, ENFEN ICEN, MapBiomas Fuego Peru, INEI.<br>
+    Detailed technical notes: <span>docs/methods/</span> in the project repository.
+  </div>
+</div>
+
+<main>
+
+<section>
+  <h2>Executive summary</h2>
+  <p><strong>Problem.</strong> MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire differently. Adding their detections makes fire in Peru appear to multiply by 8.9 between 2011 (10,375 detections) and 2012 (92,807). The fire did not change; the instrument did. With raw data, nobody can honestly compare one year with another.</p>
+  <p><strong>What we built.</strong> One record of fire in Peru, 2000–2026, by macroregion (Amazon, Andes, Coast) and month, in <em>fire cell-days</em>. We estimate the total, including fire neither satellite saw, with capture–recapture (the Chapman estimator, used by biologists to count fish), calibrated only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart. Every number has a 90&#8239;% range.</p>
+  <div class="kpis">
+    <div class="kpi"><b>3.5&#8239;%</b><span>Annual error of our method on held-out years 2021–2024, Peru (Aqua-only vs VIIRS-only)</span></div>
+    <div class="kpi"><b>334&#8239;%</b><span>Error of the naive sum of detections on the same years</span></div>
+    <div class="kpi"><b>80&#8239;% vs 55–58&#8239;%</b><span>Sensor agreement when passes are &lt; 20 min vs 20–60 min apart: small fire flickers</span></div>
+    <div class="kpi"><b>0.72</b><span>Correlation with MapBiomas burned area (0.85–0.98 within each Landsat era)</span></div>
+    <div class="kpi"><b>−28.8&#8239;%</b><span>Aqua sees this much less than an on-time Aqua in 2026 (orbital drift)</span></div>
+    <div class="kpi"><b>≈ −11&#8239;%</b><span>Simulated undercount of the headline number: it is a lower bound</span></div>
+  </div>
+  <p><strong>Main findings.</strong></p>
+  <ul>
+    <li>The false ×8.9 jump of 2012 becomes ×1.36 (33,238 to 45,117 fire cell-days), within normal year-to-year variation. The false jumps of 2018 (NOAA-20) and 2023 (NOAA-21) also disappear.</li>
+    <li>The highest months are August 2005 (21,512 [19,552–27,338] fire cell-days) and August 2010 (20,616 [18,857–26,739]), both drought years. September 2024, the record in the naive sum, is 15,520 [15,219–15,940].</li>
+    <li>Aqua sees 16&#8239;% and S-NPP sees 79&#8239;% of afternoon fire cell-days. Sensors are positively dependent, so the record is a <strong>lower bound</strong>. No correction passed our tests, so none is applied.</li>
+    <li>The record does not depend on MODIS after 2012: without MODIS it changes by at most 0.05 fire cell-days in any region-month.</li>
+    <li>A seasonal outlook built on the record beats climatology in a leave-one-year-out backtest (lead-1 RPSS 0.35). Trained on raw detections, the same model under-predicts every post-2012 season by ×4.5: <em>without harmonization, even AI gets it wrong.</em></li>
+  </ul>
+  <p><strong>What we do not claim.</strong> We count fire cell-days, not fires and not hectares. Ranges after 2012 cover calibration uncertainty only. The Coast has a 32&#8239;% annual error. 2000–2002 (Terra only) and August–November 2026 (near-real-time data) are low-confidence or provisional. Forecasts are always labelled and shown apart from observations.</p>
+</section>
+
+<section class="page">
+  <h2><span class="num">1</span>Harmonization: capture–recapture on simultaneous overpasses</h2>
+  <p><strong>Data.</strong> NASA FIRMS standard-processing detections for Peru: MODIS C6.1 Terra (from 2000-11-01) and Aqua (from 2002-07-04), VIIRS S-NPP 375 m (from 2012-01-20), NOAA-20 and NOAA-21; near-real-time files from August 2026. Filters: vegetation fire (<code>type = 0</code>), MODIS confidence ≥ 30, VIIRS confidence nominal or high. Outage days are masked. Regions: INEI departments grouped into three macroregions.</p>
+  <p><strong>Method.</strong> Per region and calendar month, list 1 = Aqua cell-days, list 2 = S-NPP cell-days, <em>m</em> = both. Chapman: N = (n₁+1)(n₂+1)/(m+1) − 1. We calibrate on 2013–2020, only on days with an overpass gap under 20 minutes, and get the share each sensor sees, p<sub>aqua</sub> = n₁/N and p<sub>viirs</sub> = n₂/N (500-replicate year bootstrap). Each period then uses its available sensor:</p>
+  <table>
+    <tr><th>Period</th><th>Estimate</th><th>Confidence</th></tr>
+    <tr><td>2000-11 to 2002-06</td><td>Terra bridged to Aqua scale (ratio from 2003–2011), ÷ p<sub>aqua</sub></td><td>low</td></tr>
+    <tr><td>2002-07 to 2011-12</td><td>n<sub>aqua</sub> / p<sub>aqua</sub></td><td>low in 2002, then normal</td></tr>
+    <tr><td>2012-01 to 2026-07</td><td>n<sub>snpp</sub> / p<sub>viirs</sub> (Aqua fills S-NPP outage days)</td><td>normal</td></tr>
+    <tr><td>2026-08 to 2026-10</td><td>Same, from near-real-time data with a static-source mask</td><td>provisional</td></tr>
+    <tr><td>2026-11 (to 11-13)</td><td>NOAA-20 scaled to S-NPP (ratio 0.97–0.98) after S-NPP ends on 11-01</td><td>provisional</td></tr>
+  </table>
+  <h3>The overpass-time finding</h3>
+  <table>
+    <tr><th>Aqua – S-NPP gap</th><th class="n">Aqua cell-days also seen by S-NPP</th><th class="n">Chapman N / S-NPP</th></tr>
+    <tr class="hl"><td>0–20 min</td><td class="n">80.0&#8239;%</td><td class="n">1.25</td></tr>
+    <tr><td>20–40 min</td><td class="n">57.6&#8239;%</td><td class="n">1.74</td></tr>
+    <tr><td>40–60 min</td><td class="n">54.8&#8239;%</td><td class="n">1.82</td></tr>
+  </table>
+  <p>Fire that starts or stops between two passes looks like fire one sensor missed, and Chapman inflates N. Calibrating only on simultaneous passes avoids this. The static-source mask for near-real-time data removes 92&#8239;% of static S-NPP detections and 0.18&#8239;% of vegetation detections (2024–2025 test, in-sample).</p>
+  <figure>
+    <svg viewBox="0 0 640 255" role="img" aria-label="Peru annual fire record: naive sum of detections versus harmonized estimate, 2001 to 2025" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif" font-size="11">
+<line x1="58" x2="624" y1="221.0" y2="221.0" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="225.0" text-anchor="end" fill="#555">0k</text>
+<line x1="58" x2="624" y1="187.2" y2="187.2" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="191.2" text-anchor="end" fill="#555">50k</text>
+<line x1="58" x2="624" y1="153.3" y2="153.3" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="157.3" text-anchor="end" fill="#555">100k</text>
+<line x1="58" x2="624" y1="119.5" y2="119.5" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="123.5" text-anchor="end" fill="#555">150k</text>
+<line x1="58" x2="624" y1="85.7" y2="85.7" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="89.7" text-anchor="end" fill="#555">200k</text>
+<line x1="58" x2="624" y1="51.8" y2="51.8" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="55.8" text-anchor="end" fill="#555">250k</text>
+<line x1="58" x2="624" y1="18.0" y2="18.0" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="22.0" text-anchor="end" fill="#555">300k</text>
+<text x="58.0" y="237" text-anchor="middle" fill="#555">2001</text>
+<text x="152.3" y="237" text-anchor="middle" fill="#555">2005</text>
+<text x="246.7" y="237" text-anchor="middle" fill="#555">2009</text>
+<text x="317.4" y="237" text-anchor="middle" fill="#555">2012</text>
+<text x="411.8" y="237" text-anchor="middle" fill="#555">2016</text>
+<text x="506.1" y="237" text-anchor="middle" fill="#555">2020</text>
+<text x="624.0" y="237" text-anchor="middle" fill="#555">2025</text>
+<line x1="317.4" x2="317.4" y1="18" y2="221" stroke="#999" stroke-dasharray="3 3"/>
+<text x="321.4" y="28" fill="#555">VIIRS starts (2012)</text>
+<polygon points="58.0,201.3 81.6,202.7 105.2,187.0 128.8,195.3 152.3,172.0 175.9,189.9 199.5,183.3 223.1,191.2 246.7,194.9 270.2,178.7 293.8,196.1 317.4,190.0 341.0,195.4 364.6,197.3 388.2,192.5 411.8,185.0 435.3,196.7 458.9,194.9 482.5,192.0 506.1,181.2 529.7,193.7 553.2,185.3 576.8,188.9 600.4,184.1 624.0,197.9 624.0,198.5 600.4,184.8 576.8,189.6 553.2,185.9 529.7,194.4 506.1,182.4 482.5,192.6 458.9,195.5 435.3,197.2 411.8,185.8 388.2,193.0 364.6,197.8 341.0,195.9 317.4,190.7 293.8,198.3 270.2,182.8 246.7,197.6 223.1,193.9 199.5,186.9 175.9,192.8 152.3,175.9 128.8,198.3 105.2,190.8 81.6,205.0 58.0,211.2" fill="#1f5f8b" opacity="0.25"/>
+<polyline fill="none" stroke="#b5452a" stroke-width="2" points="58.0,220.3 81.6,216.4 105.2,211.4 128.8,213.9 152.3,206.8 175.9,213.0 199.5,209.8 223.1,212.4 246.7,213.8 270.2,208.4 293.8,214.0 317.4,158.2 341.0,173.1 364.6,178.1 388.2,167.8 411.8,151.9 435.3,178.3 458.9,137.2 482.5,117.0 506.1,86.8 529.7,128.3 553.2,99.1 576.8,67.4 600.4,18.2 624.0,117.0"/>
+<polyline fill="none" stroke="#1f5f8b" stroke-width="2.2" points="58.0,204.5 81.6,204.4 105.2,190.5 128.8,197.2 152.3,177.4 175.9,193.8 199.5,187.5 223.1,194.0 246.7,197.8 270.2,183.2 293.8,198.5 317.4,190.5 341.0,195.8 364.6,197.7 388.2,192.9 411.8,185.6 435.3,197.1 458.9,195.3 482.5,192.4 506.1,182.0 529.7,194.2 553.2,185.8 576.8,189.4 600.4,184.6 624.0,198.3"/>
+<text x="482.5" y="12.2" fill="#b5452a" font-weight="600">Naive sum of detections</text>
+<text x="62.0" y="156.7" fill="#1f5f8b" font-weight="600">Harmonized estimate</text>
+<text x="62.0" y="169.7" fill="#1f5f8b">fire cell-days, 90% range shaded</text>
+<text x="12" y="119.5" transform="rotate(-90 12 119.5)" text-anchor="middle" fill="#555">per year</text>
+</svg>
+    <figcaption>Figure 1. Peru, fire per year, 2001–2025. Red: naive sum of all detections. Blue: harmonized estimate in fire cell-days with its 90&#8239;% range (shaded). In most Aqua-era years the range sits above the point estimate because the structural error from the held-out years is uncentred. Sources: <code>series.json</code>, aligned replicates.</figcaption>
+  </figure>
+  <p class="meta">Detail: docs/methods/01-harmonization.md</p>
+</section>
+
+<section class="page">
+  <h2><span class="num">2</span>The MODIS emulator</h2>
+  <p>A gradient-boosting classifier predicts, for each S-NPP fire cell-day, the probability that Aqua MODIS also sees it, from fire radiative power, number of points, brightness, scan and track, day/night, region and month. The monthly MODIS equivalent is Σ p + r · n<sub>snpp</sub>, where r is the Aqua-only rate. Trained on 2013–2020, tested on 2021–2024. It is a statistical emulator, not a physical simulation.</p>
+  <table>
+    <tr><th>Model, test years 2021–2024</th><th class="n">AUC</th><th class="n">Brier</th><th class="n">Monthly error</th><th class="n">Annual error</th></tr>
+    <tr class="hl"><td>Gradient boosting</td><td class="n">0.756</td><td class="n">0.104</td><td class="n">16.8&#8239;%</td><td class="n">4.3&#8239;%</td></tr>
+    <tr><td>Logistic regression</td><td class="n">0.744</td><td class="n">0.105</td><td class="n">15.8&#8239;%</td><td class="n">4.2&#8239;%</td></tr>
+    <tr><td>Fixed ratio</td><td class="n">0.614</td><td class="n">0.115</td><td class="n">17.5&#8239;%</td><td class="n">4.3&#8239;%</td></tr>
+  </table>
+  <p>In the stable-orbit years 2013–2022 the emulator matches real Aqua with a 3.2&#8239;% annual error (12.5&#8239;% monthly; 92.5&#8239;% of months inside the range). From 2023 the Aqua orbit drifts later (median overpass 13:38 in 2019, 14:51 in 2025, 15:39 in 2026) and Aqua sees less afternoon fire than an on-time Aqua would.</p>
+  <figure>
+    <svg viewBox="0 0 640 230" role="img" aria-label="Real Aqua versus emulated Aqua fire cell-days per year, Peru, 2013 to 2026" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif" font-size="11">
+<line x1="58" x2="624" y1="196.0" y2="196.0" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="200.0" text-anchor="end" fill="#555">0k</text>
+<line x1="58" x2="624" y1="163.6" y2="163.6" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="167.6" text-anchor="end" fill="#555">2k</text>
+<line x1="58" x2="624" y1="131.3" y2="131.3" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="135.3" text-anchor="end" fill="#555">4k</text>
+<line x1="58" x2="624" y1="98.9" y2="98.9" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="102.9" text-anchor="end" fill="#555">6k</text>
+<line x1="58" x2="624" y1="66.5" y2="66.5" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="70.5" text-anchor="end" fill="#555">8k</text>
+<line x1="58" x2="624" y1="34.2" y2="34.2" stroke="#ddd" stroke-width="0.6"/>
+<text x="52" y="38.2" text-anchor="end" fill="#555">10k</text>
+<rect x="63.7" y="94.0" width="14.6" height="102.0" fill="#9db7cc"/>
+<rect x="78.2" y="98.6" width="14.6" height="97.4" fill="#1f5f8b"/>
+<text x="78.2" y="211" text-anchor="middle" fill="#555">2013</text>
+<rect x="104.1" y="103.7" width="14.6" height="92.3" fill="#9db7cc"/>
+<rect x="118.6" y="109.1" width="14.6" height="86.9" fill="#1f5f8b"/>
+<text x="118.6" y="211" text-anchor="middle" fill="#555">2014</text>
+<rect x="144.5" y="79.3" width="14.6" height="116.7" fill="#9db7cc"/>
+<rect x="159.1" y="80.9" width="14.6" height="115.1" fill="#1f5f8b"/>
+<text x="159.1" y="211" text-anchor="middle" fill="#555">2015</text>
+<rect x="184.9" y="53.0" width="14.6" height="143.0" fill="#9db7cc"/>
+<rect x="199.5" y="50.6" width="14.6" height="145.4" fill="#1f5f8b"/>
+<text x="199.5" y="211" text-anchor="middle" fill="#555">2016</text>
+<rect x="225.4" y="103.9" width="14.6" height="92.1" fill="#9db7cc"/>
+<rect x="239.9" y="105.5" width="14.6" height="90.5" fill="#1f5f8b"/>
+<text x="239.9" y="211" text-anchor="middle" fill="#555">2017</text>
+<rect x="265.8" y="92.8" width="14.6" height="103.2" fill="#9db7cc"/>
+<rect x="280.4" y="91.6" width="14.6" height="104.4" fill="#1f5f8b"/>
+<text x="280.4" y="211" text-anchor="middle" fill="#555">2018</text>
+<rect x="306.2" y="72.8" width="14.6" height="123.2" fill="#9db7cc"/>
+<rect x="320.8" y="66.6" width="14.6" height="129.4" fill="#1f5f8b"/>
+<text x="320.8" y="211" text-anchor="middle" fill="#555">2019</text>
+<rect x="346.7" y="72.3" width="14.6" height="123.7" fill="#9db7cc"/>
+<rect x="361.2" y="68.6" width="14.6" height="127.4" fill="#1f5f8b"/>
+<text x="361.2" y="211" text-anchor="middle" fill="#555">2020</text>
+<rect x="387.1" y="86.5" width="14.6" height="109.5" fill="#9db7cc"/>
+<rect x="401.6" y="92.6" width="14.6" height="103.4" fill="#1f5f8b"/>
+<text x="401.6" y="211" text-anchor="middle" fill="#555">2021</text>
+<rect x="427.5" y="59.4" width="14.6" height="136.6" fill="#9db7cc"/>
+<rect x="442.1" y="57.8" width="14.6" height="138.2" fill="#1f5f8b"/>
+<text x="442.1" y="211" text-anchor="middle" fill="#555">2022</text>
+<rect x="467.9" y="64.0" width="14.6" height="132.0" fill="#9db7cc"/>
+<rect x="482.5" y="73.9" width="14.6" height="122.1" fill="#1f5f8b"/>
+<text x="482.5" y="211" text-anchor="middle" fill="#555">2023</text>
+<text x="482.5" y="60.0" text-anchor="middle" fill="#b5452a" font-size="10">−7.5%</text>
+<rect x="508.4" y="43.3" width="14.6" height="152.7" fill="#9db7cc"/>
+<rect x="522.9" y="46.6" width="14.6" height="149.4" fill="#1f5f8b"/>
+<text x="522.9" y="211" text-anchor="middle" fill="#555">2024</text>
+<text x="522.9" y="39.3" text-anchor="middle" fill="#b5452a" font-size="10">−2.1%</text>
+<rect x="548.8" y="111.1" width="14.6" height="84.9" fill="#9db7cc"/>
+<rect x="563.4" y="124.1" width="14.6" height="71.9" fill="#1f5f8b"/>
+<text x="563.4" y="211" text-anchor="middle" fill="#555">2025</text>
+<text x="563.4" y="107.1" text-anchor="middle" fill="#b5452a" font-size="10">−15.3%</text>
+<rect x="589.2" y="107.8" width="14.6" height="88.2" fill="#9db7cc"/>
+<rect x="603.8" y="133.1" width="14.6" height="62.9" fill="#1f5f8b"/>
+<text x="603.8" y="211" text-anchor="middle" fill="#555">2026*</text>
+<text x="603.8" y="103.8" text-anchor="middle" fill="#b5452a" font-size="10">−28.8%</text>
+<line x1="462.3" x2="462.3" y1="18" y2="196" stroke="#999" stroke-dasharray="3 3"/>
+<text x="458.3" y="28" text-anchor="end" fill="#555">Aqua orbit drifts →</text>
+<rect x="66" y="20" width="10" height="10" fill="#9db7cc"/><text x="80" y="29" fill="#333">Emulated on-time Aqua</text>
+<rect x="208" y="20" width="10" height="10" fill="#1f5f8b"/><text x="222" y="29" fill="#333">Real Aqua</text>
+</svg>
+    <figcaption>Figure 2. Peru, Aqua MODIS fire cell-days per year: emulated on-time Aqua (from VIIRS) vs real Aqua. Percentages: real vs emulated. *2026: 11 months. Source: <code>continuity.json</code>.</figcaption>
+  </figure>
+  <p>The harmonized record is not affected, because it uses VIIRS since 2012. A MODIS-only trend would show a false decline.</p>
+  <p class="meta">Detail: docs/methods/02-modis-emulator.md</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Three satellites: dependence and flicker</h2>
+  <p>Two lists cannot detect dependence between sensors; a third can. A Bayesian log-linear model with Aqua, S-NPP and NOAA-20 (2018-04 to 2022-12; NumPyro, R-hat ≤ 1.008) finds all pairwise dependences positive: log odds ratio 1.40–1.54 between MODIS and VIIRS, 0.46–0.63 between the two VIIRS. Independence is rejected (posterior predictive coverage of histories 57&#8239;% vs 93&#8239;%).</p>
+  <table>
+    <tr><th>Peru, 2018-04 to 2022-12</th><th class="n">Fire cell-days</th><th class="n">× main method</th></tr>
+    <tr><td>Main-equivalent (n<sub>snpp</sub> / p<sub>viirs</sub>)</td><td class="n">214,445</td><td class="n">1</td></tr>
+    <tr><td>Chapman Aqua/S-NPP, simultaneous days only</td><td class="n">—</td><td class="n">1.03</td></tr>
+    <tr><td>Three lists, with dependence</td><td class="n">661,947 [647,216–677,665]</td><td class="n">3.09 [3.02–3.16]</td></tr>
+  </table>
+  <p><strong>Why ×3 is not used.</strong> NOAA-20 passes about 50 minutes after S-NPP. Only 39.6&#8239;% of S-NPP cell-days are seen again by NOAA-20 (26&#8239;% below 5 MW, 64&#8239;% above 20 MW). The model counts that flicker as fire that could have been missed, so it estimates fire active at some point in a one-hour window, not at the overpass. In simulation it overestimates by +10&#8239;% to +58&#8239;% depending on persistence. <strong>What it proves:</strong> the direction (our number is a lower bound) and that small fire flickers on a one-hour timescale. Not the magnitude.</p>
+  <p class="meta">Detail: docs/methods/03-bayesian-three-satellites.md</p>
+</section>
+
+<section>
+  <h2><span class="num">4</span>How much does the headline number undercount?</h2>
+  <p>We built a simulator of fire cell-days (latent intensity, sensor-specific detection, short lifetime, flicker), fitted to real 2013–2020 facts. It reproduces them closely (for example, sensor agreement at &lt; 20 min: 0.796 real vs 0.795 simulated; simultaneous Chapman / S-NPP 1.256 vs 1.257). Each estimator then sat an exam: pass if |bias| &lt; 10&#8239;% and coverage ≥ 80&#8239;% in every scenario.</p>
+  <table>
+    <tr><th>Estimator, best-fit world</th><th class="n">Bias</th><th class="n">Coverage</th></tr>
+    <tr class="hl"><td>Headline method</td><td class="n">−11.2&#8239;%</td><td class="n">0&#8239;%</td></tr>
+    <tr><td>Huggins</td><td class="n">−9.2&#8239;%</td><td class="n">0&#8239;%</td></tr>
+    <tr><td>Detection + persistence, simultaneous days</td><td class="n">+1.2&#8239;%</td><td class="n">92&#8239;%</td></tr>
+    <tr><td>Three lists</td><td class="n">+227&#8239;%</td><td class="n">0&#8239;%</td></tr>
+  </table>
+  <p>The headline number is about 11&#8239;% low (true factor 1.13, replicate range 1.10–1.18); in worse-fitting worlds the factor ranges from 0.91 to 1.65. <strong>No estimator passed</strong> (the closest fails coverage in one scenario, and the exam is incomplete in two scenarios). We therefore publish no correction and report the record as a lower bound.</p>
+  <p class="meta">Detail: docs/methods/04-underestimation.md</p>
+</section>
+
+<section class="page">
+  <h2><span class="num">5</span>Seasonal fire outlook <span class="forecast-tag">Forecast</span></h2>
+  <p>Ridge regression on log anomalies of the August–October season of the harmonized record. Candidate predictors: recent fire, ENSO (NOAA CPC ONI, ENFEN ICEN) and drought (SPI-3/6/12 from NASA POWER precipitation). Leads of 1, 4, 7 and 10 months. Leave-one-year-out backtest 2003–2025 with predictor selection inside each fold. The model is published only where RPSS ≥ 0.05 and MAE skill &gt; 0; otherwise climatology, labelled as such.</p>
+  <table>
+    <tr><th>Lead</th><th class="n">Macroregions with skill</th><th class="n">Mean RPSS</th><th class="n">Mean MAE skill</th><th class="n">Departments with skill</th></tr>
+    <tr><td>1 month</td><td class="n">3 of 3</td><td class="n">0.347</td><td class="n">0.239</td><td class="n">18 of 20</td></tr>
+    <tr><td>4 months</td><td class="n">2 of 3</td><td class="n">0.204</td><td class="n">0.143</td><td class="n">8 of 20</td></tr>
+    <tr><td>7 months</td><td class="n">2 of 3</td><td class="n">0.253</td><td class="n">0.177</td><td class="n">10 of 20</td></tr>
+    <tr><td>10 months</td><td class="n">2 of 3</td><td class="n">0.223</td><td class="n">0.105</td><td class="n">8 of 20</td></tr>
+  </table>
+  <p><strong>2026, out of sample</strong> (fitted on 2003–2025; observation provisional): Peru lead-1 forecast 25,231 [19,624–32,439] fire cell-days, observed 22,955, inside the range and in the forecast class (normal). All three macroregions fell inside their ranges; the most likely class was wrong for the Amazon and the Coast.</p>
+  <table>
+    <tr><th>2027 outlook (origin 2026-10)</th><th>Method</th><th class="n">Median [90&#8239;% range]</th><th>Most likely class</th></tr>
+    <tr><td>Peru</td><td>climatology</td><td class="n">27,301 [19,726–37,650]</td><td>normal (50&#8239;%)</td></tr>
+    <tr><td>Amazon</td><td>climatology</td><td class="n">14,059 [10,832–20,280]</td><td>normal (50&#8239;%)</td></tr>
+    <tr><td>Andes</td><td>model</td><td class="n">14,426 [10,153–20,499]</td><td>very high (52&#8239;%)</td></tr>
+    <tr><td>Coast</td><td>model</td><td class="n">1,677 [1,137–2,472]</td><td>normal (38&#8239;%)</td></tr>
+  </table>
+  <div class="note warn"><strong>Without harmonization, even AI gets it wrong.</strong> Trained on 2003–2011 and tested on 2013–2025 seasons, the model trained on raw detections under-predicts by a median ×4.49; trained on the harmonized record, 0.94. Fitted trend 2003–2025: +16.8&#8239;% per year on raw detections, −0.3&#8239;% per year on the harmonized record.</div>
+  <p class="meta">Detail: docs/methods/05-seasonal-forecast.md</p>
+</section>
+
+<section>
+  <h2><span class="num">6</span>Validation</h2>
+  <p>Held-out years 2021–2024 are never used for fitting. In those years we reconstruct Peru twice on identical days: with Aqua only (the rule used before 2012) and with VIIRS only (the rule used since 2012).</p>
+  <table>
+    <tr><th>Annual error, 2021–2024</th><th class="n">Our method</th><th class="n">Naive sum</th><th class="n">Correlation with MapBiomas</th></tr>
+    <tr class="hl"><td>Peru</td><td class="n">3.5&#8239;%</td><td class="n">334&#8239;%</td><td class="n">0.72</td></tr>
+    <tr><td>Amazon</td><td class="n">11.3&#8239;%</td><td class="n">361&#8239;%</td><td class="n">0.54</td></tr>
+    <tr><td>Andes</td><td class="n">7.0&#8239;%</td><td class="n">337&#8239;%</td><td class="n">0.72</td></tr>
+    <tr><td>Coast</td><td class="n">32.0&#8239;%</td><td class="n">199&#8239;%</td><td class="n">0.66</td></tr>
+  </table>
+  <p>MapBiomas Fuego Peru (Landsat, 30 m) has its own steps when its satellites change: around 2013 (Landsat 8) and 2021–2022 (Landsat 9; Peru jumps from 220,139 to 445,776 ha). Within each Landsat era the Peru correlation is 0.85 (2001–2012), 0.98 (2013–2020) and 0.92 (2021–2025). In the Andes MapBiomas filters burn scars with FIRMS hot spots, so there it is not fully independent. The record keeps 2005 and 2010 as the high years of the MODIS era, the known drought years, which MapBiomas also shows.</p>
+  <p class="meta">Detail: docs/methods/06-validation.md</p>
+</section>
+
+<section>
+  <h2><span class="num">7</span>After MODIS: continuity and sealed daily predictions</h2>
+  <p><strong>Shutdown scenario.</strong> If MODIS had ended in January 2023, the harmonized record would not change: rebuilt without MODIS it matches within 0.05 fire cell-days in all 716 region-months. Only S-NPP outage days filled with Aqua depend on MODIS: 0.71&#8239;% of Peru's 2012–2026 total. The MODIS-scale series continues with the emulator.</p>
+  <p><strong>Sealed daily predictions.</strong> Every day a public job predicts, from VIIRS alone, how many fire cell-days Aqua will report for the previous day, with a 90&#8239;% range. The file carries SHA-256 hashes of its input, model and calibration and of itself, is committed to a public branch, and is never overwritten. A day later the real Aqua count is scored.</p>
+  <table>
+    <tr><th>2026-11-12</th><th class="n">Predicted [90&#8239;% range]</th><th class="n">Observed Aqua</th><th>Inside</th></tr>
+    <tr><td>Peru</td><td class="n">17.5 [1–60]</td><td class="n">32</td><td>yes</td></tr>
+    <tr><td>Amazon</td><td class="n">12.5 [0–42]</td><td class="n">17</td><td>yes</td></tr>
+    <tr><td>Andes</td><td class="n">4.3 [0–14]</td><td class="n">13</td><td>yes</td></tr>
+    <tr><td>Coast</td><td class="n">0.7 [0–2]</td><td class="n">2</td><td>yes</td></tr>
+  </table>
+  <div class="note warn">Honest limits: one scored day only. The first predictions were generated when the system started, after their dates, so they test the pipeline, not blind skill. The seal proves a prediction was not edited; the commit time proves when it was made. It predicts what Aqua will report from VIIRS, not future fire.</div>
+  <p class="meta">Detail: docs/methods/07-continuity-and-live.md</p>
+</section>
+
+<section class="page">
+  <h2>Limitations</h2>
+  <ul>
+    <li><strong>Lower bound.</strong> Sensors are positively dependent; clouds and smoke hide fire from both. The simulated undercount is about 11&#8239;%, but no correction is applied.</li>
+    <li><strong>Unit.</strong> Fire cell-days count places and days with active fire at the overpass. Not fires, not hectares. In years of large fires (2022–2024) burned area grows more than our count.</li>
+    <li><strong>Regional accuracy.</strong> Coast 32&#8239;%, Amazon 11&#8239;%, Andes 7&#8239;% annual error on held-out years. Single months are less accurate than seasons.</li>
+    <li><strong>Early and late periods.</strong> 2000-11 to 2002-12 relies on Terra (backcast annual error 16–28&#8239;% by region). August–November 2026 uses near-real-time data and is provisional.</li>
+    <li><strong>Ranges.</strong> After 2012 they cover calibration uncertainty only (about ±1–2&#8239;% per year).</li>
+    <li><strong>Forecasts</strong> rest on 23 seasons and are always shown apart from observations.</li>
+  </ul>
+
+  <h2>Data sources</h2>
+  <ul class="refs">
+    <li>NASA FIRMS — Fire Information for Resource Management System: MODIS C6.1 and VIIRS 375 m active fire detections (standard and near-real-time). <a href="https://firms.modaps.eosdis.nasa.gov/">firms.modaps.eosdis.nasa.gov</a></li>
+    <li>NASA GIBS — Global Imagery Browse Services: daily true-colour and short-wave infrared imagery in the app. <a href="https://nasa-gibs.github.io/gibs-api-docs/">nasa-gibs.github.io/gibs-api-docs</a></li>
+    <li>NASA POWER — monthly precipitation and temperature (community AG). <a href="https://power.larc.nasa.gov/">power.larc.nasa.gov</a></li>
+    <li>NOAA CPC — Oceanic Niño Index (ONI). <a href="https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt">cpc.ncep.noaa.gov/data/indices/oni.ascii.txt</a></li>
+    <li>ENFEN / IGP — Índice Costero El Niño (ICEN). <a href="http://met.igp.gob.pe/datos/ICEN.txt">met.igp.gob.pe/datos/ICEN.txt</a></li>
+    <li>MapBiomas Fuego Peru, Collection 2 — annual burned area from Landsat, 1990–2025. <a href="https://peru.mapbiomas.org/">peru.mapbiomas.org</a></li>
+    <li>INEI — department reference boundaries, as published by SERFOR. <a href="https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Limites_Politicos_Administrativos/MapServer">geo.serfor.gob.pe</a></li>
+  </ul>
+
+  <h2>Selected references</h2>
+  <ul class="refs">
+    <li>Zheng, Y. et al. Fire radiative power correction and spatiotemporal fusion based on MYD14 and VNP14IMG. <em>Remote Sensing</em> 18, 1650 (2026). <a href="https://doi.org/10.3390/rs18101650">doi:10.3390/rs18101650</a></li>
+    <li>Zhang, T. et al. How well does the "small fire boost" methodology used within GFED4.1s represent agricultural burning? <em>Remote Sensing</em> 10, 823 (2018). <a href="https://doi.org/10.3390/rs10060823">doi:10.3390/rs10060823</a></li>
+    <li>The central role of the identifying assumption in population size estimation. <em>Biometrics</em> 80, ujad028 (2024). <a href="https://academic.oup.com/biometrics/article/80/1/ujad028/7624336">academic.oup.com</a></li>
+    <li>Rho Environmetrics and John Field Consulting. Using capture-mark-recapture methods to estimate fire starts (ground records, Australia, 2011). <a href="https://www.aer.gov.au/system/files/Rho%20Environmetrics%20and%20John%20Field%20Consulting%20%20-%20f-factor%20scheme%20-%20received%202%20December%202011.pdf">aer.gov.au</a></li>
+    <li>NASA. VIIRS Active Fire User Guide. <a href="https://viirsland.gsfc.nasa.gov/PDF/VIIRS_activefire_User_Guide.pdf">viirsland.gsfc.nasa.gov</a></li>
+  </ul>
+
+  <h2>Reproducibility</h2>
+  <p class="sans" style="font-size:9pt">All parameters are set in <code>scripts/config.py</code>. Pipeline: <code>download_peru_sources.py → cells.py → capture_recapture.py → modis_emulator.py → build_series.py → validate.py → build_map.py → fetch_power.py → forecast.py → forecast_v2.py → continuity.py</code>; daily: <code>live_predict.py predict|score</code>. Published outputs: <code>data/processed/series.json, methodology.json, forecast.json, continuity.json, live/</code>. Every number in this report comes from those files or from the intermediate files named in the technical notes.</p>
+</section>
+
+</main>
+</body>
+</html>
