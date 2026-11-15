@@ -262,6 +262,14 @@ El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; n
 
 La API acepta `GET` en las rutas de datos y `POST` únicamente en `/chat`, y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés. Si `CHAT_ENABLED` no es `1` o falta `ANTHROPIC_API_KEY`, `POST /chat` responde `503`.
 
+### Respaldo estático de la web
+
+`scripts/export_static.py` (se corre al final, después de `forecast_v2.py` y `continuity.py`) copia una instantánea a `web/public/data/` para que la web siga funcionando si la API no responde: `series.json`, `series/<region>.json` (igual que `GET /series?region=`), `regions.geojson`, `methodology.json`, `forecast.json`, `continuity.json`, `live/scoreboard.json`, `live/latest_prediction.json` y el mapa por mes en `map/YYYY-MM.json`, con `map/index.json` (meses disponibles y parámetros de la cuadrícula).
+
+Formato de `map/YYYY-MM.json`, ordenado por `lat`, `lon` como la API: `k` son los saltos entre claves de celda (`clave = fila × width + columna`, con `lat = (lat0 + fila × step) / 100` y `lon = (lon0 + columna × step) / 100`); `r` es un texto con la inicial de la macrorregión de cada celda; `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20` y `raw_viirs_noaa21` son textos con un carácter por celda en base 36 (`-` es `null`; la columna entera es `null` si todas lo son); `e` es `estimated × 100` en enteros. El cliente (`web/src/data/client.js`) lo reconstruye con los mismos campos y orden que `GET /map`, y replica los filtros de `/series`, `/map`, `/forecast`, `/methodology` y el recálculo de `/continuity` con `shutdown`.
+
+La verificación en vivo lee primero el repositorio público `piales00/elis-live` (`data/processed/live/`, mismo formato), luego `GET /live` y por último la instantánea.
+
 ## 5. Datos de prueba
 
 Mientras no existan los datos reales, el frontend usa archivos con estas mismas columnas en `web/mock/` (`series.json`, `regions.geojson`, `map-2024-09.json`, `methodology.json`). Al llegar los reales, solo se cambia la dirección de donde se leen.

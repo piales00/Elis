@@ -33,6 +33,7 @@ import MethodView from "./components/shell/views/MethodView.jsx";
 import DataView from "./components/shell/views/DataView.jsx";
 import ContinuityView from "./components/shell/views/ContinuityView.jsx";
 import { LiveBadge, LiveSummary } from "./components/shell/LiveCheck.jsx";
+import SnapshotBadge from "./components/shell/SnapshotBadge.jsx";
 
 const MapView = lazy(() => import("./components/MapView.jsx"));
 const NONE = [];
@@ -508,6 +509,7 @@ export default function App() {
         </MapBoundary>
 
         <div className="fc-overlay fc-overlay-top">
+          <div className="flex min-w-0 flex-col items-start gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {!panelOpen && (
               <button type="button" className="fc-float fc-press hidden h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:flex" onClick={() => setPanelOpen(true)}>
@@ -537,6 +539,8 @@ export default function App() {
                 <span className="hidden sm:inline">{t("tour.short")}</span>
               </button>
             )}
+          </div>
+          <SnapshotBadge />
           </div>
           {outlook ? (
             <p className="fc-float pointer-events-auto m-0 hidden h-10 items-center whitespace-nowrap rounded-xl border-dashed !border-forecast px-3 text-sm font-semibold text-forecast sm:flex">{t("outlook.mapBadge")}</p>
