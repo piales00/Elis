@@ -327,7 +327,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         const widthChanged = Math.abs(w - last.w) > 2;
         const heightChanged = Math.abs(h - last.h) > 40;
         last = { w, h };
-        if (widthChanged || heightChanged) fit(0);
+        if ((widthChanged || heightChanged) && !terrainRef.current) fit(0);
       });
     });
     ro.observe(el);
