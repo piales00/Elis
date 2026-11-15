@@ -60,7 +60,11 @@ Build the data, in this order (parameters live in `scripts/config.py`):
 .venv/bin/python scripts/fetch_power.py
 .venv/bin/python scripts/forecast.py
 .venv/bin/python scripts/forecast_v2.py
+.venv/bin/python scripts/continuity.py
+.venv/bin/python scripts/export_static.py
 ```
+
+`export_static.py` runs last: it copies a snapshot of the published files to `web/public/data/` (about 11 MB, one compact map file per month). The web app reads the API first and switches to this snapshot automatically if the API does not answer within 7 s, so regenerate it whenever `data/processed/` changes.
 
 Start the API (it serves the precomputed files in `data/processed/`; interactive docs at `http://127.0.0.1:8000/docs`):
 
@@ -81,6 +85,8 @@ The web app reads `VITE_DATA_SOURCE` (`mock`, the default, uses the sample data 
 ```bash
 VITE_DATA_SOURCE=api VITE_API_BASE=http://localhost:8000 npm run dev
 ```
+
+With `VITE_DATA_SOURCE=api`, if the API is down or asleep the app keeps working from the static snapshot in `web/public/data/`, shows an "Archived data snapshot" badge, and retries the API every 60 s. The live check reads the daily sealed predictions from the public [elis-live](https://github.com/piales00/elis-live) repository first (`VITE_LIVE_FEED_URL` overrides its base URL), then the API, then the snapshot.
 
 The optional "Ask the data" assistant is off unless `CHAT_ENABLED=1` and `ANTHROPIC_API_KEY` are set for the API.
 

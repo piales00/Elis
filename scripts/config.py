@@ -260,3 +260,6 @@ LIVE_SOURCES = {
 LIVE_CALIBRATION_DAYS = 120
 LIVE_SIGMA_GRID = tuple(round(0.05 * step, 2) for step in range(41))
 LIVE_DRAWS = 4000
+STATIC_EXPORT_DIR = PROCESSED_DIR.parents[1] / "web" / "public" / "data"
+STATIC_MAP_FORMAT = 1
+STATIC_MAP_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz"
