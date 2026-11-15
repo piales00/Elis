@@ -8,7 +8,7 @@ from scripts.check_chat_presets import build
 
 def test_saved_answers_match_processed_sources():
     path = Path(__file__).resolve().parents[1] / 'web/src/data/chat-presets.json'
-    assert json.loads(path.read_text()) == build()
+    assert json.loads(path.read_text(encoding='utf-8')) == build()
 
 
 def test_followup_chips_explore_sensors_and_continuity():

@@ -71,6 +71,8 @@ export default function ChatPanel({
       unverified: [],
       verified: built.verified,
       isPreset: true,
+      presetId: preset.id,
+      targetRegion,
       suggestions: buildDecisionSuggestions({ question: questionText, region: targetRegion, locale }),
       done: true,
     };
@@ -80,6 +82,7 @@ export default function ChatPanel({
         id: `u-${Date.now()}`,
         role: "user",
         content: questionText,
+        presetKey: preset.key,
       },
       assistantTurn,
     ]);
@@ -92,6 +95,37 @@ export default function ChatPanel({
       });
     }
   };
+
+  useEffect(() => {
+    setTurns((prev) =>
+      prev.map((turn) => {
+        if (turn.presetId) {
+          const rebuilt = buildPresetResponse(turn.presetId, {
+            region: turn.targetRegion || region || "peru",
+            series,
+            methodology,
+            locale,
+          });
+          return {
+            ...turn,
+            content: rebuilt.text,
+            suggestions: buildDecisionSuggestions({
+              question: turn.presetId,
+              region: turn.targetRegion || region || "peru",
+              locale,
+            }),
+          };
+        }
+        if (turn.role === "user" && turn.presetKey) {
+          return {
+            ...turn,
+            content: t(turn.presetKey),
+          };
+        }
+        return turn;
+      }),
+    );
+  }, [locale]);
 
   const buildApiMessages = (nextUserQuestion) => {
     const history = turns
@@ -237,6 +271,8 @@ export default function ChatPanel({
                   tools: item.tools.length ? item.tools : fallback.tools || [],
                   verified: true,
                   isPreset: true,
+                  presetId: fallback.presetId,
+                  targetRegion: region,
                   suggestions: buildDecisionSuggestions({ question: trimmed, region, locale }),
                   done: true,
                 }
