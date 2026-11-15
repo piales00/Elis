@@ -1,0 +1,22 @@
+{
+  "name": "elis-pitch-video",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ElisPitch out/elis-preview.mp4",
+    "render:v2": "node tools/render-v2.mjs",
+    "still": "remotion still src/index.ts ElisPitch",
+    "prepare:clips": "node tools/prepare-clips.mjs",
+    "check:assets": "node tools/check-assets.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.543",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.543",
+    "typescript": "^5.9.3"
+  }
+}

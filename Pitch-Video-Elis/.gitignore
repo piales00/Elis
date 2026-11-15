@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# rendered video and temporary render files
+video-remotion/out/*.mp4
+video-remotion/out/.render-raw.mp4
+*.mov
+*.webm
+
+# narration recording: add only when the team approves publishing it
+video-remotion/public/audio/
+
+# caches and temporary files
+.remotion/
+.cache/
+*.log
+*.tmp
+__pycache__/
+*.pyc
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# secrets
+.env
+.env.*
