@@ -88,7 +88,7 @@ VITE_DATA_SOURCE=api VITE_API_BASE=http://localhost:8000 npm run dev
 
 With `VITE_DATA_SOURCE=api`, if the API is down or asleep the app keeps working from the static snapshot in `web/public/data/`, shows an "Archived data snapshot" badge, and retries the API every 60 s. The live check reads the daily sealed predictions from the public [elis-live](https://github.com/piales00/elis-live) repository first (`VITE_LIVE_FEED_URL` overrides its base URL), then the API, then the snapshot.
 
-The optional "Ask the data" assistant is off unless `CHAT_ENABLED=1` and `ANTHROPIC_API_KEY` are set for the API.
+The interactive **Ask Elis** scientific copilot (with 60s Autopilot, floating Mission HUD, 2027 departmental outlooks, and 3D satellite relief navigation) runs when `CHAT_ENABLED=1` and `GEMINI_API_KEY` (or `ANTHROPIC_API_KEY`) are set in `.env`.
 
 ## Repository structure
 

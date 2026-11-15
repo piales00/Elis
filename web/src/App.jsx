@@ -16,6 +16,8 @@ import MockBanner from "./components/MockBanner.jsx";
 import MapLegend from "./components/MapLegend.jsx";
 import ImageryLegend from "./components/imagery/ImageryLegend.jsx";
 import ChatPanel from "./components/chat/ChatPanel.jsx";
+import ElisSpotlight, { ELIS_MISSIONS } from "./components/chat/ElisSpotlight.jsx";
+import { ElisMark } from "./components/shell/Rail.jsx";
 import Rail, { VIEWS } from "./components/shell/Rail.jsx";
 import TimeRibbon from "./components/shell/TimeRibbon.jsx";
 import LayerSwitcher from "./components/shell/LayerSwitcher.jsx";
@@ -100,6 +102,11 @@ export default function App() {
   const [terrain, setTerrain] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
   const [dataTab, setDataTab] = useState("series");
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [spotlightMinimized, setSpotlightMinimized] = useState(false);
+  const [activeMissionId, setActiveMissionId] = useState("artifact");
+  const [autopilot, setAutopilot] = useState(false);
+  const [projectedTurn, setProjectedTurn] = useState(null);
   const panelRef = useRef(null);
 
   const regionsState = useRegions();
@@ -191,6 +198,7 @@ export default function App() {
       }
       setView(v);
       setPanelOpen(true);
+      if (v === "ask") setSpotlightMinimized(true);
       if (v === "outlook" && !deptFeature) setUnit(region);
       if (v === "year" && period.year !== LAST_YEAR && lastObserved >= 0) setPeriod(fromIndex(lastObserved));
       requestAnimationFrame(() => panelRef.current?.scrollTo?.({ top: 0 }));
@@ -274,6 +282,28 @@ export default function App() {
   );
 
   const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
+
+  const applyElisMission = useCallback(
+    (mission, enableAutopilot = null, expandCard = true) => {
+      if (!mission) return;
+      setPlaying(false);
+      setTour(null);
+      setProjectedTurn(null);
+      setActiveMissionId(mission.id);
+      setSpotlightOpen(true);
+      setSpotlightMinimized(!expandCard);
+      if (enableAutopilot !== null) setAutopilot(enableAutopilot);
+      if (mission.region) selectRegion(mission.region);
+      if (mission.year && mission.month) setPeriod({ year: mission.year, month: mission.month });
+      if (mission.metric) setRibbonMetric(mission.metric);
+      if (mission.mode3d) {
+        mapInstance?.fire("fly3d", { region: mission.cameraKey || mission.region || "amazonia" });
+      } else {
+        mapInstance?.fire("resetview");
+      }
+    },
+    [selectRegion, mapInstance],
+  );
 
   const tourStep = tour?.step;
   const tourAuto = tour?.auto;
@@ -467,9 +497,30 @@ export default function App() {
               series={series}
               methodology={methodology}
               onOpenMethod={() => openView("method")}
-              onSyncView={({ region: nextRegion, year, month }) => {
+              onLaunchMission={(missionId, auto = false) => {
+                const found = ELIS_MISSIONS.find((m) => m.id === missionId) || ELIS_MISSIONS[0];
+                setPanelOpen(false);
+                applyElisMission(found, auto, true);
+              }}
+              onProjectTurn={(turn) => {
+                setAutopilot(false);
+                setProjectedTurn(turn);
+                setSpotlightOpen(true);
+                setSpotlightMinimized(false);
+                const targetReg = turn?.chart?.region && regionIds.includes(turn.chart.region) ? turn.chart.region : region;
+                if (targetReg) selectRegion(targetReg);
+                if (turn?.chart?.highlight_year) {
+                  setPeriod({ year: turn.chart.highlight_year, month: turn.chart.highlight_month || 9 });
+                }
+                mapInstance?.fire("fly3d", { region: targetReg });
+              }}
+              onSyncView={({ region: nextRegion, cameraKey, year, month, mode3d }) => {
+                const targetReg = nextRegion && regionIds.includes(nextRegion) ? nextRegion : region;
                 if (nextRegion && regionIds.includes(nextRegion)) selectRegion(nextRegion);
                 if (year && month) setPeriod({ year, month });
+                if (mode3d) {
+                  mapInstance?.fire("fly3d", { region: cameraKey || targetReg });
+                }
               }}
             />
           </div>
@@ -535,6 +586,43 @@ export default function App() {
               <Icon name="fit" size={17} />
             </button>
             <LiveBadge state={liveOpen} onState={setLiveOpen} />
+            <button
+              type="button"
+              onClick={() => {
+                if (spotlightOpen && !autopilot) {
+                  setSpotlightOpen(false);
+                } else {
+                  const currentM = ELIS_MISSIONS.find((m) => m.id === activeMissionId) || ELIS_MISSIONS[0];
+                  applyElisMission(currentM, false);
+                }
+              }}
+              className={`fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-xs font-extrabold transition cursor-pointer ${
+                spotlightOpen ? "!border-forecast bg-forecast/15 text-forecast" : "text-fg hover:!border-forecast"
+              }`}
+              title="Open Elis Mission Control HUD"
+            >
+              <ElisMark size={18} />
+              <span>Elis HUD</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (spotlightOpen && autopilot) {
+                  setAutopilot(false);
+                } else {
+                  applyElisMission(ELIS_MISSIONS[0], true);
+                }
+              }}
+              className={`fc-float fc-press hidden h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold sm:flex cursor-pointer ${
+                spotlightOpen && autopilot
+                  ? "!border-forecast !bg-forecast !text-bg shadow-lg"
+                  : "!border-forecast/50 text-forecast hover:!border-forecast"
+              }`}
+              title="Run 60-Second Autonomous Copilot Briefing"
+            >
+              <span>{spotlightOpen && autopilot ? "⏸" : "▶"}</span>
+              <span>60s Autopilot</span>
+            </button>
             {!tour && (
               <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
                 <Icon name="tour" size={17} />
@@ -575,6 +663,55 @@ export default function App() {
             </section>
           </div>
         )}
+
+        <ElisSpotlight
+          open={spotlightOpen}
+          minimized={spotlightMinimized}
+          onToggleMinimized={(min) => {
+            setSpotlightMinimized(min);
+            if (!min && view === "ask") setPanelOpen(false);
+          }}
+          activeMissionId={activeMissionId}
+          autopilot={autopilot}
+          customTurn={projectedTurn}
+          series={series}
+          onSelectMission={(m) => applyElisMission(m, false, !spotlightMinimized)}
+          onToggleAutopilot={() => {
+            if (!autopilot) {
+              setProjectedTurn(null);
+              setAutopilot(true);
+            } else {
+              setAutopilot(false);
+            }
+          }}
+          onClose={() => {
+            setSpotlightOpen(false);
+            setAutopilot(false);
+          }}
+          onOpenChatDrawer={() => {
+            openView("ask");
+          }}
+          onOpenOutlook={() => {
+            setSpotlightOpen(false);
+            setAutopilot(false);
+            openView("outlook");
+          }}
+          onOpenMethod={() => {
+            setSpotlightOpen(false);
+            setAutopilot(false);
+            openView("method");
+          }}
+          onSyncView={({ region: nextRegion, cameraKey, year, month, mode3d }) => {
+            const targetReg = nextRegion && regionIds.includes(nextRegion) ? nextRegion : region;
+            if (nextRegion && regionIds.includes(nextRegion)) selectRegion(nextRegion);
+            if (year && month) setPeriod({ year, month });
+            if (mode3d) {
+              mapInstance?.fire("fly3d", { region: cameraKey || targetReg });
+            } else {
+              mapInstance?.fire("resetview");
+            }
+          }}
+        />
 
         <div className="fc-overlay fc-overlay-bottom">
           <div className="pointer-events-none max-w-[min(24rem,calc(100%-4rem))] [&>*]:pointer-events-auto">
