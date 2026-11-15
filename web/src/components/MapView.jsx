@@ -2,15 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { useI18n } from "../i18n/I18nProvider.jsx";
-import { prefersDark, prefersReducedMotion } from "../lib/hooks.js";
-import {
-  baseStyle,
-  cellsToGeoJSON,
-  featureBounds,
-  stepExpression,
-  CELL_COLORS,
-  CELL_OUTLINE_WIDTHS,
-} from "../lib/mapStyle.js";
+import { prefersReducedMotion } from "../lib/hooks.js";
+import { useGibsLayers } from "./imagery/useGibsLayers.js";
+import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, mapPadding, tuneBasemap } from "../lib/mapStyle.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -20,7 +14,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, region, onRegionSelect, ariaLabel }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady, focus = null }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -28,26 +22,28 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
   const live = useRef({});
   const [ready, setReady] = useState(false);
 
-  live.current = { t, formatNumber, metric, onRegionSelect, regions, region };
+  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady, focus };
+  const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
 
   const fit = (duration) => {
     const map = mapRef.current;
-    const { regions: geo, region: id } = live.current;
+    const { regions: geo, region: id, focus: target } = live.current;
     if (!map || !geo) return;
-    const feature = geo.features.find((f) => f.properties.id === id) ?? geo.features[0];
-    map.fitBounds(featureBounds(feature), { padding: 32, duration, maxZoom: 9 });
+    const el = map.getContainer();
+    if (el.clientWidth < 80 || el.clientHeight < 80) return;
+    const feature = target ?? geo.features.find((f) => f.properties.id === id) ?? geo.features[0];
+    map.fitBounds(featureBounds(feature), { padding: fill ? mapPadding(map) : 32, duration, maxZoom: target ? 8 : 9 });
   };
 
   useEffect(() => {
     if (!regions || mapRef.current) return;
-    const dark = prefersDark();
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: baseStyle(dark),
+      style: BASE_STYLE_URL,
       bounds: featureBounds(regions.features.find((f) => f.properties.id === "peru") ?? regions.features[0]),
       fitBoundsOptions: { padding: 32 },
       attributionControl: { compact: true },
-      cooperativeGestures: true,
+      cooperativeGestures: !fill,
       locale: {
         "CooperativeGesturesHandler.WindowsHelpText": t("map.gesture.desktop", { key: "Ctrl" }),
         "CooperativeGesturesHandler.MacHelpText": t("map.gesture.desktop", { key: "⌘" }),
@@ -62,13 +58,13 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
       },
     });
     mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
-    map.addControl(new maplibregl.FullscreenControl(), "top-right");
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), fill ? "bottom-right" : "top-right");
+    if (!fill) map.addControl(new maplibregl.FullscreenControl(), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
     popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
 
-    const lineColor = dark ? "#e8edf5" : "#243044";
     map.on("load", () => {
+      tuneBasemap(map);
       const before = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
       const addLayer = (layer) => map.addLayer(layer, before);
       map.addSource("regions", { type: "geojson", data: regions });
@@ -85,17 +81,17 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
         type: "fill",
         source: "regions",
         filter: ["==", ["get", "level"], "macro"],
-        paint: { "fill-color": "#0072b2", "fill-opacity": 0.06 },
+        paint: { "fill-color": "#58b8d8", "fill-opacity": 0.04 },
       });
       addLayer({
         id: "regions-line",
         type: "line",
         source: "regions",
         paint: {
-          "line-color": lineColor,
-          "line-width": 1.4,
-          "line-opacity": 0.7,
-          "line-dasharray": [3, 2],
+          "line-color": "#9daabd",
+          "line-width": 0.8,
+          "line-opacity": 0.22,
+          "line-dasharray": [3, 3],
         },
       });
       addLayer({
@@ -103,24 +99,27 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
         type: "line",
         source: "regions",
         filter: ["==", ["get", "id"], ""],
-        paint: { "line-color": "#0072b2", "line-width": 3.5 },
+        paint: { "line-color": "#58b8d8", "line-width": 1.4, "line-opacity": 0.5 },
       });
       addLayer({
         id: "cells-fill",
         type: "fill",
         source: "cells",
-        paint: { "fill-color": stepExpression(CELL_COLORS), "fill-opacity": 0.88 },
+        paint: { "fill-color": cellPaint().fillColor, "fill-opacity": cellPaint().fillOpacity },
       });
       addLayer({
         id: "cells-outline",
         type: "line",
         source: "cells",
         paint: {
-          "line-color": dark ? "#f5f5f5" : "#3b1a0b",
-          "line-width": stepExpression(CELL_OUTLINE_WIDTHS),
+          "line-color": CELL_OUTLINE_COLOR,
+          "line-width": cellPaint().lineWidth,
         },
       });
+      map.resize();
+      fit(0);
       setReady(true);
+      live.current.onReady?.(map);
     });
 
     const showCell = (e) => {
@@ -135,9 +134,10 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
         lon: coordLabel(tt, p.lon, "E", "W"),
       });
       node.append(title);
-      for (const key of ["estimated", "raw_modis", "raw_viirs"]) {
+      for (const key of ["estimated", "raw_modis", "raw_terra", "raw_aqua", "raw_viirs", "raw_viirs_noaa20", "raw_viirs_noaa21"]) {
         const row = document.createElement("div");
-        row.textContent = `${tt(`metric.${key}`)}: ${fmt(p[key])}`;
+        const raw = p[key];
+        row.textContent = `${tt(`metric.${key}`)}: ${raw === null || raw === undefined || raw === "null" ? tt("series.na") : fmt(raw)}`;
         node.append(row);
       }
       popupRef.current.setLngLat(e.lngLat).setDOMContent(node).addTo(map);
@@ -161,6 +161,7 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
       const cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
       if (cell.length) {
         showCell({ features: cell, lngLat: e.lngLat });
+        live.current.onCellSelect?.(cell[0].properties);
         return;
       }
       popupRef.current.remove();
@@ -171,6 +172,7 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
     });
 
     return () => {
+      live.current.onReady?.(null);
       map.remove();
       mapRef.current = null;
       setReady(false);
@@ -185,27 +187,66 @@ export default function MapView({ regions, cells, metric, region, onRegionSelect
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!ready || !map || !breaks) return;
+    const paint = cellPaint(breaks);
+    map.setPaintProperty("cells-fill", "fill-color", paint.fillColor);
+    map.setPaintProperty("cells-outline", "line-width", paint.lineWidth);
+  }, [ready, breaks]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!ready || !map) return;
     map.setFilter("region-selected-line", ["==", ["get", "id"], region]);
-    map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.14, 0.05]);
+    map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.07, 0.02]);
     fit(prefersReducedMotion() ? 0 : 600);
-  }, [ready, region]);
+  }, [ready, region, focus]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const el = containerRef.current;
+    if (!ready || !map || !el || typeof ResizeObserver === "undefined") return;
+    let frame = 0;
+    let last = { w: el.clientWidth, h: el.clientHeight };
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const w = el.clientWidth;
+        const h = el.clientHeight;
+        if (w < 80 || h < 80) return;
+        map.resize();
+        const widthChanged = Math.abs(w - last.w) > 2;
+        const heightChanged = Math.abs(h - last.h) > 40;
+        last = { w, h };
+        if (widthChanged || heightChanged) fit(0);
+      });
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
+  }, [ready]);
 
   return (
-    <div className="relative">
+    <div className={fill ? "relative h-full w-full" : "relative"}>
       <div
         ref={containerRef}
         role="region"
         aria-label={ariaLabel}
-        className="h-[420px] w-full overflow-hidden rounded-xl border border-line sm:h-[520px]"
+        className={fill ? "h-full w-full" : "h-[460px] w-full overflow-hidden rounded-2xl border border-line sm:h-[560px] lg:h-[640px]"}
       />
-      <button
+      {!fill && <button
         type="button"
         onClick={() => fit(prefersReducedMotion() ? 0 : 600)}
-        className="absolute left-2 top-2 rounded-md border border-line bg-surface px-2.5 py-1 text-sm font-medium shadow hover:bg-bg"
+        className="btn-icon absolute left-3 top-3 font-medium"
       >
         {t("map.reset")}
-      </button>
+      </button>}
+      {overZoom && (
+        <p role="note" className="pointer-events-none absolute bottom-16 right-3 m-0 max-w-[16rem] rounded-xl border border-line bg-bg/90 px-3 py-2 text-xs">
+          {t("imagery.zoomNote", { meters: imagery.raster.pixel ?? 375 })}
+        </p>
+      )}
     </div>
   );
 }

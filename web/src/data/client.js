@@ -33,8 +33,20 @@ function inRing(lon, lat, ring) {
   return inside;
 }
 
+const LEVEL_ALIASES = { pais: "country", departamento: "department" };
+
+function normalizeRegions(geo) {
+  return {
+    ...geo,
+    features: geo.features.map((f) => ({
+      ...f,
+      properties: { ...f.properties, level: LEVEL_ALIASES[f.properties.level] ?? f.properties.level },
+    })),
+  };
+}
+
 export async function getRegions() {
-  return getJson(isMock ? regionsUrl : `${API_BASE}/regions`);
+  return normalizeRegions(await getJson(isMock ? regionsUrl : `${API_BASE}/regions`));
 }
 
 export async function getSeries({ region, from, to }) {
@@ -51,7 +63,7 @@ export async function getSeries({ region, from, to }) {
 
 export async function getMap({ year, month, region }) {
   if (year === undefined || month === undefined) throw new Error("year and month are required");
-  if (!isMock) return getJson(`${API_BASE}/map${query({ year, month, region })}`);
+  if (!isMock) return getJson(`${API_BASE}/map${query({ year, month, region: region === "peru" ? undefined : region })}`);
   if (year !== 2024 || month !== 9) throw new NoDataError(`No mock map for ${year}-${month}`);
   const cells = await getJson(mapUrl);
   if (!region || region === "peru") return cells;
@@ -59,6 +71,11 @@ export async function getMap({ year, month, region }) {
   const feature = regions.features.find((f) => f.properties.id === region);
   if (!feature) return [];
   return cells.filter((cell) => inRing(cell.lon, cell.lat, feature.geometry.coordinates[0]));
+}
+
+export async function getForecast(region) {
+  if (isMock) throw new NoDataError("The season outlook is only available with the API");
+  return getJson(`${API_BASE}/forecast${query({ region })}`);
 }
 
 export async function getMethodology(region) {
@@ -70,4 +87,17 @@ export async function getMethodology(region) {
     detection: data.detection.filter((row) => row.region === region),
     validation: data.validation.filter((row) => row.region === region),
   };
+}
+
+export async function getContinuity({ region, shutdown } = {}) {
+  if (isMock) throw new NoDataError("Continuity is only available with the API");
+  return getJson(`${API_BASE}/continuity${query({ region, shutdown })}`);
+}
+
+export async function getLive() {
+  if (isMock) throw new NoDataError("The live check is only available with the API");
+  const response = await fetch(`${API_BASE}/live`);
+  if (response.status === 503 || response.status === 404) throw new NoDataError("No live scoreboard yet");
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.json();
 }

@@ -29,7 +29,7 @@ export default function SeriesTable({ series }) {
           <thead>
             <tr>
               {COLUMNS.map((c) => (
-                <th key={c} scope="col" className={`whitespace-nowrap border-b border-line px-2.5 py-1 ${LEFT.has(c) ? "text-left" : "text-right"}`}>
+                <th key={c} scope="col" className={`whitespace-nowrap border-b border-line px-2.5 py-1.5 ${LEFT.has(c) ? "text-left" : "text-right"}`}>
                   {t(`series.${c}`)}
                 </th>
               ))}
@@ -53,7 +53,7 @@ export default function SeriesTable({ series }) {
               return (
                 <tr key={`${row.year}-${row.month}`} className={row.is_forecast ? "italic text-forecast" : ""}>
                   {cells.map((c, i) => (
-                    <td key={COLUMNS[i]} className={`whitespace-nowrap border-b border-line px-2.5 py-1 ${LEFT.has(COLUMNS[i]) ? "text-left" : "text-right"}`}>
+                    <td key={COLUMNS[i]} className={`whitespace-nowrap border-b border-line px-2.5 py-1.5 ${LEFT.has(COLUMNS[i]) ? "text-left" : "text-right"}`}>
                       {c}
                     </td>
                   ))}

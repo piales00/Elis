@@ -1,18 +1,41 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { periodState } from "../lib/period.js";
+import { computeBreaks } from "../lib/mapStyle.js";
+import { beforeCoverage, DEFAULT_SUB, gapNoteKey, sensorFor } from "../content/sensors.js";
 import TimeBar from "./TimeBar.jsx";
-const MapView = lazy(() => import("./MapView.jsx"));
 import MapLegend from "./MapLegend.jsx";
 import MapCellTable from "./MapCellTable.jsx";
+import { isMock } from "../data/client.js";
+import SensorSelector from "./SensorSelector.jsx";
+import ImageryControls from "./imagery/ImageryControls.jsx";
+import ImageryLegend from "./imagery/ImageryLegend.jsx";
+import RegionPanel from "./imagery/RegionPanel.jsx";
+import { useImageryView } from "./imagery/useImageryView.js";
+import { FIRST_YEAR, LAST_YEAR } from "../config.js";
 
-const METRICS = ["estimated", "raw_modis", "raw_viirs"];
+const MapView = lazy(() => import("./MapView.jsx"));
+const NONE = [];
 
 export default function MapSection({ regions, region, onRegionSelect, series, seriesLoading, period, onPeriodChange, map }) {
   const { t } = useI18n();
-  const [metric, setMetric] = useState("estimated");
+  const [group, setGroup] = useState("estimated");
+  const [sub, setSub] = useState("all");
+  const img = useImageryView({ period, onPeriodChange, regions, region });
+  const regionLabel = t(`region.${region}`);
 
+  const sensor = sensorFor(group, sub);
+  const gapKey = gapNoteKey(group, sensor, period.year, period.month);
+  const metric = sensor.field;
   const state = periodState(series, period.year, period.month);
+  const noCoverage = beforeCoverage(sensor, period.year, period.month);
+  const ready = map.status === "ready";
+  const fieldMissing = ready && map.cells.length > 0 && !(metric in map.cells[0]);
+  const allNull = ready && map.cells.length > 0 && !fieldMissing && !map.cells.some((c) => c[metric] !== null && c[metric] !== undefined);
+
+  const sensorName = t(sensor.id === "all" ? `sensor.group.${group}` : sensor.labelKey);
+  const since = sensor.since ? (sensor.since.month === 1 ? String(sensor.since.year) : `${t(`month.${sensor.since.month}`)} ${sensor.since.year}`) : "";
+
   let message = null;
   let isError = false;
   if (seriesLoading || map.status === "loading") message = t("status.loading");
@@ -22,54 +45,118 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
   else if (map.status === "error") {
     message = t("status.error", { message: map.error?.message ?? String(map.error) });
     isError = true;
-  } else if (map.status === "ready" && map.cells.length === 0) message = t("map.status.empty");
+  } else if (noCoverage) message = t("map.status.noCoverage", { sensor: sensorName, since });
+  else if (ready && map.cells.length === 0) message = t("map.status.empty");
+  else if (fieldMissing) message = t("map.status.fieldMissing", { sensor: sensorName });
+  else if (allNull) message = t("map.status.noCoverage", { sensor: sensorName, since });
 
-  const cells = state === "observed" && map.status === "ready" ? map.cells : [];
+  const cells = state === "observed" && ready && !noCoverage && !fieldMissing && !allNull ? map.cells : NONE;
+  const breaks = useMemo(() => computeBreaks(cells, metric), [cells, metric]);
   const periodLabel = `${t(`month.${period.month}`)} ${period.year}`;
+  if (img.view === "imagery") {
+    message = img.message;
+    isError = img.isError;
+  }
 
   return (
     <div className="grid gap-4">
       <TimeBar period={period} series={series} loading={seriesLoading} onChange={onPeriodChange} />
 
-      <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
-        <legend className="float-left mr-3 p-0 text-sm text-muted">{t("map.metric.label")}</legend>
-        {METRICS.map((m) => (
-          <label
-            key={m}
-            className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-est ${
-              metric === m ? "border-fg bg-fg font-semibold text-bg" : "border-line bg-surface hover:bg-bg"
-            }`}
-          >
-            <input type="radio" name="metric" value={m} checked={metric === m} onChange={() => setMetric(m)} className="sr-only" />
-            {t(`metric.${m}`)}
-          </label>
-        ))}
-      </fieldset>
+      {gapKey && (
+        <p role="note" className="card-soft m-0 border-dashed border-forecast p-3 text-sm">
+          {t(gapKey)}
+        </p>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="relative">
           <Suspense fallback={<p className="m-0 text-muted">{t("status.loading")}</p>}>
-          <MapView
-            regions={regions}
-            cells={cells}
-            metric={metric}
-            region={region}
-            onRegionSelect={onRegionSelect}
-            ariaLabel={t("map.aria", { period: periodLabel })}
-          />
+            <MapView
+              regions={regions}
+              cells={cells}
+              metric={metric}
+              breaks={breaks}
+              region={region}
+              onRegionSelect={onRegionSelect}
+              onCellSelect={img.selectCell}
+              imagery={img.imagery}
+              ariaLabel={t("map.aria", { period: periodLabel })}
+            />
           </Suspense>
           {message && (
             <p
               role={isError ? "alert" : "status"}
-              className={`absolute inset-x-12 bottom-8 m-0 rounded-lg border bg-surface/95 px-3 py-2 text-center text-sm shadow ${
+              className={`absolute left-1/2 top-3 m-0 w-[min(34rem,calc(100%-11rem))] -translate-x-1/2 rounded-xl border bg-bg/90 px-3 py-2 text-center text-sm ${
                 isError ? "border-danger font-semibold text-danger" : "border-line"
               }`}
             >
               {message}
             </p>
           )}
+          <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-5rem)]">
+            {img.view === "imagery" ? (
+              <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} heat={img.heat} />
+            ) : (
+              <MapLegend metric={metric} breaks={breaks} />
+            )}
+          </div>
         </div>
-        <MapLegend metric={metric} />
+        <div className="grid gap-4">
+          <ImageryControls
+            view={img.view}
+            onViewChange={img.setView}
+            base={img.base}
+            onBaseChange={img.setBase}
+            date={img.date}
+            onDateChange={img.setDate}
+            raster={img.raster}
+            satellites={img.satellites}
+            onSatelliteChange={img.setSatellite}
+            heat={img.heat}
+            onHeatChange={img.setHeat}
+            minYear={FIRST_YEAR}
+            maxYear={LAST_YEAR}
+            onTrueScale={img.trueScale}
+          />
+          {img.view === "cells" && <SensorSelector
+            group={group}
+            sub={sub}
+            onGroupChange={(g) => {
+              setGroup(g);
+              setSub(DEFAULT_SUB[g]);
+            }}
+            onSubChange={setSub}
+          />}
+          <RegionPanel
+            regionLabel={regionLabel}
+            periodLabel={periodLabel}
+            series={series}
+            period={period}
+            cell={img.cell}
+            onClearCell={img.clearCell}
+            detections={img.detections}
+            dateLabel={img.dateLabel}
+            showingImagery={img.view === "imagery"}
+            onShowImagery={img.showImagery}
+          />
+          <div className="card-soft p-4 text-xs text-muted">
+            <ul className="m-0 grid list-none gap-2 p-0">
+              <li className="flex items-center gap-3">
+                <svg width="26" height="10" aria-hidden="true">
+                  <line x1="1" x2="25" y1="5" y2="5" strokeWidth="1.2" strokeDasharray="3 3" style={{ stroke: "var(--muted)" }} />
+                </svg>
+                <span>{t("map.legend.region")}</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <svg width="26" height="10" aria-hidden="true">
+                  <line x1="1" x2="25" y1="5" y2="5" strokeWidth="1.6" style={{ stroke: "var(--sat)", opacity: 0.7 }} />
+                </svg>
+                <span>{t("map.legend.selected")}</span>
+              </li>
+            </ul>
+            <p className="m-0 mt-3">{t(isMock ? "map.boundaries.mock" : "map.boundaries.api")}</p>
+          </div>
+        </div>
       </div>
 
       <MapCellTable cells={cells} metric={metric} />

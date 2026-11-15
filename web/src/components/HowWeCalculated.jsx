@@ -1,21 +1,12 @@
 import { useI18n } from "../i18n/I18nProvider.jsx";
-import { LIMITS, PENDING, SOURCES, STEPS } from "../content/sources.js";
+import { LIMITS, STEPS } from "../content/sources.js";
 
 function Card({ title, children }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
+    <div className="card p-5">
       <h3 className="m-0 text-lg font-semibold">{title}</h3>
       {children}
     </div>
-  );
-}
-
-function PendingBadge() {
-  const { t } = useI18n();
-  return (
-    <span className="ml-2 rounded border border-dashed border-forecast px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-forecast">
-      {t("method.pending.badge")}
-    </span>
   );
 }
 
@@ -27,7 +18,7 @@ function PairBar({ label, value, max, color, hatched, text }) {
   return (
     <div className="grid grid-cols-[5.5rem_1fr_4.5rem] items-center gap-2 text-sm">
       <span className="text-muted">{label}</span>
-      <span aria-hidden="true" className="block h-3 rounded-sm bg-bg">
+      <span aria-hidden="true" className="block h-3 rounded-sm bg-surface-2">
         <span className="block h-full rounded-sm" style={{ width: `${pct}%`, background: fill, border: `1px solid ${color}` }} />
       </span>
       <span className="text-right tabular-nums">{text}</span>
@@ -46,8 +37,8 @@ export default function HowWeCalculated({ methodology, region }) {
   const range = (a) => (Array.isArray(a) ? a.join("–") : t("series.na"));
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="@container grid gap-6">
+      <div className="grid gap-4 @2xl:grid-cols-3">
         {["observed", "estimate", "forecast"].map((k) => (
           <Card key={k} title={t(`method.kind.${k}.title`)}>
             <p className="m-0 mt-2 text-muted">{t(`method.kind.${k}.text`)}</p>
@@ -56,7 +47,7 @@ export default function HowWeCalculated({ methodology, region }) {
       </div>
 
       <Card title={t("method.steps.title")}>
-        <ol className="m-0 mt-4 grid list-none gap-4 p-0 md:grid-cols-2">
+        <ol className="m-0 mt-4 grid list-none gap-4 p-0 @xl:grid-cols-2">
           {STEPS.map((s, i) => (
             <li key={s} className="flex gap-3">
               <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-full border border-line text-sm font-semibold">
@@ -71,7 +62,7 @@ export default function HowWeCalculated({ methodology, region }) {
         </ol>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @2xl:grid-cols-2">
         <Card title={t("method.params.title")}>
           {params ? (
             <dl className="m-0 mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 tabular-nums">
@@ -85,7 +76,6 @@ export default function HowWeCalculated({ methodology, region }) {
           ) : (
             <p className="m-0 mt-3 text-sm text-muted">
               {t("method.unavailable")}
-              <PendingBadge />
             </p>
           )}
         </Card>
@@ -104,7 +94,6 @@ export default function HowWeCalculated({ methodology, region }) {
                     {v.mapbiomas_corr === null || v.mapbiomas_corr === undefined ? (
                       <>
                         {t("series.na")}
-                        <PendingBadge />
                       </>
                     ) : (
                       <span className="font-semibold tabular-nums">{formatNumber(v.mapbiomas_corr, { maximumFractionDigits: 2 })}</span>
@@ -116,7 +105,6 @@ export default function HowWeCalculated({ methodology, region }) {
           ) : (
             <p className="m-0 mt-3 text-sm text-muted">
               {t("method.valid.empty")}
-              <PendingBadge />
             </p>
           )}
         </Card>
@@ -125,7 +113,7 @@ export default function HowWeCalculated({ methodology, region }) {
       <Card title={t("method.detect.title")}>
         <p className="m-0 mt-1 text-sm text-muted">{t("method.detect.sub", { region: regionName })}</p>
         {detection.length ? (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 @md:grid-cols-2 @3xl:grid-cols-3">
             {detection.map((d) => (
               <div key={`${d.region}-${d.month}`} className="grid gap-1.5">
                 <p className="m-0 font-semibold">{t(`month.${d.month}`)}</p>
@@ -137,46 +125,15 @@ export default function HowWeCalculated({ methodology, region }) {
         ) : (
           <p className="m-0 mt-3 text-sm text-muted">
             {t("method.detect.empty")}
-            <PendingBadge />
           </p>
         )}
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <Card title={t("method.limits.title")}>
           <ul className="m-0 mt-3 grid list-disc gap-2 pl-5 text-sm">
             {LIMITS.map((l) => (
               <li key={l}>{t(`method.limit.${l}`)}</li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card title={t("method.sources.title")}>
-          <ul className="m-0 mt-3 grid list-none gap-3 p-0 text-sm">
-            {SOURCES.map((s) => (
-              <li key={s.key}>
-                <a href={s.url} target="_blank" rel="noreferrer" className="font-semibold text-est underline underline-offset-2">
-                  {t(`method.source.${s.key}.name`)}
-                </a>
-                <span className="block text-muted">{t(`method.source.${s.key}.text`)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="m-0 mt-4 text-sm text-muted">{t("method.firms.ack")}</p>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card title={t("method.ai.title")}>
-          <p className="m-0 mt-2 text-sm text-muted">{t("method.ai.text")}</p>
-        </Card>
-        <Card title={t("method.pending.title")}>
-          <ul className="m-0 mt-3 grid list-none gap-2 p-0 text-sm">
-            {PENDING.map((p) => (
-              <li key={p}>
-                {t(`method.pending.${p}`)}
-                <PendingBadge />
-              </li>
             ))}
           </ul>
         </Card>

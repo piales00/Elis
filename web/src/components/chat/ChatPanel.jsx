@@ -6,6 +6,7 @@ import {
   streamChat,
 } from "../../data/chat.js";
 import ChatChart from "./ChatChart.jsx";
+import Icon from "../shell/icons.jsx";
 
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_INPUT_CHARS = 600;
@@ -15,9 +16,12 @@ export default function ChatPanel({
   series = [],
   methodology = null,
   onSyncView,
+  embedded = false,
+  onOpenMethod,
 }) {
   const { locale, t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpen] = useState(false);
+  const open = embedded || openState;
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState([]);
   const [streaming, setStreaming] = useState(false);
@@ -33,11 +37,11 @@ export default function ChatPanel({
 
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.key === "Escape" && open) setOpen(false);
+      if (e.key === "Escape" && openState) setOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [openState]);
 
   const handlePresetClick = (preset) => {
     if (streaming) return;
@@ -214,28 +218,32 @@ export default function ChatPanel({
 
   return (
     <>
-      <button
+      {!embedded && <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="ask-the-data-drawer"
         className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full border border-line bg-fg px-4 py-2.5 text-sm font-semibold text-bg shadow-lg transition hover:opacity-90 cursor-pointer"
       >
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+        <Icon name="ask" size={16} />
         <span>{t("chat.trigger")}</span>
-      </button>
+      </button>}
 
       {open && (
         <div
           id="ask-the-data-drawer"
-          role="dialog"
+          role={embedded ? undefined : "dialog"}
           aria-label={t("chat.title")}
-          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-line bg-bg shadow-2xl"
+          className={embedded ? "flex h-full min-h-0 flex-col" : "fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-line bg-bg shadow-2xl"}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3.5">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="m-0 text-base font-bold text-fg">{t("chat.title")}</h2>
+                <h2 className="m-0 flex items-center gap-1.5 text-base font-bold text-fg">
+                  <Icon name="ask" size={18} className="text-forecast" />
+                  {t("chat.title")}
+                  <span className="rounded-[5px] bg-forecast px-1 text-[10px] font-extrabold leading-[15px] text-bg">{t("ai.tag")}</span>
+                </h2>
                 <span className="rounded-full border border-line bg-bg px-2.5 py-0.5 text-[11px] font-semibold text-est">
                   {regionName}
                 </span>
@@ -252,14 +260,14 @@ export default function ChatPanel({
                   {t("chat.clear")}
                 </button>
               )}
-              <button
+              {!embedded && <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={t("chat.close")}
                 className="rounded-lg border border-line bg-bg px-2.5 py-1 text-xs font-semibold text-fg hover:border-muted cursor-pointer"
               >
                 ✕
-              </button>
+              </button>}
             </div>
           </div>
 
@@ -363,7 +371,13 @@ export default function ChatPanel({
                       <span className="text-[11px] text-muted">{t("chat.unitReminder")}</span>
                       <a
                         href="#method"
-                        onClick={() => setOpen(false)}
+                        onClick={(e) => {
+                          setOpen(false);
+                          if (onOpenMethod) {
+                            e.preventDefault();
+                            onOpenMethod();
+                          }
+                        }}
                         className="font-semibold text-est hover:underline"
                       >
                         {t("chat.howWeCalculateLink")} →
