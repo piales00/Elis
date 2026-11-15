@@ -1,0 +1,9 @@
+{
+  "data/processed/series.json": "b0ea0f6fcff9ac7c6f7b308a90084b3715f9a7afccc714740ecf7320a0ee7b61",
+  "data/processed/forecast.json": "6017c4401fbe19797ef5e4e0fe2e98b0d533af528752ab87eb6c9dd0d753edc7",
+  "data/processed/continuity.json": "9ffbd33bf88fe880aa4808e2a203913bee366eea86fd9e53256b7b19357eeff3",
+  "docs/report/figures/season-ranges.json": "e8135c93c8eb8aa9b5e3818629d39dadcc9067890ed379a250992a22e40a820f",
+  "docs/report/figures/aqua-drift.svg": "7d5c5c61cb81c456b8efc5d5bb5fda95cccc84be03e230ba4143fe139894b1e7",
+  "docs/report/figures/forecast-2026.svg": "f586d159db7ca6c28c6ba3bb2bdf440cfcd12be574e701228703fb73b3f45f49",
+  "docs/report/figures/record.svg": "57d8f18abd1680a94b5db9591cbcf572c4e604e8141a94a196b67113c18f1e7b"
+}

@@ -1,0 +1,26 @@
+{
+  "source": "data/interim/series_replicates.parquet",
+  "source_sha256": "39fca7b5f98f3c836e8ad862afd5833188ce081b935a8402dfbeb03180a361cd",
+  "series_sha256": "b0ea0f6fcff9ac7c6f7b308a90084b3715f9a7afccc714740ecf7320a0ee7b61",
+  "period": "2026-08/2026-10",
+  "ci_level": 0.9,
+  "method": "Quantiles of sums of aligned replicates, not sums of monthly endpoints.",
+  "rows": {
+    "amazonia": {
+      "low": 11508.692483436194,
+      "high": 11774.758877275044
+    },
+    "sierra": {
+      "low": 9501.45981878912,
+      "high": 10043.576153451178
+    },
+    "peru": {
+      "low": 22756.317838704643,
+      "high": 23280.02144190313
+    },
+    "costa": {
+      "low": 1560.622133396326,
+      "high": 1668.4809928077273
+    }
+  }
+}

@@ -17,7 +17,7 @@ MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire
 | 05 | [Seasonal fire outlook](05-seasonal-forecast.md) | Lead-1 RPSS 0.31 (macroregions); 2026 inside the range; 2027 outlook |
 | 06 | [Validation](06-validation.md) | 3.8 % vs 334 % on held-out years (Amazon 2.3 %, Coast 9.0 % after the Aqua-era correction); MapBiomas 0.75 |
 | 07 | [After MODIS: continuity and sealed daily predictions](07-continuity-and-live.md) | Record unchanged without MODIS; first sealed prediction scored |
-| 08 | [Elis: Assistant and 40s Mission Control HUD](08-elis-assistant-and-hud.md) | Zero-hallucination dual RAG (Gemini 3.1 Flash Lite + Claude); 40s autonomous showcase; decision paths for INDECI & MINAM |
+| 08 | [Elis: Data assistant and guided demonstration](08-elis-assistant-and-hud.md) | Processed-data tools with numerical verification; guided demonstration; explicit limits on interpretation |
 
 Downloadable technical report: [`docs/report/firechronos-technical-report.pdf`](../report/firechronos-technical-report.pdf) (HTML source alongside).
 
