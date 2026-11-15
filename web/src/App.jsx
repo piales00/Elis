@@ -528,7 +528,7 @@ export default function App() {
               className="fc-float fc-press grid size-10 place-items-center rounded-xl"
               aria-label={t("map.reset")}
               title={t("map.reset")}
-              onClick={() => fitTo(outlook && deptFeature ? deptFeature : regions?.features.find((f) => f.properties.id === region))}
+              onClick={() => mapInstance?.fire("resetview")}
             >
               <Icon name="fit" size={17} />
             </button>
