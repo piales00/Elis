@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: firechronos-api
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /regions
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+      - key: CHAT_ENABLED
+        value: "0"
+      - key: CHAT_DAILY_BUDGET_USD
+        value: "5"
