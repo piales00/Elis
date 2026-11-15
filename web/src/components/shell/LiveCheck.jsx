@@ -274,7 +274,7 @@ export function LiveBadge({ state, onState }) {
   };
   return (
     <div
-      className="relative"
+      className="relative shrink-0"
       onPointerEnter={enter}
       onPointerLeave={leave}
       onBlur={(e) => {
@@ -293,7 +293,8 @@ export function LiveBadge({ state, onState }) {
           clear();
           onState(state === "pinned" ? null : "pinned");
         }}
-        className="fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold"
+        className="fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold whitespace-nowrap"
+        title={t("live.title")}
         aria-label={t("live.title")}
       >
         <span className="fc-live-dot" aria-hidden="true" />

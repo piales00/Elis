@@ -119,11 +119,16 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), fill ? "bottom-right" : "top-right");
     if (!fill) map.addControl(new maplibregl.FullscreenControl(), "top-right");
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
-    popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric", maxWidth: 48 }), "bottom-right");
+    popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px", className: "fc-cell-popup", anchor: "top-left" });
 
     map.on("style.load", () => tuneBasemap(map));
     map.on("load", () => {
+      if (fill) {
+        const attribution = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+        attribution?.classList.remove("maplibregl-compact-show");
+        attribution?.removeAttribute("open");
+      }
       const before = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
       const addLayer = (layer) => map.addLayer(layer, before);
       map.addSource("regions", { type: "geojson", data: regions });
@@ -223,6 +228,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         node.append(button);
       }
       popupRef.current.setLngLat(e.lngLat).setDOMContent(node).addTo(map);
+      popupRef.current.getElement().querySelector(".maplibregl-popup-content").scrollTop = 0;
     };
 
     map.on("mousemove", "cells-fill", (e) => {
@@ -298,12 +304,25 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     if (!ready || !map || !el || typeof ResizeObserver === "undefined") return;
     let frame = 0;
     let last = { w: el.clientWidth, h: el.clientHeight };
+    const stage = el.closest(".fc-stage");
+    const toolbar = stage?.querySelector(".fc-overlay-top");
+    const legend = stage?.querySelector(".fc-overlay-bottom");
+    const updatePopupBounds = () => {
+      const box = el.getBoundingClientRect();
+      const top = toolbar ? toolbar.getBoundingClientRect().bottom - box.top + 8 : 64;
+      const bottom = legend ? box.bottom - legend.getBoundingClientRect().top + 8 : 12;
+      el.parentElement.style.setProperty("--fc-tools-top", `${top}px`);
+      el.style.setProperty("--fc-popup-top", `${top}px`);
+      el.style.setProperty("--fc-popup-bottom", `${bottom}px`);
+    };
+    updatePopupBounds();
     const ro = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const w = el.clientWidth;
         const h = el.clientHeight;
         if (w < 80 || h < 80) return;
+        updatePopupBounds();
         map.resize();
         const widthChanged = Math.abs(w - last.w) > 2;
         const heightChanged = Math.abs(h - last.h) > 40;
@@ -312,6 +331,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       });
     });
     ro.observe(el);
+    if (toolbar) ro.observe(toolbar);
+    if (legend) ro.observe(legend);
     return () => {
       cancelAnimationFrame(frame);
       ro.disconnect();
@@ -333,7 +354,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       >
         {t("map.reset")}
       </button>}
-      <div className={`absolute right-3 z-[6] flex flex-col items-end gap-2 ${fill ? "top-36" : "top-24"}`}>
+      <div className="fc-map-tools absolute right-3 z-[6] flex flex-col items-end gap-2" style={{ top: fill ? "var(--fc-tools-top, 144px)" : "96px" }}>
         <button type="button" disabled={!ready} aria-pressed={terrain} aria-label={t("map.terrain")} title={t("map.terrain")} onClick={() => changeTerrain(!terrainRef.current)} className={`fc-float fc-press grid size-11 place-items-center rounded-xl text-sm font-bold ${terrain ? "!border-est !text-est" : ""}`}>
           3D
         </button>
@@ -364,7 +385,6 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
             <circle cx="16" cy="26" r="1" />
           </svg>
         </button>
-        <span className="fc-float max-w-32 rounded-lg px-2 py-1 text-right text-xs">{t("map.drop")}</span>
       </div>
       <span id="explore-drop-help" className="sr-only">{t("map.dropHelp")}</span>
       {drag && <div aria-hidden="true" className="pointer-events-none fixed z-[100] text-est" style={{ left: drag.x, top: drag.y, transform: "translate(-50%, -100%)" }}>

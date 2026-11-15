@@ -564,8 +564,8 @@ export default function App() {
         </MapBoundary>
 
         <div className="fc-overlay fc-overlay-top">
-          <div className="flex min-w-0 flex-col items-start gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-col items-start gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {!panelOpen && (
               <button type="button" className="fc-float fc-press hidden h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:flex" onClick={() => setPanelOpen(true)}>
                 <Icon name={view} size={18} />

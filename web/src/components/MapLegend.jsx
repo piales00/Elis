@@ -22,7 +22,7 @@ export default function MapLegend({ metric, breaks, terrain = false }) {
           </li>
         ))}
       </ul>
-      {terrain && <p className="m-0 mt-2 text-muted">Smoothed cell activity · not burned area. Satellite basemap: 2020.</p>}
+      {terrain && <p className="m-0 mt-2 text-muted">{t("map.legend.terrain")}</p>}
       <p className="m-0 mt-2 text-muted">{t("map.legend.note")}</p>
     </div>
   );
