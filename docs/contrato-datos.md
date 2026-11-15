@@ -158,6 +158,66 @@ Cada entrada de `regions`:
 
 Los departamentos con poca actividad no tienen pronóstico. Antes de 2012 la serie por departamento hereda el reparto por celda con la climatología de VIIRS. Las probabilidades salen de una distribución normal en logaritmo con la dispersión de los residuos de validación cruzada. Es un pronóstico, no un dato observado.
 
+### `continuity.json` — MODIS después de MODIS
+
+Continuidad tras el apagado de MODIS (Terra y Aqua terminan su misión científica en 2027). Lo escribe `scripts/continuity.py` (necesita `data/interim/`; se ejecuta después de `build_series.py`). Un solo objeto JSON:
+
+| Campo | Qué es |
+|---|---|
+| `unit`, `ci_level`, `regions`, `period` | `fire cell-days`, 0,9, `["peru","amazonia","sierra","costa"]` y primer y último mes (`YYYY-MM`, de 2012-01 a 2026-11) |
+| `scenario` | `shutdown` (`YYYY-MM`, por defecto `CONTINUITY_SHUTDOWN` = 2023-01), `modis_science_end_year` (2027) y `description` |
+| `rows` | Una fila por región y mes (ver abajo) |
+| `metrics.emulator_by_year` | Por región y año (2013–2026): `months`, `aqua_observed`, `aqua_emulated`, `error_pct` = (emulado − real) / real, `aqua_vs_emulated_pct` = (real − emulado) / emulado (negativo: Aqua ve menos de lo esperado), `range_coverage` (fracción de meses con el real dentro del rango) y `period` (`pre_drift` hasta 2022, `drift` desde 2023) |
+| `metrics.summary` | Por región y período (`pre_drift` 2013–2022, `drift` 2023–2026): `monthly_mape_pct`, `annual_mape_pct`, `bias_pct`, `aqua_vs_emulated_pct`, `range_coverage` |
+| `metrics.harmonized_check` | `months`, `max_abs_diff_rebuilt_vs_series` (`harmonized_viirs_only + modis_filled` frente a `estimated`), `viirs_identity_max_rel_diff` (`n_snpp / p_viirs` frente al segmento de captura y recaptura) y `months_with_modis_filled_days` (región, mes, días y celdas-día que dependen de Aqua) |
+| `method` | Definiciones en inglés de cada campo |
+
+Cada fila de `rows`:
+
+| Campo | Qué es |
+|---|---|
+| `region`, `month` | Identificadores (`month` en `YYYY-MM`) |
+| `n_snpp`, `excluded_days`, `partial_coverage` | Celdas-día de S-NPP en días con Aqua y S-NPP disponibles, días excluidos por apagones y si el mes está incompleto |
+| `aqua_observed` | Celdas-día reales de Aqua en esos mismos días (puede diferir de `modis_equiv` en meses con apagones) |
+| `aqua_emulated`, `aqua_emulated_low`, `aqua_emulated_high` | Emulador desde VIIRS con rango al 90 %: 500 réplicas de la suma de Bernoulli (aproximación normal) más el residuo de Poisson, por un factor estructural remuestreado de los log(real/emulado) mensuales de la misma región en 2013–2022, dejando fuera el año del mes |
+| `harmonized`, `harmonized_low`, `harmonized_high` | `estimated`, `est_low`, `est_high` de `series.json` |
+| `harmonized_viirs_only`, `_low`, `_high` | La estimación sin MODIS: segmentos que solo usan VIIRS (`n_snpp / p_viirs`; NOAA-20 en escala S-NPP después de S-NPP) |
+| `modis_filled` | Parte de `harmonized` que viene de días sin S-NPP rellenados con Aqua. `harmonized = harmonized_viirs_only + modis_filled` |
+| `source` | `source` de `series.json` |
+| `modis_scale`, `modis_scale_low`, `modis_scale_high`, `modis_scale_source` | Serie en escala MODIS del escenario: `aqua_observed` antes de `shutdown` (rango igual al valor), `aqua_emulated` con su rango desde `shutdown` |
+
+La serie armonizada no cambia con el apagado: desde 2012 es `n_snpp / p_viirs` con `p_viirs` calibrado una sola vez en 2013–2020. Solo `modis_filled` depende de MODIS.
+
+### `live/` — predicciones diarias selladas
+
+Lo escribe `scripts/live_predict.py`. En `main` están los insumos fijos y un `scoreboard.json` vacío; las predicciones y el marcador reales los publica el flujo `.github/workflows/live-predictions.yml` en la rama `live-data` (misma ruta `data/processed/live/`).
+
+| Archivo | Qué es |
+|---|---|
+| `emulator.joblib` | Copia mínima del emulador (`model`, `features`, `region_categories`, `rates` con `region`, `month`, `r`, y `train_years`), menos de 2 MB, sin datos personales. Se regenera con `live_predict.py export` |
+| `static_mask.json` | Máscara de fuentes estáticas (`cells`: `instrument`, `cell_y`, `cell_x`). Si existe `data/interim/static_mask.parquet`, se usa ese |
+| `cell_regions.json` | Macrorregión de cada celda vista en `cells.parquet` (`cells`: `[cell_y, cell_x, region]`); las celdas nuevas se asignan con `scripts/regions.py` |
+| `calibration.json` | Factor de deriva y dispersión por fuente (`snpp`, `noaa20`) y región, ajustados en los últimos `LIVE_CALIBRATION_DAYS` días con Aqua y S-NPP (`window`, `n_days`, `sources.<fuente>.regions[]`: `region`, `drift_factor`, `sigma`, `coverage_in_sample`, `coverage_second_half`, `mean_daily_observed`, `mean_daily_emulated`) |
+| `predictions/YYYY-MM-DD.json` | Una predicción sellada por día (ver abajo). Nunca se sobrescribe |
+| `scoreboard.json` | Marcador (ver abajo) |
+
+Predicción (`predictions/YYYY-MM-DD.json`):
+
+| Campo | Qué es |
+|---|---|
+| `date`, `generated_at_utc` | Día UTC predicho y hora de generación (`...Z`) |
+| `unit`, `ci_level` | `fire cell-days`, 0,9 |
+| `viirs_source`, `firms_source` | `snpp` (`VIIRS_SNPP_NRT`) o `noaa20` (`VIIRS_NOAA20_NRT`, solo si FIRMS no trae S-NPP) |
+| `input_sha256`, `viirs_detections` | SHA-256 del CSV de FIRMS usado y detecciones que pasan los filtros |
+| `model_version`, `calibration_sha256` | `emulator-` + 12 primeros caracteres del SHA-256 de `emulator.joblib`, y SHA-256 de `calibration.json` |
+| `regions` | `peru` primero y luego las macrorregiones: `region`, `viirs_cell_days`, `aqua_emulated` (sin corregir la deriva), `aqua_predicted` (con la deriva), `aqua_low`, `aqua_high` (rango al 90 %) |
+| `method` | Descripción en inglés |
+| `sha256` | SHA-256 del JSON canónico (claves ordenadas, separadores `,` y `:`, UTF-8) de todos los demás campos |
+
+`scoreboard.json`: `unit`, `ci_level`, `updated_at_utc`, `rows` y `summary`. Cada fila de `rows` es una región y fecha: `date`, `region`, `viirs_source`, `predicted`, `low`, `high`, `observed` (celdas-día de Aqua en MODIS NRT, `null` si FIRMS no trae Aqua), `inside` (sí/no), `error` (= observado − predicho), `status` (`scored` o `no_aqua_data`), `prediction_sha256`, `prediction_generated_at_utc`, `aqua_input_sha256` y `scored_at_utc`. `summary`, por región: `n_days`, `coverage` (cobertura empírica del rango), `mean_error`, `mean_abs_error` y `mean_abs_error_pct` (Σ|error| / Σ observado).
+
+Celdas-día como en `cells.py`: confianza `n`/`h` (VIIRS) o ≥ 30 (MODIS), sin `type` en NRT, así que se aplica la máscara de fuentes estáticas; puntos dentro del polígono de Perú (`regions.geojson`, con margen de `PERU_POINT_BUFFER_DEG`), porque la API de área de FIRMS entrega un rectángulo. El sello es el SHA-256 y el commit en `live-data`: la predicción del día D se hace al día siguiente solo con VIIRS y se verifica con Aqua un día después.
+
 ### `map.parquet` — solo lo lee la API
 
 Una fila por celda, año y mes con actividad.
@@ -193,6 +253,8 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 | `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
 | `GET /forecast` | `region` (opcional: `peru`, macrorregión o departamento) | `forecast.json`. Con `region`, `regions`, `backtest.rows` y `out_of_sample.rows` se filtran a esa unidad; una región desconocida da 404 |
+| `GET /continuity` | `region` (opcional), `shutdown` (opcional, `YYYY-MM`) | `continuity.json`. Con `region`, `rows` y las listas de `metrics` se filtran; una región desconocida da 404. Con `shutdown`, `modis_scale*` y `scenario.shutdown` se recalculan para ese mes (422 si está fuera de `period` o es el primer mes) |
+| `GET /live` | — | `{"scoreboard": scoreboard.json, "latest_prediction": última predicción o null}` de `data/processed/live/`; 503 si falta el marcador |
 | `POST /chat` | Cuerpo JSON: `messages` (lista de `{role, content}`), `region` (opcional), `locale` (opcional) | `text/event-stream` con eventos `text`, `tool`, `chart`, `notice`, `done` y `error` (ver `docs/plan-chat-ia.md`) |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.

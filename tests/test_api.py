@@ -148,6 +148,10 @@ def test_series_reaches_last_data_month(client):
     ('/map', {'year': 2024, 'month': 9, 'region': ''}),
     ('/methodology', {'region': ''}),
     ('/forecast', {'region': ''}),
+    ('/continuity', {'region': ''}),
+    ('/continuity', {'shutdown': '2023-13'}),
+    ('/continuity', {'shutdown': '2012-01'}),
+    ('/continuity', {'shutdown': '2030-01'}),
 ])
 def test_validation_errors(client, path, params):
     response = client.get(path, params=params)
@@ -173,3 +177,42 @@ def test_error_messages_in_english(client, monkeypatch, tmp_path):
     assert client.get('/map', params={'year': 2024, 'month': 9}).json()['detail'] == 'map.parquet is not available yet.'
     assert client.get('/regions').status_code == 503
     assert client.get('/forecast').json()['detail'] == 'forecast.json is not available yet.'
+    assert client.get('/continuity').json()['detail'] == 'continuity.json is not available yet.'
+    assert client.get('/live').json()['detail'] == 'live/scoreboard.json is not available yet.'
+
+
+def test_continuity(client):
+    body = client.get('/continuity').json()
+    stored = json.loads((config.PROCESSED_DIR / 'continuity.json').read_text())
+    assert body == stored
+    assert body['regions'] == [config.NATIONAL, *config.REGIONS]
+    sierra = client.get('/continuity', params={'region': 'sierra'}).json()
+    assert sierra['rows'] and all(r['region'] == 'sierra' for r in sierra['rows'])
+    assert all(r['region'] == 'sierra' for r in sierra['metrics']['summary'])
+    assert sierra['metrics']['harmonized_check'] == body['metrics']['harmonized_check']
+    moved = client.get('/continuity', params={'region': 'peru', 'shutdown': '2020-06'}).json()
+    assert moved['scenario']['shutdown'] == '2020-06'
+    for row in moved['rows']:
+        expected = row['aqua_emulated'] if row['month'] >= '2020-06' else row['aqua_observed']
+        assert row['modis_scale'] == expected
+        assert row['modis_scale_source'] == ('aqua_emulated' if row['month'] >= '2020-06' else 'aqua_observed')
+        assert row['modis_scale_low'] <= row['modis_scale'] <= row['modis_scale_high']
+    missing = client.get('/continuity', params={'region': 'atlantis'})
+    assert missing.status_code == 404
+    assert missing.json()['detail'] == "No continuity entry for region 'atlantis'."
+
+
+def test_live(client, monkeypatch, tmp_path):
+    body = client.get('/live').json()
+    assert body['scoreboard'] == json.loads((config.PROCESSED_DIR / 'live' / 'scoreboard.json').read_text())
+    import api.main
+    live = tmp_path / 'live'
+    (live / 'predictions').mkdir(parents=True)
+    (live / 'scoreboard.json').write_text(json.dumps({'unit': 'fire cell-days', 'rows': [], 'summary': []}))
+    monkeypatch.setattr(api.main, 'PROCESSED_DIR', tmp_path)
+    assert client.get('/live').json()['latest_prediction'] is None
+    for day in ('2026-11-10', '2026-11-12', '2026-11-11'):
+        (live / 'predictions' / f'{day}.json').write_text(json.dumps({'date': day}))
+    assert client.get('/live').json()['latest_prediction'] == {'date': '2026-11-12'}
+    preflight = client.options('/live', headers={'Origin': 'https://example.org', 'Access-Control-Request-Method': 'POST'})
+    assert preflight.status_code == 400
