@@ -2,7 +2,6 @@ import { useI18n } from "../../../i18n/I18nProvider.jsx";
 import { SENSORS } from "../../../content/sensors.js";
 import { ClassBadge } from "../../SlotDetails.jsx";
 import ImageryControls from "../../imagery/ImageryControls.jsx";
-import MapCellTable from "../../MapCellTable.jsx";
 import { FIRST_YEAR, LAST_YEAR } from "../../../config.js";
 import StatusChip from "../StatusChip.jsx";
 
@@ -81,6 +80,7 @@ export default function ExploreView({
   onSubChange,
   cellView,
   onOpenOutlook,
+  onOpenCells,
 }) {
   const { t, formatNumber } = useI18n();
   const num = (v) => (v === null || v === undefined ? t("series.na") : formatNumber(v));
@@ -201,7 +201,11 @@ export default function ExploreView({
               {t("explore.toImagery", { date: img.dateLabel })}
             </button>
           )}
-          <MapCellTable cells={cellView.cells} metric={cellView.metric} />
+          {cellView.cells.length > 0 && (
+            <button type="button" className="fc-link justify-self-start text-sm" onClick={onOpenCells}>
+              {t("explore.openCells", { n: formatNumber(cellView.cells.length) })} →
+            </button>
+          )}
         </>
       )}
       <p className="m-0 text-xs text-muted">{t("details.unit")}</p>

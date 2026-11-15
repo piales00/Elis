@@ -159,3 +159,12 @@ Archivos existentes tocados (cambios pequeños, para integrar con otras ramas):
 `Header`, `Hero`, `Section`, `MapSection` y `TimeBar` quedan sin uso; se pueden borrar al integrar.
 
 URL: `?view=&region=&y=&m=&unit=`; `?tour=1` abre el recorrido y `?tour=auto` lo reproduce solo.
+
+## Segunda ronda (2026-11-14)
+
+- **Data** (riel y ⌘K, atajo 7): vista ancha que tapa el mapa. Tres tablas con filtros, orden y páginas (serie mensual de las cuatro regiones, celdas del mes por macrorregión, pronóstico 2027 por unidad); cada una descarga en CSV exactamente las filas filtradas. Tarjeta «Use the API» con URL base, las 6 rutas con `curl` y Python copiables, enlace a `/docs` de FastAPI (el proxy de Vite también reenvía `/openapi.json`), unidades, fuentes y cita sugerida. La tabla de celdas sale del panel de Explore.
+- **Outlook:** además de 2027, temporadas observadas 2003–2026 con los umbrales de clase y el rango 2027, habilidad por anticipación (RPSS y MAE skill de `skill_by_lead`), prueba fuera de muestra 2026 (`out_of_sample`, modelo frente a climatología y observado) y el pronóstico mensual de diciembre de 2026 con su método (`methodology.forecast.published`), más la explicación de por qué no hay meses más allá.
+- **Falta un dato para el retropronóstico año a año:** `forecast.json → backtest.rows` solo trae métricas resumidas por unidad y anticipación. `scripts/forecast_v2.py` calcula los valores por año en `evaluate()` pero no los guarda. La web ya dibuja puntos y rangos si aparece `backtest.seasons` con filas `{region, lead, year, observed, median, low, high}` (en cell-days, no en logaritmo). Propuesta para T3: exportarlas y documentarlas antes en `docs/contrato-datos.md`.
+- **Method → How it works:** seis tarjetas con afirmación, cifra clave, gráfico mínimo y enlace al documento. Las cifras salen de `methodology.json` y `forecast.json`; las del modelo bayesiano, el simulador de subestimación, el AUC de la razón fija (0,62) y la correlación por era Landsat (0,92) están en `web/src/content/evidence.js` con su documento de origen.
+- **Selector de tiempo:** clic en la fecha de la barra abre un calendario 2000–2026 × ene–dic coloreado por clase (pronóstico rayado violeta, provisional con borde ámbar, baja confianza atenuado), con atajos (Latest, Peak month, Fake-record year 2012, Same month last year) y flechas. En modo satelital abre un calendario de días que marca los días con detecciones VIIRS y MODIS publicadas en GIBS.
+- **Ask the data:** icono de destellos y etiqueta «AI».

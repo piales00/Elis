@@ -2,7 +2,7 @@ import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { LOCALES } from "../../config.js";
 import Icon from "./icons.jsx";
 
-export const VIEWS = ["explore", "compare", "year", "outlook", "ask", "method"];
+export const VIEWS = ["explore", "compare", "year", "outlook", "ask", "method", "data"];
 
 export function Logo({ size = 28 }) {
   return (
@@ -70,7 +70,10 @@ export default function Rail({ view, panelOpen, onSelect, onTour, theme, onTheme
                 className="fc-rail-item"
                 data-on={on || undefined}
               >
-                <Icon name={v} size={22} />
+                <span className="relative">
+                  <Icon name={v} size={22} />
+                  {v === "ask" && <span className="fc-ai-tag">{t("ai.tag")}</span>}
+                </span>
                 <span className="fc-rail-label">{t(`view.${v}.short`)}</span>
               </button>
             </li>

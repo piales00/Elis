@@ -30,10 +30,12 @@ import CompareView from "./components/shell/views/CompareView.jsx";
 import YearView from "./components/shell/views/YearView.jsx";
 import OutlookView, { OutlookLegend } from "./components/shell/views/OutlookView.jsx";
 import MethodView from "./components/shell/views/MethodView.jsx";
+import DataView from "./components/shell/views/DataView.jsx";
 
 const MapView = lazy(() => import("./components/MapView.jsx"));
 const NONE = [];
-const PANEL_WIDTH = { explore: 380, compare: 600, year: 540, outlook: 420, ask: 440, method: 720 };
+const PANEL_WIDTH = { explore: 380, compare: 600, year: 540, outlook: 500, ask: 440 };
+const WIDE = new Set(["method", "data"]);
 
 function readUrl() {
   try {
@@ -83,6 +85,7 @@ export default function App() {
   const [tour, setTour] = useState(initial.tour ? { step: 0, auto: initial.tour === "auto" } : null);
   const [theme, setTheme] = useState(readTheme);
   const [mapInstance, setMapInstance] = useState(null);
+  const [dataTab, setDataTab] = useState("series");
   const panelRef = useRef(null);
 
   const regionsState = useRegions();
@@ -291,7 +294,7 @@ export default function App() {
       if (e.key === "/") {
         e.preventDefault();
         setPaletteOpen(true);
-      } else if (/^[1-6]$/.test(e.key)) openView(VIEWS[Number(e.key) - 1]);
+      } else if (/^[1-7]$/.test(e.key)) openView(VIEWS[Number(e.key) - 1]);
       else if (e.key === "Escape" && tour) setTour(null);
     };
     window.addEventListener("keydown", onKey);
@@ -369,19 +372,33 @@ export default function App() {
         onSubChange={setSub}
         cellView={cellView}
         onOpenOutlook={() => openView("outlook")}
+        onOpenCells={() => {
+          setDataTab("cells");
+          openView("data");
+        }}
       />
     );
   else if (view === "compare") panel = <CompareView series={series} region={region} period={period} onSelectPeriod={setPeriod} methodology={methodology} />;
   else if (view === "year") panel = <YearView series={series} region={region} period={period} onSelectPeriod={setPeriod} />;
-  else if (view === "outlook") panel = <OutlookView forecast={forecast} unitId={unit} onSelectUnit={selectUnit} nextRows={deptFeature ? NONE : forecastRows} />;
-  else if (view === "method")
-    panel = <MethodView methodology={methodology} region={region} series={series} regionCount={regionIds.length} mapCells={map.cells} theme={theme} onTheme={toggleTheme} />;
+  else if (view === "outlook") panel = (
+      <OutlookView
+        forecast={forecast}
+        unitId={unit}
+        onSelectUnit={selectUnit}
+        nextRows={deptFeature ? NONE : forecastRows}
+        series={deptFeature ? NONE : series}
+        periods={periods}
+        monthlyMethods={methodology?.forecast?.published}
+      />
+    );
+  else if (view === "method") panel = <MethodView methodology={methodology} forecast={forecast} theme={theme} onTheme={toggleTheme} onOpenData={() => openView("data")} />;
+  else if (view === "data") panel = <DataView key={dataTab} initialTab={dataTab} regionIds={regionIds} period={period} periods={periods} forecast={forecast} />;
 
   const panelTitle = view === "outlook" ? t("view.outlook") : t(`view.${view}`);
-  const panelSub = view === "outlook" ? null : view === "ask" ? null : `${regionLabel} · ${periodLabel}`;
+  const panelSub = view === "outlook" || view === "ask" || WIDE.has(view) ? null : `${regionLabel} · ${periodLabel}`;
 
   return (
-    <div className="fc-app" data-panel={panelOpen ? "open" : "closed"} data-sheet={sheetExpanded ? "expanded" : "half"} style={{ "--panel-w": `${PANEL_WIDTH[view]}px` }}>
+    <div className="fc-app" data-panel={panelOpen || WIDE.has(view) ? "open" : "closed"} data-wide={WIDE.has(view) || undefined} data-sheet={sheetExpanded ? "expanded" : "half"} style={{ "--panel-w": `${PANEL_WIDTH[view] ?? 400}px` }}>
       <MockBanner />
       <a href="#fc-panel" className="fc-skip">
         {t("a11y.skip")}
@@ -405,7 +422,7 @@ export default function App() {
             </h2>
             {panelSub && <p className="m-0 truncate text-xs text-muted">{panelSub}</p>}
           </div>
-          <button type="button" className="fc-icon-btn hidden lg:grid" aria-label={t("panel.collapse")} title={t("panel.collapse")} onClick={() => setPanelOpen(false)}>
+          <button type="button" className={`fc-icon-btn hidden ${WIDE.has(view) ? "" : "lg:grid"}`} aria-label={t("panel.collapse")} title={t("panel.collapse")} onClick={() => setPanelOpen(false)}>
             <Icon name="prev" size={18} />
           </button>
         </header>
@@ -560,6 +577,11 @@ export default function App() {
           onTogglePlay={togglePlay}
           imageryDate={imagery ? img.date : null}
           onImageryDateChange={img.setDate}
+          onFakeRecord={() => {
+            setPlaying(false);
+            setPeriod({ year: 2012, month: 9 });
+            setRibbonMetric("raw");
+          }}
         />
       </footer>
 

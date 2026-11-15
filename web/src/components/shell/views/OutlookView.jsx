@@ -4,6 +4,7 @@ import { useElementWidth } from "../../../lib/hooks.js";
 import { chanceHigh, CLASSES, findUnit, seasonLabel, skillSummary } from "../../../lib/forecast.js";
 import { OUTLOOK_MAP_COLORS } from "../useOutlookLayer.js";
 import { OUTLOOK_STEPS } from "../../../lib/forecast.js";
+import { OutOfSample, SeasonHistory, SkillByLead } from "./OutlookEvidence.jsx";
 
 const CLASS_FILL = ["var(--p-2)", "var(--p-3)", "var(--p-4)", "var(--p-5)"];
 
@@ -130,7 +131,7 @@ function OutlookLegend() {
 
 export { OutlookLegend };
 
-export default function OutlookView({ forecast, unitId, onSelectUnit, nextRows }) {
+export default function OutlookView({ forecast, unitId, onSelectUnit, nextRows, series, periods, monthlyMethods }) {
   const { t, formatNumber } = useI18n();
   const data = forecast.data;
   const unit = findUnit(data, unitId);
@@ -219,39 +220,78 @@ export default function OutlookView({ forecast, unitId, onSelectUnit, nextRows }
         </>
       )}
 
-      {skillJul && skillNow && (
-        <section aria-labelledby="skill-title">
-          <h4 id="skill-title" className="fc-h">
-            {t("outlook.skill.title")}
+      {unit?.published && unit.level !== "department" && series.length > 0 && (
+        <section aria-labelledby="history-title">
+          <h4 id="history-title" className="fc-h">
+            {t("outlook.history.title")}
           </h4>
-          <p className="m-0 text-sm leading-relaxed">
-            {t("outlook.skill.line", { macro: skillJul.macro[0], macroN: skillJul.macro[1], dept: skillJul.dept[0], deptN: skillJul.dept[1] })}
-          </p>
-          <p className="m-0 mt-1 text-xs leading-relaxed text-muted">
-            {t("outlook.skill.now", { lead: data.lead, origin: data.origin, macro: skillNow.macro[0], macroN: skillNow.macro[1], dept: skillNow.dept[0], deptN: skillNow.dept[1] })}
-          </p>
+          <SeasonHistory series={series} unit={unit} forecast={data} periods={periods} />
         </section>
       )}
 
-      {nextRows.length > 0 && (
-        <section aria-labelledby="next-title">
-          <h4 id="next-title" className="fc-h">
-            {t("outlook.next")}
+      {unit?.skill_by_lead?.length > 0 && (
+        <section aria-labelledby="skill-title" className="grid gap-2">
+          <h4 id="skill-title" className="fc-h">
+            {t("outlook.skill.title")}
           </h4>
-          <ul className="m-0 grid list-none gap-1 p-0 text-sm tabular-nums">
-            {nextRows.map((r) => (
-              <li key={`${r.year}-${r.month}`} className="flex justify-between gap-3 rounded-lg border border-dashed border-forecast px-3 py-1.5">
-                <span>
-                  {monthName(r.month)} {r.year}
-                </span>
-                <span>
-                  {formatNumber(r.estimated, { maximumFractionDigits: 0 })} <span className="text-muted">({formatNumber(r.est_low, { maximumFractionDigits: 0 })} – {formatNumber(r.est_high, { maximumFractionDigits: 0 })})</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <SkillByLead unit={unit} />
+          {skillJul && skillNow && (
+            <>
+              <p className="m-0 mt-1 text-sm leading-relaxed">
+                {t("outlook.skill.line", { macro: skillJul.macro[0], macroN: skillJul.macro[1], dept: skillJul.dept[0], deptN: skillJul.dept[1] })}
+              </p>
+              <p className="m-0 text-xs leading-relaxed text-muted">
+                {t("outlook.skill.now", { lead: data.lead, origin: data.origin, macro: skillNow.macro[0], macroN: skillNow.macro[1], dept: skillNow.dept[0], deptN: skillNow.dept[1] })}
+              </p>
+            </>
+          )}
         </section>
       )}
+
+      {unit && (
+        <section aria-labelledby="oos-title" className="grid gap-2">
+          <h4 id="oos-title" className="fc-h">
+            {t("outlook.oos.title", { year: data.out_of_sample?.year ?? 2026 })}
+          </h4>
+          <OutOfSample forecast={data} unit={unit} />
+        </section>
+      )}
+
+      <section aria-labelledby="next-title" className="grid gap-2">
+        <h4 id="next-title" className="fc-h">
+          {t("outlook.next")}
+        </h4>
+        {nextRows.length > 0 ? (
+          <ul className="m-0 grid list-none gap-1 p-0 text-sm tabular-nums">
+            {nextRows.map((r) => {
+              const key = `${r.year}-${String(r.month).padStart(2, "0")}`;
+              const method = monthlyMethods?.find((m) => m.region === r.region && m.month === key)?.method;
+              return (
+                <li key={key} className="grid gap-0.5 rounded-lg border border-dashed border-forecast px-3 py-2">
+                  <span className="flex justify-between gap-3">
+                    <span className="font-semibold">
+                      {monthName(r.month)} {r.year}
+                    </span>
+                    <span>
+                      {formatNumber(r.estimated, { maximumFractionDigits: 0 })}{" "}
+                      <span className="text-muted">
+                        ({formatNumber(r.est_low, { maximumFractionDigits: 0 })} – {formatNumber(r.est_high, { maximumFractionDigits: 0 })})
+                      </span>
+                    </span>
+                  </span>
+                  <span className="text-xs text-forecast">
+                    {t("explore.forecastTag")}
+                    {method && ` · ${t(`outlook.method.${method}.short`)}`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="m-0 text-sm text-muted">{t("outlook.next.dept")}</p>
+        )}
+        <p className="m-0 text-xs leading-relaxed text-muted">{t("outlook.next.why")}</p>
+      </section>
 
       <section aria-labelledby="dept-title">
         <h4 id="dept-title" className="fc-h">

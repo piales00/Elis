@@ -6,6 +6,7 @@ import {
   streamChat,
 } from "../../data/chat.js";
 import ChatChart from "./ChatChart.jsx";
+import Icon from "../shell/icons.jsx";
 
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_INPUT_CHARS = 600;
@@ -224,7 +225,7 @@ export default function ChatPanel({
         aria-controls="ask-the-data-drawer"
         className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2.5 rounded-full border border-line bg-fg px-4 py-2.5 text-sm font-semibold text-bg shadow-lg transition hover:opacity-90 cursor-pointer"
       >
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+        <Icon name="ask" size={16} />
         <span>{t("chat.trigger")}</span>
       </button>}
 
@@ -238,7 +239,11 @@ export default function ChatPanel({
           <div className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3.5">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="m-0 text-base font-bold text-fg">{t("chat.title")}</h2>
+                <h2 className="m-0 flex items-center gap-1.5 text-base font-bold text-fg">
+                  <Icon name="ask" size={18} className="text-forecast" />
+                  {t("chat.title")}
+                  <span className="rounded-[5px] bg-forecast px-1 text-[10px] font-extrabold leading-[15px] text-bg">{t("ai.tag")}</span>
+                </h2>
                 <span className="rounded-full border border-line bg-bg px-2.5 py-0.5 text-[11px] font-semibold text-est">
                   {regionName}
                 </span>

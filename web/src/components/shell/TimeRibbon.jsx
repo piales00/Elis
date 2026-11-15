@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { useElementWidth } from "../../lib/hooks.js";
 import { FIRST_YEAR, LAST_YEAR } from "../../config.js";
@@ -7,6 +7,7 @@ import { periodStatus } from "../../lib/status.js";
 import { isoDate } from "../../lib/gibs.js";
 import StatusChip from "./StatusChip.jsx";
 import Icon from "./icons.jsx";
+import { DayPicker, MonthPicker } from "./TimePicker.jsx";
 
 const N = MAX_INDEX + 1;
 const H = 60;
@@ -34,12 +35,15 @@ export default function TimeRibbon({
   onTogglePlay,
   imageryDate,
   onImageryDateChange,
+  onFakeRecord,
   compact = false,
 }) {
   const { t, formatNumber } = useI18n();
   const [ref, width] = useElementWidth();
   const [hover, setHover] = useState(null);
   const dragging = useRef(false);
+  const [picker, setPicker] = useState(false);
+  const closePicker = useCallback(() => setPicker(false), []);
   const raw = metric === "raw";
 
   const bars = useMemo(() => {
@@ -129,36 +133,75 @@ export default function TimeRibbon({
         >
           <Icon name={playing ? "pause" : "play"} size={16} />
         </button>
-        <div className="min-w-[7.5rem]">
+        <div className="relative min-w-[7.5rem]">
           {imagery ? (
             <div className="flex items-center gap-1">
               <button type="button" className="fc-icon-btn" aria-label={t("imagery.day.prev")} onClick={() => onImageryDateChange(shiftDay(imageryDate, -1))}>
                 <Icon name="prev" size={16} />
               </button>
-              <input
-                type="date"
-                aria-label={t("imagery.day.label")}
-                value={isoDate(imageryDate)}
-                min="2000-11-01"
-                max="2026-11-13"
-                onChange={(e) => {
-                  const [y, m, d] = e.target.value.split("-").map(Number);
-                  if (y) onImageryDateChange({ year: y, month: m, day: d });
-                }}
-                className="fc-input w-[9.5rem] px-2 py-1 text-sm tabular-nums"
-              />
+              <button
+                type="button"
+                data-picker-trigger
+                aria-expanded={picker}
+                aria-haspopup="dialog"
+                aria-label={`${t("imagery.day.label")}: ${imageryDate.day} ${t(`month.${imageryDate.month}`)} ${imageryDate.year}`}
+                onClick={() => setPicker((v) => !v)}
+                className="fc-date-btn"
+              >
+                <Icon name="calendar" size={15} className="text-muted" />
+                <span className="tabular-nums">
+                  {imageryDate.day} {t(`month.${imageryDate.month}`)} {imageryDate.year}
+                </span>
+              </button>
               <button type="button" className="fc-icon-btn" aria-label={t("imagery.day.next")} onClick={() => onImageryDateChange(shiftDay(imageryDate, 1))}>
                 <Icon name="next" size={16} />
               </button>
             </div>
           ) : (
             <>
-              <p className="m-0 font-head text-lg font-extrabold leading-tight tabular-nums" aria-live="polite">
-                {label(period)}
-              </p>
-              {!loading && <StatusChip status={status} />}
+              <button
+                type="button"
+                data-picker-trigger
+                aria-expanded={picker}
+                aria-haspopup="dialog"
+                aria-label={`${t("picker.open")}: ${label(period)}`}
+                onClick={() => setPicker((v) => !v)}
+                className="fc-date-btn !px-1.5 font-head text-lg font-extrabold leading-tight"
+              >
+                <span className="tabular-nums" aria-live="polite">
+                  {label(period)}
+                </span>
+                <Icon name="chevron" size={14} className="text-muted" />
+              </button>
+              {!loading && <StatusChip status={status} className="ml-1.5" />}
             </>
           )}
+          {picker &&
+            (imagery ? (
+              <DayPicker
+                date={imageryDate}
+                onClose={closePicker}
+                onPick={(d) => {
+                  onImageryDateChange(d);
+                  setPicker(false);
+                }}
+              />
+            ) : (
+              <MonthPicker
+                series={series}
+                periods={periods}
+                period={period}
+                onClose={closePicker}
+                onPick={(p) => {
+                  onChange(p);
+                  setPicker(false);
+                }}
+                onFakeRecord={() => {
+                  onFakeRecord?.();
+                  setPicker(false);
+                }}
+              />
+            ))}
         </div>
       </div>
 
