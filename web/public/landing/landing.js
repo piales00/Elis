@@ -1,163 +1,53 @@
-const evidence = {
-  annualDetections: [
-    { year: 2011, value: 10375 },
-    { year: 2012, value: 92807 },
-  ],
-  overlap: [
-    { label: "0–20 min", value: 80.03014318010551 },
-    { label: "20–40 min", value: 57.63319899021214 },
-  ],
-  validation: [
-    { label: "Peru", value: 3.525 },
-    { label: "Amazon", value: 11.329 },
-    { label: "Andes", value: 6.977 },
-    { label: "Coast", value: 32.04 },
-  ],
-};
-
-const fmt = new Intl.NumberFormat("en-US");
-const annualChart = () => {
-  const max = Math.max(...evidence.annualDetections.map((d) => d.value));
-  const bars = evidence.annualDetections.map((d, i) => {
-    const x = 70 + i * 210;
-    const height = (d.value / max) * 148;
-    const y = 184 - height;
-    return `<rect class="bar-raw" x="${x}" y="${y}" width="100" height="${height}" rx="3"></rect><text class="value" x="${x + 50}" y="${Math.max(25, y - 10)}" text-anchor="middle">${fmt.format(d.value)}</text><text class="axis" x="${x + 50}" y="214" text-anchor="middle">${d.year}</text>`;
-  }).join("");
-  return `<svg viewBox="0 0 440 238" role="presentation" aria-hidden="true"><line class="grid-line" x1="36" y1="184" x2="410" y2="184"></line>${bars}<text class="axis" x="220" y="236" text-anchor="middle">Raw detections by year</text></svg>`;
-};
-
-const overlapChart = () => {
-  const baseline = 230;
-  const bars = evidence.overlap.map((d, i) => {
-    const x = 76 + i * 210;
-    const height = d.value * 1.65;
-    const y = baseline - height;
-    return `<rect class="bar-est" x="${x}" y="${y}" width="96" height="${height}" rx="3"></rect><text class="value" x="${x + 48}" y="${y - 12}" text-anchor="middle">${d.value.toFixed(1)}%</text><text class="axis" x="${x + 48}" y="258" text-anchor="middle">${d.label}</text>`;
-  }).join("");
-  return `<svg viewBox="0 0 440 276" role="presentation" aria-hidden="true"><line class="grid-line" x1="40" y1="230" x2="414" y2="230"></line>${bars}<text class="axis" x="220" y="274" text-anchor="middle">Aqua cell-days also seen by S-NPP</text></svg>`;
-};
-
-const validationChart = () => {
-  const max = 35;
-  const rows = evidence.validation.map((d, i) => {
-    const y = 15 + i * 51;
-    const width = d.value / max * 245;
-    return `<text class="axis" x="0" y="${y + 23}">${d.label}</text><rect x="86" y="${y}" width="245" height="30" rx="3" fill="var(--surface-2)"></rect><rect class="${d.label === "Coast" ? "bar-raw" : "bar-est"}" x="86" y="${y}" width="${width}" height="30" rx="3"></rect><text class="value" x="${Math.min(341, 94 + width)}" y="${y + 22}">${d.value.toFixed(1)}%</text>`;
-  }).join("");
-  return `<svg viewBox="0 0 420 228" role="presentation" aria-hidden="true">${rows}<text class="axis" x="86" y="226">Mean annual relative difference</text></svg>`;
-};
-
-document.querySelector("#annual-chart").innerHTML = annualChart();
-document.querySelector("#overlap-chart").innerHTML = overlapChart();
-document.querySelector("#validation-chart").innerHTML = validationChart();
-
-const themeButton = document.querySelector(".theme-toggle");
-const themeLabel = document.querySelector(".theme-label");
-const themeMeta = document.querySelector('meta[name="theme-color"]');
-let savedTheme;
-try {
-  savedTheme = localStorage.getItem("firechronos-theme");
-} catch {
-  savedTheme = null;
-}
-if (savedTheme === "dark" || savedTheme === "light") document.documentElement.dataset.theme = savedTheme;
-
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-
-function resolvedTheme() {
-  if (document.documentElement.dataset.theme === "auto") return prefersDark.matches ? "dark" : "light";
-  return document.documentElement.dataset.theme;
-}
-
-function syncThemeControl() {
-  const dark = resolvedTheme() === "dark";
-  themeLabel.textContent = dark ? "Light mode" : "Dark mode";
-  themeButton.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
-  themeMeta.content = dark ? "#0f1b16" : "#f4f6f9";
-}
-
-syncThemeControl();
-themeButton.addEventListener("click", () => {
-  const nextTheme = resolvedTheme() === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = nextTheme;
-  try {
-    localStorage.setItem("firechronos-theme", nextTheme);
-  } catch {
-    document.documentElement.dataset.theme = nextTheme;
-  }
-  syncThemeControl();
-});
-
-prefersDark.addEventListener("change", () => {
-  if (document.documentElement.dataset.theme === "auto") syncThemeControl();
-});
-
-let progressFrame = 0;
-function updateProgress() {
-  if (progressFrame) return;
-  progressFrame = requestAnimationFrame(() => {
-    progressFrame = 0;
-    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0;
-    document.documentElement.style.setProperty("--reading-progress", progress);
-  });
-}
-
-window.addEventListener("scroll", updateProgress, { passive: true });
-window.addEventListener("resize", updateProgress, { passive: true });
-updateProgress();
-
-const navLinks = [...document.querySelectorAll('.site-header nav a[href^="#"]')];
-const navTargets = new Map(navLinks.map((link) => [link.hash.slice(1), link]));
-const activeSections = new Map();
-
-function setActiveLink() {
-  const active = [...activeSections.entries()].filter(([, ratio]) => ratio > 0).sort((a, b) => b[1] - a[1])[0]?.[0];
-  for (const [id, link] of navTargets) {
-    if (id === active) {
-      link.classList.add("is-active");
-      link.setAttribute("aria-current", "location");
-    } else {
-      link.classList.remove("is-active");
-      link.removeAttribute("aria-current");
-    }
-  }
-}
-
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-if (!reducedMotion.matches && "IntersectionObserver" in window) {
-  const revealItems = [...document.querySelectorAll("[data-reveal]")];
-  const grouped = new Map();
-  for (const item of revealItems) {
-    const section = item.closest("section") ?? item.parentElement;
-    const group = grouped.get(section) ?? [];
-    group.push(item);
-    grouped.set(section, group);
-  }
-  for (const group of grouped.values()) {
-    group.slice(0, 6).forEach((item, index) => item.style.setProperty("--reveal-delay", `${index * 70}ms`));
-  }
-
-  const revealObserver = new IntersectionObserver((entries, observer) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      }
-    }
-  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-
-  for (const item of revealItems) revealObserver.observe(item);
-
-  const navObserver = new IntersectionObserver((entries) => {
-    for (const entry of entries) activeSections.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
-    setActiveLink();
-  }, { threshold: [0, 0.12, 0.28, 0.55], rootMargin: "-18% 0px -62% 0px" });
-
-  for (const id of navTargets.keys()) {
-    const section = document.getElementById(id);
-    if (section) navObserver.observe(section);
-  }
-  document.documentElement.classList.add("has-motion");
-}
+const CONFIG={team:[{n:"Samuel Ortega",p:"team/samuel.jpg",r:"",l:""},{n:"Piero Perez",p:"team/piero.jpg",r:"",l:""},{n:"Valentino Llamocca",p:"team/valentino.jpg",r:"",l:""},{n:"Jossep Hurtado",p:"team/jossep.jpg",r:"",l:""}]};
+const EN={fd:"<b>3.5%</b> mean annual difference between estimates in Peru, 2021–2024 (held-out years). It measures agreement, not accuracy.",s11:"Source: NASA FIRMS, raw MODIS and VIIRS detections summed by year in Peru. <a href=\"https://github.com/piales00/Elis\" target=\"_blank\" rel=\"noreferrer\">See the calculation in the repository</a>.",s12:"Source: held-out comparison (2021–2024) computed by the team with NASA FIRMS data. <a href=\"https://github.com/piales00/Elis\" target=\"_blank\" rel=\"noreferrer\">See the calculation in the repository</a>.",ctaA:"See data and code",ctaB:"Open the interactive app",ctaC:"Step-by-step method",tm:"Team member",q1:"<b>2000–2026</b><span>monthly period</span>",q2:"<b>5</b><span>NASA FIRMS sensors</span>",q3:"<b>0.1°</b><span>grid per day (≈11 km)</span>",q4:"<b>90%</b><span>uncertainty range</span>",v1:"Each sensor records the cell-days where it sees fire.",v2:"We count those both see: the overlap.",v3:"That proportion estimates what was missed, with a 90% range.",h1:"A fire history you can actually compare.",t9:"Peru in three regions.",p9:"Elis estimates activity by region and month: Coast, Andes and Amazon. The map shows example hot spots that change with the seasons, from 2000 to 2026.",skip:"Skip to content",n1:"Problem",n2:"Method",n3:"Results",n4:"Limits",n5:"Team",lede:"A comparable monthly history of fire in Peru, 2000–2026.",cta:"View the repository",cta2:"Understand the problem",ilu:"Illustrative animation: not real data.",t1:"A change of sensor distorts the comparison.",p1:"MODIS has observed since 2000 with pixels of about 1 km. VIIRS joined in 2012 with 375 m pixels and also detects smaller fires. Adding both detections creates an artificial jump.",c0:"Raw detections in Peru. This does not mean real activity grew ninefold. Tap a bar to learn more.",t2:"Two satellites, two resolutions.",pc:"Left: MODIS averages the whole kilometre into one pixel. Right: VIIRS (approximate grid) separates the fire into a finer pixel, which is why it sees smaller fires.",t3:"Chapman capture–recapture.",p3:"Capture–recapture is a method from ecology: when two observers partly see the same cases, the overlap shows how many neither saw. We compare which cell-days each sensor detects and which both detect. That overlap lets us estimate what both may have missed. It is computed by region and month, with a 90% uncertainty range.",vc:"Illustrative example, no figures. Outer ring: estimated total with its 90% range. Formula: N̂ = (n₁+1)(n₂+1)/(m+1) − 1, where m is the cell-days seen by both sensors.",t4:"Data and sources",s1:"Since 2000, ≈1 km",s2:"Since 2012, 375 m",s2b:"375 m",g1:"0.1° grid per day",g2:"≈11 km; vegetation detections only",src:"Source: NASA FIRMS (Fire Information for Resource Management System).",t5:"Results",p5:"Method calibration: 2013–2020. Held-out years comparison: 2021–2024. Mean annual difference between estimates: it measures agreement, not accuracy against a complete fire census.",r1:"Peru",r2:"Amazon",r3:"Andes",r4:"Coast",e0:"Separate check: machine-learning emulator (2021–2024)",e1:"monthly error (baseline: 17.5%)",e2:"It estimates which VIIRS cell-days MODIS Aqua would have detected. These metrics describe the emulator and do not validate the main estimate on their own; that estimate is statistical.",t6:"Method limits",l1:"The unit is “estimated fire cell-days”: a 0.1° cell with at least one vegetation fire on a day.",l2:"It does not equal the number of fires or burned hectares.",l3:"The 2021–2024 comparison measures agreement between estimates, not accuracy against a complete census.",l4:"Elis does not claim the estimate is the real fire activity; uncertainty travels with each value.",t7:"Team",t8:"All the code and method, open.",foot:"Project for NASA Space Apps Challenge 2026, challenge “Harmonization of MODIS and VIIRS Hot Spots”.",foot2:"Credits: NASA Space Apps Challenge and NASA FIRMS data (MODIS and VIIRS)."};
+const NOTE={es:{c1:"2011: 10.375 detecciones crudas, solo MODIS.",c2:"2012: 92.807 detecciones crudas, con VIIRS sumado. Es un cambio de instrumento, no un aumento real de la actividad."},en:{c1:"2011: 10,375 raw detections, MODIS only.",c2:"2012: 92,807 raw detections, with VIIRS added. It is an instrument change, not a real increase in activity."}};
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const ES={tm:"Integrante del equipo"};$$("[data-i18n]").forEach(e=>ES[e.dataset.i18n]=e.innerHTML);
+let lang="es",pick="";const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const nf=(v,d)=>v.toLocaleString(lang==="es"?"es-ES":"en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmt=(e,v)=>{e.textContent=nf(v,+e.dataset.d||0)+(e.dataset.s?(lang==="es"?" %":"%"):"")};
+function marquees(){const mk=(t,s)=>{const x=Array(8).fill(`<span>${t}</span><span aria-hidden="true">${s}</span>`).join("");return `<span class="track">${x}</span><span class="track" aria-hidden="true">${x}</span>`};
+ $('[data-m=a]').innerHTML=mk("NASA SPACE APPS CHALLENGE","✦");$('[data-m=b]').innerHTML=mk("HARMONIZATION OF MODIS AND VIIRS HOT SPOTS","●")}
+function team(){$("#team").innerHTML=CONFIG.team.map(m=>`<li tabindex="0"><img class="av" src="${m.p}" alt="Foto de ${m.n}" width="96" height="96" loading="lazy"><h3>${m.n}</h3><p${m.r?"":' data-i18n="tm"'}>${m.r||ES.tm}</p>${m.l?`<a href="${m.l}" target="_blank" rel="noreferrer">Link</a>`:""}</li>`).join("");
+ $$("#team li").forEach(li=>{li.onpointermove=e=>{const r=li.getBoundingClientRect();li.style.setProperty("--ry",((e.clientX-r.left)/r.width-.5)*14+"deg");li.style.setProperty("--rx",-((e.clientY-r.top)/r.height-.5)*14+"deg")};li.onpointerleave=()=>{li.style.setProperty("--rx","0deg");li.style.setProperty("--ry","0deg")}})}
+function setLang(l){lang=l;document.documentElement.lang=l;$$("[data-i18n]").forEach(e=>e.innerHTML=(l==="en"?EN:ES)[e.dataset.i18n]);
+ const b=$("#lang");b.textContent=l==="es"?"EN":"ES";b.setAttribute("aria-label",l==="es"?"Switch to English":"Cambiar a español");
+ $$(".num.done").forEach(e=>fmt(e,+e.dataset.n));$$(".val").forEach((e,i)=>e.textContent=nf(i?92807:10375,0));
+ if(pick)$("#cn").textContent=NOTE[l][pick];$("#cn").setAttribute("data-i18n",pick?"":"c0")}
+$$(".col").forEach(c=>c.onclick=()=>{pick=c.dataset.t;$("#cn").removeAttribute("data-i18n");$("#cn").textContent=NOTE[lang][pick]});
+$("#lang").onclick=()=>setLang(lang==="es"?"en":"es");
+marquees();team();
+function count(e){const n=+e.dataset.n;e.classList.add("done");if(rm){fmt(e,n);return}const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/1300);fmt(e,n*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s)})(t0)}
+$$("[data-reveal]").forEach(e=>e.classList.add("rv"));
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;e.target.classList.add("is-visible");$$(".num",e.target).forEach(count);io.unobserve(e.target)}),{threshold:.2});
+$$("[data-reveal]").forEach(e=>io.observe(e));
+$$(".emu .num,.reg .num").forEach(e=>e.textContent="–");
+addEventListener("scroll",()=>{const h=document.documentElement;h.style.setProperty("--p",h.scrollTop/Math.max(1,h.scrollHeight-innerHeight))},{passive:true});
+/* Mapa estilizado de Perú (contorno aproximado, ilustrativo) con puntos de calor */
+const PE=[[-81.2,-4.7],[-80.3,-3.4],[-78.8,-4.8],[-78.2,-3.4],[-75.5,-1.5],[-75.2,-0.1],[-73.4,-1.3],[-72,-2.4],[-70.3,-4.2],[-70.5,-7],[-73,-9],[-70.6,-11],[-69.6,-11],[-68.7,-12.6],[-69.5,-14.5],[-69,-16.3],[-69.5,-17.5],[-70.4,-18.3],[-71.4,-17.3],[-73,-16.2],[-75.2,-15.2],[-76.4,-13.5],[-77.9,-11.5],[-79.2,-8.5],[-80.5,-6.5]];
+const inside=(x,y)=>{let c=false;for(let i=0,j=PE.length-1;i<PE.length;j=i++){const[a,b]=PE[i],[p,q]=PE[j];if((b>y)!==(q>y)&&x<(p-a)*(y-b)/(q-b)+a)c=!c}return c};
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const pts=[];while(pts.length<150){const x=-81.3+rnd()*12.6,y=-rnd()*18.4;if(inside(x,y))pts.push({x,y,u:rnd(),z:1+rnd()*2,c:(rnd()*4)|0})}
+function stage(id,draw){const cv=$(id),cx=cv.getContext("2d"),st={W:0,H:0,mx:0,my:0,tx:0,ty:0,vis:true};
+ const size=()=>{const d=Math.min(devicePixelRatio||1,2);st.W=cv.clientWidth;st.H=cv.clientHeight;cv.width=st.W*d;cv.height=st.H*d;cx.setTransform(d,0,0,d,0,0)};
+ const run=t=>{st.mx+=(st.tx-st.mx)*.07;st.my+=(st.ty-st.my)*.07;cx.clearRect(0,0,st.W,st.H);draw(cx,st,t)};
+ size();addEventListener("resize",()=>{size();rm&&run(5000)});
+ cv.parentElement.addEventListener("pointermove",e=>{const r=cv.getBoundingClientRect();st.tx=(e.clientX-r.left)/r.width-.5;st.ty=(e.clientY-r.top)/r.height-.5},{passive:true});
+ new IntersectionObserver(e=>st.vis=e[0].isIntersecting).observe(cv);return {run,st}}
+/* Círculo de brasa del hero: brillo decorativo con partículas */
+const P=Array.from({length:110},()=>({a:rnd()*6.28,r:rnd(),s:.2+rnd()*.6,z:1+rnd()*2}));
+const hero=stage("#flame",(cx,{W,H,mx,my},t)=>{const R=Math.min(W,H)*.34,x=W/2+mx*50,y=H/2+my*40,pu=1+.03*Math.sin(t/500);cx.globalCompositeOperation="lighter";cx.globalAlpha=.6;
+ let g=cx.createRadialGradient(x,y,R*.1,x,y,R*2.2*pu);g.addColorStop(0,"rgba(255,140,50,.35)");g.addColorStop(1,"rgba(255,80,20,0)");cx.fillStyle=g;cx.fillRect(0,0,W,H);
+ g=cx.createRadialGradient(x-R*.1,y-R*.1,0,x,y,R*pu);g.addColorStop(0,"rgba(255,246,214,.95)");g.addColorStop(.35,"rgba(255,184,77,.8)");g.addColorStop(.75,"rgba(255,90,30,.45)");g.addColorStop(1,"rgba(83,173,203,.35)");cx.fillStyle=g;cx.beginPath();cx.arc(x,y,R*pu,0,6.283);cx.fill();
+ for(const p of P){p.a+=rm?0:.0015*p.s;const d=R*(1.05+p.r*1.2+.08*Math.sin(t/700+p.a*5));cx.fillStyle=p.r<.3?"rgba(83,173,203,.7)":"rgba(255,170,70,.75)";cx.beginPath();cx.arc(x+Math.cos(p.a)*d-mx*20*p.z,y+Math.sin(p.a)*d-my*20*p.z,p.z,0,6.283);cx.fill()}
+ cx.globalAlpha=1;cx.globalCompositeOperation="source-over"});
+/* Mapa de Perú (contorno aproximado, ilustrativo) con puntos de calor */
+const TOT=27*12,COL=["160,70,130","208,74,58","238,138,60","245,196,83"];
+const peru=stage("#map",(cx,{W,H,mx,my},t)=>{const m=rm?8.5:(t/150)%TOT,s=Math.min(W/13.2,H/19)*.95,ox=(W-13*s)/2,oy=(H-18.6*s)/2,X=(lo,la)=>[ox+(lo+81.5)*s,oy-la*s];
+ cx.beginPath();PE.forEach(([a,b],i)=>{const[x,y]=X(a,b);i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.closePath();cx.fillStyle="rgba(83,173,203,.08)";cx.fill();cx.strokeStyle="rgba(83,173,203,.8)";cx.lineWidth=2;cx.stroke();
+ cx.fillStyle="rgba(174,184,200,.9)";cx.font="600 13px 'Hanken Grotesk',sans-serif";
+ [["Costa","Coast",-80.6,-9.5],["Andes","Andes",-76.2,-11],["Amazonía","Amazon",-71.5,-6.5]].forEach(([a,b,lo,la])=>{const[x,y]=X(lo,la);cx.fillText(lang==="es"?a:b,x,y)});
+ const f=.15+.8*(1+Math.cos((m%12-8.5)/12*6.283))/2;cx.globalCompositeOperation="lighter";
+ for(const p of pts){const a=.9*Math.max(0,Math.min(1,(f-p.u)*6));if(!a)continue;const[x,y]=X(p.x,p.y),px=x-mx*14*p.z,py=y-my*14*p.z,g=cx.createRadialGradient(px,py,0,px,py,p.z*7);g.addColorStop(0,`rgba(${COL[p.c]},${a})`);g.addColorStop(1,`rgba(${COL[p.c]},0)`);cx.fillStyle=g;cx.beginPath();cx.arc(px,py,p.z*7,0,6.283);cx.fill()}
+ cx.globalCompositeOperation="source-over";$("#yr").textContent=rm?"2000–2026":2000+Math.floor(m/12)});
+if(rm){hero.run(5000);peru.run(5000)}else{let t0=0;(function loop(t){if(!t0)t0=t;if(!document.hidden)for(const s of [hero,peru])s.st.vis&&s.run(t-t0);requestAnimationFrame(loop)})(0)}

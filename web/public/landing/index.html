@@ -1,157 +1,140 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#0f1b16">
-    <title>FireChronos Peru | A comparable fire history</title>
-    <meta name="description" content="FireChronos combines NASA FIRMS MODIS and VIIRS active-fire detections into an uncertainty-bounded monthly fire activity history for Peru, 2000–2026.">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="FireChronos Peru | A comparable fire history">
-    <meta property="og:description" content="A sensor-aware monthly history of fire activity in Peru, built from NASA FIRMS MODIS and VIIRS observations.">
-    <meta property="og:image" content="og-image.svg">
-    <meta property="og:image:type" content="image/svg+xml">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="FireChronos Peru | A comparable fire history">
-    <meta name="twitter:description" content="A sensor-aware monthly history of fire activity in Peru, built from NASA FIRMS MODIS and VIIRS observations.">
-    <meta name="twitter:image" content="og-image.svg">
-    <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="landing.css">
-    <script src="landing.js" defer></script>
-  </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-    <header class="site-header wrap">
-      <a class="wordmark" href="#top" aria-label="FireChronos Peru home"><span class="mark" aria-hidden="true">F</span><span>FireChronos <span class="wordmark-country">Peru</span></span></a>
-      <nav aria-label="Main navigation">
-        <a href="#data">Data</a>
-        <a href="#approach">Approach</a>
-        <a href="#results">Evidence</a>
-        <a href="#model">AI</a>
-        <a href="#limits">Limits</a>
-      </nav>
-      <button class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme"><span class="theme-label">Light mode</span></button>
-      <div class="reading-progress" aria-hidden="true"><span></span></div>
-    </header>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c1511">
+<title>Elis | Una historia mensual comparable del fuego en Perú, 2000–2026</title>
+<meta name="description" content="Elis armoniza detecciones MODIS y VIIRS de NASA FIRMS para estimar una historia mensual comparable de celdas-día con fuego en Perú, con incertidumbre del 90 %.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Elis | Fuego en Perú, 2000–2026">
+<meta property="og:description" content="Armonización de MODIS y VIIRS para comparar la actividad de fuego a lo largo del tiempo.">
+<meta property="og:image" content="og-image.svg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="logo-elis.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Hanken+Grotesk:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="landing.css">
+<script src="landing.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Saltar al contenido</a>
+<header class="bar">
+  <a class="brand" href="#top" aria-label="Elis"><img src="logo-elis.png" alt="" width="26" height="36">Elis</a>
+  <nav aria-label="Principal"><a href="#problema" data-i18n="n1">Problema</a><a href="#metodo" data-i18n="n2">Método</a><a href="#resultados" data-i18n="n3">Resultados</a><a href="#limites" data-i18n="n4">Límites</a><a href="#equipo" data-i18n="n5">Equipo</a></nav>
+  <button id="lang" type="button" aria-label="Switch to English">EN</button>
+  <div class="progress" aria-hidden="true"><span></span></div>
+</header>
+<main id="main">
+<section class="hero" id="top" aria-labelledby="h1">
+  <canvas id="flame" aria-hidden="true"></canvas>
+  <div class="hero-copy">
+    <p class="kicker">Elis · NASA Space Apps Challenge 2026</p>
+    <h1 id="h1" data-i18n="h1">Un historial de fuego que sí se puede comparar.</h1>
+    <p class="lede" data-i18n="lede">Una historia mensual comparable del fuego en Perú, 2000–2026.</p>
+    <p class="row"><a class="btn" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="cta">Ver el repositorio</a><a class="btn ghost" href="#problema" data-i18n="cta2">Entender el problema</a></p>
+    <a class="finding" href="#resultados"><span data-i18n="fd"><b>3,5 %</b> diferencia media anual entre estimaciones en Perú, 2021–2024 (años reservados). Mide concordancia, no exactitud.</span></a>
+  </div>
+</section>
+<div class="ribbons" aria-label="NASA Space Apps Challenge. Harmonization of MODIS and VIIRS Hot Spots">
+  <div class="marquee m1" data-m="a"></div>
+  <div class="marquee m2" data-m="b"></div>
+</div>
 
-    <main id="main">
-      <section class="hero wrap" id="top" aria-labelledby="hero-title">
-        <div class="hero-copy" data-hero-copy>
-          <p class="event-line">NASA Space Apps Challenge 2026 · Harmonization of MODIS and VIIRS Hot Spots</p>
-          <h1 id="hero-title">A comparable fire history.</h1>
-          <p class="hero-lede">FireChronos turns changing satellite observations into a comparable, uncertainty-bounded monthly record of fire activity from 2000 to 2026.</p>
-          <div class="button-row">
-            <a class="button button-primary" href="https://elis-blond.vercel.app/?view=explore&amp;region=amazonia&amp;y=2008&amp;m=5" target="_blank" rel="noreferrer">Open interactive app</a>
-            <a class="button button-secondary" href="https://github.com/piales00/firechronos-peru" target="_blank" rel="noreferrer">View repository</a>
-          </div>
-          <p class="challenge-note"><strong>Challenge alignment:</strong> this repository documents MODIS–VIIRS fire-detection harmonization in Peru. It contains no microgravity combustion dataset or spacecraft fire-safety model, so this page does not claim to solve “Flame in Freefall.”</p>
-        </div>
-        <figure class="hero-figure" data-hero-figure>
-          <div class="figure-heading"><span>FireChronos · live interface preview</span><span class="figure-unit">Peru / May 2008</span></div>
-          <div class="hero-image-frame"><img src="app-preview.png" width="1920" height="942" alt="FireChronos map interface with fire activity cells across Peru and the Amazon region" fetchpriority="high"></div>
-          <figcaption>Team-supplied screenshot of the interactive map. Its displayed estimate differs from the current processed series; it is an interface preview, not a results source.</figcaption>
-        </figure>
-      </section>
+<section class="sec" id="problema" aria-labelledby="t1">
+  <h2 id="t1" data-i18n="t1">El cambio de sensor distorsiona la comparación.</h2>
+  <p data-i18n="p1">MODIS observa desde 2000 con píxeles de unos 1 km. VIIRS se suma en 2012 con píxeles de 375 m y detecta también fuegos más pequeños. Sumar ambas detecciones crea un salto artificial.</p>
+  <div class="duo"><figure class="chart" data-reveal>
+    <div class="cols" role="group" aria-label="Detecciones crudas en Perú: 10.375 en 2011 y 92.807 en 2012">
+      <button class="col" type="button" data-t="c1" style="--h:11.2%"><span class="val">10.375</span><span class="fill"></span><span class="cy">2011</span></button>
+      <button class="col hi" type="button" data-t="c2" style="--h:100%"><span class="val">92.807</span><span class="fill"></span><span class="cy">2012</span></button>
+    </div>
+    <figcaption id="cn" aria-live="polite" data-i18n="c0">Detecciones crudas en Perú. Eso no significa que la actividad real se multiplicara por nueve. Toca una barra para ver más.</figcaption>
+    <p class="srcl" data-i18n="s11">Fuente: NASA FIRMS, detecciones crudas de MODIS y VIIRS sumadas por año en Perú. <a href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer">Ver cálculo en el repositorio</a>.</p>
+  </figure>
 
-      <section class="section band" aria-labelledby="problem-title">
-        <div class="wrap two-column">
-          <div data-reveal><h2 id="problem-title">When the instrument changes, the trend can lie.</h2></div>
-          <div class="prose" data-reveal><p>MODIS has observed active fires since 2000. VIIRS joined in 2012 with a finer detection footprint. Simply adding detections makes the time series jump, even when the underlying fire activity has not changed by the same amount.</p><p>That breaks year-to-year comparisons used by researchers, journalists and regional monitoring teams. FireChronos asks a narrower question: how can observations from different sensors support one cautious historical record?</p><p class="scope-callout"><strong>Scope check.</strong> FireChronos studies satellite observations of fires on Earth. It does not study flame behavior in microgravity or certify spacecraft and habitat safety.</p></div>
-        </div>
-      </section>
+  <div><h3 data-i18n="t2">Dos satélites, dos resoluciones.</h3>
+  <figure class="pix" data-reveal>
+    <svg viewBox="0 0 380 170" role="img" aria-label="Un píxel MODIS de 1 km frente a una cuadrícula de píxeles VIIRS de 375 m sobre la misma zona; el fuego ocupa solo un píxel VIIRS.">
+      <rect class="pm" x="10" y="10" width="150" height="150"/><circle class="fire" cx="85" cy="85" r="9"/>
+      <g class="pv"><rect x="210" y="10" width="50" height="50"/><rect x="260" y="10" width="50" height="50"/><rect x="310" y="10" width="50" height="50"/><rect x="210" y="60" width="50" height="50"/><rect class="on" x="260" y="60" width="50" height="50"/><rect x="310" y="60" width="50" height="50"/><rect x="210" y="110" width="50" height="50"/><rect x="260" y="110" width="50" height="50"/><rect x="310" y="110" width="50" height="50"/></g>
+      <circle class="fire" cx="285" cy="85" r="9"/>
+    </svg>
+    <figcaption data-i18n="pc">Izquierda: MODIS promedia todo el kilómetro en un solo píxel. Derecha: VIIRS (cuadrícula aproximada) separa el fuego en un píxel más fino, por eso ve fuegos más pequeños.</figcaption>
+  </figure></div></div>
+</section>
 
-      <section class="section wrap" id="data" aria-labelledby="data-title">
-        <div class="section-intro" data-reveal><h2 id="data-title">NASA FIRMS active-fire observations, assembled for Peru.</h2><p>Standard and near-real-time files cover several MODIS and VIIRS platforms. The analysis groups detections into 0.1° cell-days and monthly regional summaries.</p></div>
-        <div class="data-strip">
-          <article data-reveal><span class="data-period">2000–2026</span><h3>MODIS</h3><p>Terra from November 2000; Aqua from July 2002. The initial Terra-only bridge is marked low confidence.</p></article>
-          <article data-reveal><span class="data-period">2012–2026</span><h3>VIIRS</h3><p>Suomi-NPP anchors the main calibration; NOAA-20 and NOAA-21 are retained separately for later coverage.</p></article>
-          <article data-reveal><span class="data-period">Monthly</span><h3>One declared unit</h3><p>A fire cell-day is a 0.1° grid cell with at least one vegetation-fire detection on a date. It is not an individual fire or burned area.</p></article>
-        </div>
-        <p class="source-line">Source: NASA Fire Information for Resource Management System (FIRMS), MODIS active-fire and VIIRS 375 m active-fire detections. Analysis uses vegetation detections and sensor-specific confidence filters described in the <a href="https://github.com/piales00/firechronos-peru/blob/main/docs/contrato-datos.md" target="_blank" rel="noreferrer">data contract</a>. Local raw inventory: 56 CSV files and two boundary GeoJSON files; the monthly record runs November 2000 through November 13, 2026. The latest 2026 near-real-time rows are provisional.</p>
-      </section>
+<section class="sec alt" id="metodo" aria-labelledby="t3">
+  <h2 id="t3" data-i18n="t3">Captura y recaptura de Chapman.</h2>
+  <p data-i18n="p3">Captura y recaptura es un método de la ecología: si dos observadores ven en parte los mismos casos, el solapamiento indica cuántos no vio ninguno. Se compara qué celdas-día detecta cada sensor y cuáles detectan ambos. Ese solapamiento permite estimar la parte que los dos pudieron pasar por alto. Se calcula por región y mes, con un rango de incertidumbre del 90 %.</p>
+  <div class="vrow"><figure class="venn" data-reveal>
+    <svg viewBox="0 0 400 200" role="img" aria-label="Dos conjuntos que se solapan: celdas-día vistas por MODIS, por VIIRS y por ambos. Un anillo discontinuo exterior representa el total estimado con su rango. Ejemplo ilustrativo sin cifras.">
+      <ellipse class="est" cx="200" cy="100" rx="185" ry="92"/>
+      <circle class="ca" cx="160" cy="100" r="68"/><circle class="cb" cx="240" cy="100" r="68"/>
+      <text x="125" y="104">MODIS</text><text x="275" y="104">VIIRS</text><text x="200" y="104" class="both">∩</text>
+    </svg>
+    <figcaption data-i18n="vc">Ejemplo ilustrativo, sin cifras. Anillo exterior: total estimado, con su rango del 90 %. Fórmula: N̂ = (n₁+1)(n₂+1)/(m+1) − 1, donde m son las celdas-día vistas por ambos sensores.</figcaption>
+  </figure>
+  <ol class="steps"><li data-reveal data-i18n="v1">Cada sensor registra las celdas-día donde ve fuego.</li><li data-reveal data-i18n="v2">Se cuentan las que ven ambos: el solapamiento.</li><li data-reveal data-i18n="v3">Con esa proporción se estima lo que se pasó por alto, con rango del 90 %.</li></ol></div>
+  <h3 data-i18n="t4">Datos y fuentes</h3>
+  <ul class="cards sens">
+    <li data-reveal><b>MODIS Terra</b><span data-i18n="s1">Desde 2000, ≈1 km</span></li>
+    <li data-reveal><b>MODIS Aqua</b><span data-i18n="s1">Desde 2000, ≈1 km</span></li>
+    <li data-reveal><b>VIIRS Suomi-NPP</b><span data-i18n="s2">Desde 2012, 375 m</span></li>
+    <li data-reveal><b>VIIRS NOAA-20</b><span data-i18n="s2b">375 m</span></li>
+    <li data-reveal><b>VIIRS NOAA-21</b><span data-i18n="s2b">375 m</span></li>
+    <li data-reveal><b data-i18n="g1">Grilla 0,1° por día</b><span data-i18n="g2">≈11 km; solo detecciones de vegetación</span></li>
+  </ul>
+  <p class="src" data-i18n="src">Fuente: NASA FIRMS (Fire Information for Resource Management System).</p>
+</section>
 
-      <section class="section band" id="approach" aria-labelledby="approach-title">
-        <div class="wrap">
-          <div class="section-intro" data-reveal><h2 id="approach-title">From detections to a comparable record.</h2><p>A regional and monthly pipeline keeps the observation, estimate and forecast distinct.</p></div>
-          <ol class="pipeline">
-            <li data-reveal><span class="step-number" aria-hidden="true"></span><h3>Observe</h3><p>Read NASA FIRMS MODIS and VIIRS records with sensor availability and outages.</p></li>
-            <li data-reveal><span class="step-number" aria-hidden="true"></span><h3>Prepare</h3><p>Filter vegetation detections, assign 0.1° cells and collapse each cell-date to one cell-day.</p></li>
-            <li data-reveal><span class="step-number" aria-hidden="true"></span><h3>Estimate</h3><p>Use Chapman capture–recapture during sensor overlap, with Aqua and S-NPP calibration by region and month.</p></li>
-            <li data-reveal><span class="step-number" aria-hidden="true"></span><h3>Check</h3><p>Compare against held-out overlap years, a MODIS-equivalent emulator and external context.</p></li>
-          </ol>
-          <p class="method-note">Calibration: 2013–2020. Held-out comparison: 2021–2024. The 90% interval and period-confidence flags travel with the monthly estimates.</p>
-        </div>
-      </section>
+<section class="sec" id="mapa" aria-labelledby="t9">
+  <div class="maps">
+    <div><h2 id="t9" data-i18n="t9">Perú en tres regiones.</h2><p data-i18n="p9">Elis estima la actividad por región y mes: Costa, Andes y Amazonía. El mapa muestra puntos de calor de ejemplo que cambian con las estaciones, de 2000 a 2026.</p><p class="ilu" data-i18n="ilu">Animación ilustrativa: no son datos reales.</p>
+    <ul class="qs"><li data-i18n="q1"><b>2000–2026</b><span>período mensual</span></li><li data-i18n="q2"><b>5</b><span>sensores NASA FIRMS</span></li><li data-i18n="q3"><b>0,1°</b><span>grilla por día (≈11 km)</span></li><li data-i18n="q4"><b>90 %</b><span>rango de incertidumbre</span></li></ul></div>
+    <div class="mapbox"><canvas id="map" role="img" aria-label="Mapa estilizado de Perú con Costa, Andes y Amazonía y puntos de calor de ejemplo que cambian mes a mes entre 2000 y 2026. Animación ilustrativa."></canvas><p class="yr" aria-hidden="true"><b id="yr">2000</b></p></div>
+  </div>
+</section>
 
-      <section class="section wrap" id="model" aria-labelledby="model-title">
-        <div class="two-column model-grid">
-          <div><h2 id="model-title">Statistics lead. Machine learning checks a separate piece.</h2></div>
-          <div class="prose" data-reveal><p>The headline estimate uses Chapman capture–recapture: it compares cell-days seen by both sensors with cell-days seen by only one to estimate missed activity. It is a statistical estimator, not an AI model.</p><p>A separate MODIS-equivalent emulator uses a calibrated histogram gradient-boosting classifier to estimate which VIIRS cell-days Aqua would detect. On the 2021–2024 test period, its national AUC was 0.756 and Brier score 0.104. Its monthly total error was 16.8%, versus 17.5% for a fixed-ratio baseline. These are emulator metrics, not proof that the main fire estimate is accurate.</p><p>The seasonal forecast is a Ridge regression on fire-history anomalies, evaluated by leave-one-year-out backtesting. It is experimental and remains separate from observed values.</p></div>
-        </div>
-      </section>
+<section class="sec alt" id="resultados" aria-labelledby="t5">
+  <h2 id="t5" data-i18n="t5">Resultados</h2>
+  <p data-i18n="p5">Calibración del método: 2013–2020. Comparación en años reservados: 2021–2024. Diferencia media anual entre estimaciones: mide concordancia, no exactitud frente a un censo completo de incendios.</p>
+  <ul class="cards reg">
+    <li data-reveal><span class="num" data-n="3.5" data-d="1" data-s="%"></span><h3 data-i18n="r1">Perú</h3><i class="meter" style="--w:10%"></i></li>
+    <li data-reveal><span class="num" data-n="11.3" data-d="1" data-s="%"></span><h3 data-i18n="r2">Amazonía</h3><i class="meter" style="--w:32%"></i></li>
+    <li data-reveal><span class="num" data-n="7.0" data-d="1" data-s="%"></span><h3 data-i18n="r3">Andes</h3><i class="meter" style="--w:20%"></i></li>
+    <li data-reveal><span class="num" data-n="32.0" data-d="1" data-s="%"></span><h3 data-i18n="r4">Costa</h3><i class="meter" style="--w:91%"></i></li>
+  </ul>
+  <article class="emu" data-reveal>
+    <h3 data-i18n="e0">Comprobación aparte: emulador de aprendizaje automático (2021–2024)</h3>
+    <div class="stats"><div><span class="num" data-n="0.756" data-d="3"></span><small>AUC</small></div><div><span class="num" data-n="0.104" data-d="3"></span><small>Brier</small></div><div><span class="num" data-n="16.8" data-d="1" data-s="%"></span><small data-i18n="e1">error mensual (línea base: 17,5 %)</small></div></div>
+    <p data-i18n="e2">Estima qué celdas-día VIIRS habría detectado MODIS Aqua. Estas métricas describen al emulador y no validan por sí solas la estimación principal, que es estadística.</p>
+  </article>
+  <p class="srcl" data-i18n="s12">Fuente: comparación en años reservados (2021–2024) calculada por el equipo con datos de NASA FIRMS. <a href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer">Ver cálculo en el repositorio</a>.</p>
+  <p class="row ctas"><a class="btn" href="https://elis-blond.vercel.app/" target="_blank" rel="noreferrer" data-i18n="ctaB">Abrir la app interactiva</a><a class="btn ghost" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="ctaA">Ver datos y código</a><a class="btn ghost" href="#metodo" data-i18n="ctaC">Método paso a paso</a></p>
+</section>
 
-      <section class="section band" id="results" aria-labelledby="results-title">
-        <div class="wrap">
-          <div class="section-intro" data-reveal><h2 id="results-title">Three signals worth checking.</h2><p>Every figure below is generated from the repository’s processed data or its accompanying method report. The comparison reference is not ground truth.</p></div>
-          <div class="result-grid">
-            <article class="result-card result-wide" data-reveal>
-              <div class="result-copy"><h3>Timing changes what satellites see in common.</h3><p>During the 2013–2020 calibration, the share of Aqua cell-days also detected by S-NPP is higher when overpasses are close together.</p><strong class="result-number">80.0% <span>at a gap under 20 min</span></strong><p class="result-caveat">At 20–40 minutes, the share is 57.6%. This is an observed overlap pattern, not a direct measurement of flame lifetime.</p></div>
-              <div id="overlap-chart" class="chart" role="img" aria-label="Share of Aqua cell-days also seen by S-NPP: 80.0 percent at zero to twenty minutes and 57.6 percent at twenty to forty minutes"></div>
-              <p class="chart-source">Source: <code>data/processed/methodology.json</code> · <code>findings.calibration_overpass_gaps</code>.</p>
-            </article>
-            <article class="result-card" data-reveal>
-              <h3>Regional differences remain.</h3><p>In the 2021–2024 held-out comparison, this is the mean annual relative difference between the Aqua-only estimate and the two-sensor estimate on identical available days.</p>
-              <div id="validation-chart" class="chart" role="img" aria-label="Held-out comparison difference by region: Peru 3.5 percent, Amazon 11.3 percent, Andes 7.0 percent, Coast 32.0 percent"></div>
-              <p class="chart-source">Peru 3.5% · Amazon 11.3% · Andes 7.0% · Coast 32.0%. Coast has the largest deviation. Source: <code>methodology.json</code> and <code>scripts/validate.py</code>.</p>
-              <p class="result-caveat">This tests agreement with another estimate, not accuracy against a complete fire census.</p>
-            </article>
-            <article class="result-card" data-reveal>
-              <h3>Uncorrected detections create a false jump.</h3><p>In Peru, the raw sum goes from 10,375 detections in 2011 to 92,807 in 2012, when VIIRS joins MODIS.</p>
-              <div id="annual-chart" class="chart" role="img" aria-label="Raw sensor detections: 10,375 in 2011 and 92,807 in 2012"></div>
-              <p class="chart-source">These are raw detections, not cell-days. Source: <code>series.json</code>, summed by year for Peru.</p>
-              <p class="result-caveat">Do not read the increase as a ninefold increase in fire activity.</p>
-            </article>
-          </div>
-          <p class="figure-footnote">Charts use the real repository aggregates. Charts are static summaries, not live data queries. Reported uncertainty and the limitations below remain part of the interpretation.</p>
-        </div>
-      </section>
+<section class="sec" id="limites" aria-labelledby="t6">
+  <h2 id="t6" data-i18n="t6">Límites del método</h2>
+  <ul class="lim">
+    <li data-i18n="l1">La unidad es «celdas-día con fuego estimadas»: una celda de 0,1° con al menos un fuego de vegetación en un día.</li>
+    <li data-i18n="l2">No equivale al número de incendios ni a hectáreas quemadas.</li>
+    <li data-i18n="l3">La comparación de 2021–2024 mide concordancia entre estimaciones, no exactitud frente a un censo completo.</li>
+    <li data-i18n="l4">Elis no afirma que la estimación sea la actividad real de fuego; la incertidumbre viaja con cada valor.</li>
+  </ul>
+</section>
 
-      <section class="section wrap" aria-labelledby="meaning-title">
-        <div class="two-column">
-          <div data-reveal><h2 id="meaning-title">A more careful baseline for monitoring fire on Earth.</h2></div>
-          <div class="prose" data-reveal><p>A sensor-aware record can help researchers and regional monitoring teams compare seasonal patterns without mistaking a new satellite for a sudden change in fire activity. The project describes activity in cell-days, not fire perimeters, burned hectares or live incident alerts.</p><p>It does not provide spacecraft fire-safety insights. That would require microgravity combustion data and safety evidence that are absent from this project.</p></div>
-        </div>
-      </section>
-
-      <section class="section band" id="limits" aria-labelledby="limits-title">
-        <div class="wrap two-column">
-          <div data-reveal><h2 id="limits-title">The estimate is cautious by design, and still incomplete.</h2></div>
-          <div class="prose" data-reveal><ul class="limit-list"><li>Both sensors can miss the same fire, for example beneath clouds or smoke; the estimate can be low.</li><li>Capture–recapture assumes a workable relationship between sensor detections. Shared visibility of large fires can violate independence.</li><li>2000–2002 has low confidence because it relies on a Terra-to-Aqua bridge. The 2026 near-real-time period is provisional, and November is partial.</li><li>Regional held-out deviation reaches 32.0% in the Coast. The method does not convert active-fire detections into burned area.</li><li>The MODIS-equivalent emulation and the Ridge seasonal outlook are separate checks, with modest or uneven performance. The three-list Bayesian experiment is not used as the headline estimate because asynchronous overpasses make its magnitude unreliable.</li></ul><p><strong>Next:</strong> test sensitivity to shared misses and overpass timing, improve coastal validation, and compare against independent burned-area products while keeping their different units explicit.</p></div>
-        </div>
-      </section>
-
-      <section class="section wrap demo-section" aria-labelledby="demo-title">
-        <div class="demo-panel">
-          <div data-reveal><p class="event-line">Step inside the project</p><h2 id="demo-title">Explore the record by place and month.</h2><p>The interactive app brings the historical map, fire calendar and methodology together. The preview above shows the interface; its estimate does not match the current processed series.</p><p class="demo-source-note">For Amazonia, May 2008, the screenshot displays 784 (90% range 616–1,194); <code>data/processed/series.json</code> currently reports 684.5 (90% range 355.9–811.7). Use the processed file for the results shown on this page.</p></div>
-          <div class="demo-actions" data-reveal><a class="button button-primary" href="https://elis-blond.vercel.app/?view=explore&amp;region=amazonia&amp;y=2008&amp;m=5" target="_blank" rel="noreferrer">Open the interactive app</a><a class="text-link" href="https://github.com/piales00/firechronos-peru/tree/main/web" target="_blank" rel="noreferrer">Browse app source</a></div>
-        </div>
-      </section>
-
-      <section class="section band" aria-labelledby="team-title">
-        <div class="wrap two-column">
-          <div data-reveal><h2 id="team-title">Built by Log N + 1.</h2></div>
-          <div class="prose" data-reveal><p>The project notes identify Josep, Samuel and Valentino as contributors. The team plan records Claude and Codex as AI assistants used during development. A final Space Apps AI-use declaration was still pending team review in the repository; this page does not imply that the statistical estimate was generated by AI.</p></div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer wrap">
-      <div><a class="wordmark" href="#top"><span class="mark" aria-hidden="true">F</span><span>FireChronos <span class="wordmark-country">Peru</span></span></a><p class="footer-note">NASA FIRMS active-fire detections · MODIS and VIIRS · Peru</p></div>
-      <div class="footer-links"><a href="https://github.com/piales00/firechronos-peru" target="_blank" rel="noreferrer">Repository</a><a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noreferrer">NASA FIRMS</a><a href="https://github.com/piales00/firechronos-peru/blob/main/docs/contrato-datos.md" target="_blank" rel="noreferrer">Data contract</a><a href="https://github.com/piales00/firechronos-peru/blob/main/docs/benchmarking.md" target="_blank" rel="noreferrer">Methods & references</a><a href="https://github.com/piales00/firechronos-peru/blob/main/docs/equipo.md" target="_blank" rel="noreferrer">Team notes</a></div>
-      <p class="copyright">FireChronos Peru · NASA Space Apps Challenge 2026 · Challenge named in repository: Harmonization of MODIS and VIIRS Hot Spots.</p>
-    </footer>
-  </body>
+<section class="sec alt" id="equipo" aria-labelledby="t7">
+  <h2 id="t7" data-i18n="t7">Equipo</h2>
+  <ul class="team" id="team"></ul>
+</section>
+<section class="final" aria-labelledby="t8">
+  <h2 id="t8" data-i18n="t8">Todo el código y el método, abiertos.</h2>
+  <a class="btn" href="https://github.com/piales00/Elis" target="_blank" rel="noreferrer" data-i18n="cta">Ver el repositorio</a> <a class="btn ghost" href="https://elis-blond.vercel.app/" target="_blank" rel="noreferrer" data-i18n="ctaB">Abrir la app interactiva</a>
+</section>
+</main>
+<footer>
+  <p data-i18n="foot">Proyecto para NASA Space Apps Challenge 2026, reto «Harmonization of MODIS and VIIRS Hot Spots».</p>
+  <p data-i18n="foot2">Créditos: NASA Space Apps Challenge y datos de NASA FIRMS (MODIS y VIIRS).</p>
+</footer>
+</body>
 </html>
