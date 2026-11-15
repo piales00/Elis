@@ -138,3 +138,45 @@ def get_forecast(region: str | None = Query(default=None, min_length=1)) -> dict
         if isinstance(filtered.get(key), dict) and isinstance(filtered[key].get("rows"), list):
             filtered[key] = dict(filtered[key], rows=[row for row in filtered[key]["rows"] if row.get("region") == region])
     return filtered
+
+
+@app.get("/continuity")
+def get_continuity(
+    region: str | None = Query(default=None, min_length=1),
+    shutdown: str | None = Query(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
+) -> dict[str, Any]:
+    value = read_json("continuity.json")
+    if not isinstance(value, dict) or not isinstance(value.get("rows"), list) or not isinstance(value.get("metrics"), dict):
+        raise HTTPException(status_code=500, detail="continuity.json has an invalid format.")
+    result = dict(value)
+    if region is not None:
+        if region not in value.get("regions", []):
+            raise HTTPException(status_code=404, detail=f"No continuity entry for region '{region}'.")
+        result["rows"] = [row for row in value["rows"] if row.get("region") == region]
+        result["metrics"] = {key: [row for row in rows if row.get("region") == region] if isinstance(rows, list) else rows
+                             for key, rows in value["metrics"].items()}
+    if shutdown is not None:
+        first, last = value.get("period", [None, None])
+        if first is None or not first < shutdown <= last:
+            raise HTTPException(status_code=422, detail=f"The shutdown month must be after {first} and no later than {last}.")
+        rows = []
+        for row in result["rows"]:
+            after = row["month"] >= shutdown
+            rows.append(dict(row,
+                modis_scale=row["aqua_emulated"] if after else row["aqua_observed"],
+                modis_scale_low=row["aqua_emulated_low"] if after else row["aqua_observed"],
+                modis_scale_high=row["aqua_emulated_high"] if after else row["aqua_observed"],
+                modis_scale_source="aqua_emulated" if after else "aqua_observed"))
+        result["rows"] = rows
+        result["scenario"] = dict(value.get("scenario", {}), shutdown=shutdown)
+    return result
+
+
+@app.get("/live")
+def get_live() -> dict[str, Any]:
+    scoreboard = read_json("live/scoreboard.json")
+    if not isinstance(scoreboard, dict) or not isinstance(scoreboard.get("rows"), list):
+        raise HTTPException(status_code=500, detail="live/scoreboard.json has an invalid format.")
+    predictions = sorted((PROCESSED_DIR / "live" / "predictions").glob("*.json"))
+    latest = read_json(f"live/predictions/{predictions[-1].name}") if predictions else None
+    return {"scoreboard": scoreboard, "latest_prediction": latest}
