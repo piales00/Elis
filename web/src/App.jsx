@@ -314,11 +314,16 @@ export default function App() {
     img.setHeat(false);
     img.clearCell();
     setRibbonMetric("estimated");
-    mapInstance?.fire("resetview");
-    setTimeout(() => {
-      mapInstance?.resize();
-      mapInstance?.fire("resetview");
-    }, 700);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        mapInstance?.resize();
+        mapInstance?.fire("resetview", { instant: true });
+        setTimeout(() => {
+          mapInstance?.resize();
+          mapInstance?.fire("resetview", { instant: true });
+        }, 400);
+      }),
+    );
   }, [img, mapInstance, selectRegion]);
 
   const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
