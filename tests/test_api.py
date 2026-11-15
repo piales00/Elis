@@ -74,6 +74,13 @@ def test_map_by_region(client):
     assert client.get('/map', params={'year': 2024, 'month': 9, 'region': 'atlantis'}).json() == []
 
 
+def test_map_by_country_returns_all_macroregions(client):
+    params = {'year': 2024, 'month': 9}
+    full = client.get('/map', params=params).json()
+    country = client.get('/map', params={**params, 'region': 'peru'}).json()
+    assert country == full
+
+
 def test_map_before_viirs_has_null_viirs(client):
     rows = client.get('/map', params={'year': 2005, 'month': 9}).json()
     assert rows and all(r['raw_viirs'] is None for r in rows)
@@ -101,6 +108,25 @@ def test_methodology(client):
         assert 0 < row['p_modis'] < row['p_viirs'] < 1
 
 
+def test_forecast(client):
+    body = client.get('/forecast').json()
+    stored = json.loads((config.PROCESSED_DIR / 'forecast.json').read_text())
+    assert body == stored
+    ids = {r['region'] for r in body['regions']}
+    assert {config.NATIONAL, *config.REGIONS} <= ids
+    for region in (config.NATIONAL, 'sierra', 'cusco'):
+        response = client.get('/forecast', params={'region': region})
+        assert response.status_code == 200
+        filtered = response.json()
+        assert [r['region'] for r in filtered['regions']] == [region]
+        assert filtered['backtest']['rows'] and all(r['region'] == region for r in filtered['backtest']['rows'])
+        assert all(r['region'] == region for r in filtered['out_of_sample']['rows'])
+        assert filtered['metrics'] == body['metrics']
+    missing = client.get('/forecast', params={'region': 'atlantis'})
+    assert missing.status_code == 404
+    assert missing.json()['detail'] == "No forecast entry for region 'atlantis'."
+
+
 def test_series_reaches_last_data_month(client):
     rows = [r for r in client.get('/series', params={'region': config.NATIONAL, 'from': config.LAST_DATA_DATE.year}).json()
             if not r['is_forecast']]
@@ -121,6 +147,7 @@ def test_series_reaches_last_data_month(client):
     ('/map', {'year': 1999, 'month': 9}),
     ('/map', {'year': 2024, 'month': 9, 'region': ''}),
     ('/methodology', {'region': ''}),
+    ('/forecast', {'region': ''}),
 ])
 def test_validation_errors(client, path, params):
     response = client.get(path, params=params)
@@ -145,3 +172,4 @@ def test_error_messages_in_english(client, monkeypatch, tmp_path):
     assert client.get('/series', params={'region': 'peru'}).json()['detail'] == 'series.json is not available yet.'
     assert client.get('/map', params={'year': 2024, 'month': 9}).json()['detail'] == 'map.parquet is not available yet.'
     assert client.get('/regions').status_code == 503
+    assert client.get('/forecast').json()['detail'] == 'forecast.json is not available yet.'
