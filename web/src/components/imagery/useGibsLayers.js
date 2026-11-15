@@ -3,7 +3,6 @@ import { prefersReducedMotion } from "../../lib/hooks.js";
 import { FIRE_COLORS, FOOTPRINT_MIN_ZOOM, GIBS_ATTRIBUTION, HEAT_MAX_FRP, HEAT_RAMP } from "../../lib/gibs.js";
 
 const EMPTY = { type: "FeatureCollection", features: [] };
-const CELL_LAYERS = ["cells-fill", "cells-outline"];
 const FIRE_LAYERS = ["fires-heat", "fires-viirs-fp", "fires-modis-fp", "fires-modis-fp-line", "fires-viirs-pt", "fires-modis-pt"];
 
 function firstSymbol(map) {
@@ -84,7 +83,7 @@ function setVisibility(map, ids, visible) {
   for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
 }
 
-export function useGibsLayers(map, ready, imagery) {
+export function useGibsLayers(map, ready, imagery, terrain = false) {
   const enabled = Boolean(imagery?.enabled);
   const tileUrl = enabled ? imagery.raster?.tiles[0] ?? null : null;
   const rasterMaxZoom = enabled ? imagery.raster?.maxZoom ?? null : null;
@@ -94,10 +93,12 @@ export function useGibsLayers(map, ready, imagery) {
   useEffect(() => {
     if (!ready || !map) return;
     if (!map.getSource("fires-modis-pt")) addFireLayers(map);
-    setVisibility(map, CELL_LAYERS, !enabled);
-    setVisibility(map, FIRE_LAYERS, enabled);
-    setVisibility(map, ["fires-heat"], heat);
-  }, [map, ready, enabled, heat]);
+    setVisibility(map, ["cells-fill"], terrain || !enabled);
+    setVisibility(map, ["cells-outline"], !terrain && !enabled);
+    setVisibility(map, ["terrain-fire"], terrain);
+    setVisibility(map, FIRE_LAYERS, enabled && !terrain);
+    setVisibility(map, ["fires-heat"], heat && !terrain);
+  }, [map, ready, enabled, heat, terrain]);
 
   useEffect(() => {
     if (!ready || !map) return;
@@ -109,8 +110,8 @@ export function useGibsLayers(map, ready, imagery) {
 
   useEffect(() => {
     if (!ready || !map) return;
-    map.setMaxZoom(rasterMaxZoom === null ? 22 : Math.max(rasterMaxZoom, FOOTPRINT_MIN_ZOOM) + 1);
-  }, [map, ready, rasterMaxZoom]);
+    map.setMaxZoom(terrain || rasterMaxZoom === null ? 22 : Math.max(rasterMaxZoom, FOOTPRINT_MIN_ZOOM) + 1);
+  }, [map, ready, rasterMaxZoom, terrain]);
 
   useEffect(() => {
     if (!ready || !map) return;
@@ -124,8 +125,8 @@ export function useGibsLayers(map, ready, imagery) {
       maxzoom: rasterMaxZoom,
       attribution: `<a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">${GIBS_ATTRIBUTION}</a>`,
     });
-    map.addLayer({ id: "gibs-imagery", type: "raster", source: "gibs-imagery", paint: { "raster-fade-duration": 0 } }, map.getLayer("country-fill") ? "country-fill" : firstSymbol(map));
-  }, [map, ready, tileUrl, rasterMaxZoom]);
+    map.addLayer({ id: "gibs-imagery", type: "raster", source: "gibs-imagery", layout: { visibility: terrain ? "none" : "visible" }, paint: { "raster-fade-duration": 0 } }, map.getLayer("country-fill") ? "country-fill" : firstSymbol(map));
+  }, [map, ready, tileUrl, rasterMaxZoom, terrain]);
 
   useEffect(() => {
     if (!ready || !map || !map.getSource("fires-modis-pt")) return;

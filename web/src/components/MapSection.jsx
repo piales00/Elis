@@ -19,6 +19,7 @@ const NONE = [];
 
 export default function MapSection({ regions, region, onRegionSelect, series, seriesLoading, period, onPeriodChange, map }) {
   const { t } = useI18n();
+  const [terrain, setTerrain] = useState(false);
   const [group, setGroup] = useState("estimated");
   const [sub, setSub] = useState("all");
   const img = useImageryView({ period, onPeriodChange, regions, region });
@@ -72,6 +73,7 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
         <div className="relative">
           <Suspense fallback={<p className="m-0 text-muted">{t("status.loading")}</p>}>
             <MapView
+              onTerrainChange={setTerrain}
               regions={regions}
               cells={cells}
               metric={metric}
@@ -94,10 +96,10 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
             </p>
           )}
           <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-5rem)]">
-            {img.view === "imagery" ? (
+            {img.view === "imagery" && !terrain ? (
               <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} heat={img.heat} />
             ) : (
-              <MapLegend metric={metric} breaks={breaks} />
+              <MapLegend terrain={terrain} metric={metric} breaks={breaks} />
             )}
           </div>
         </div>
