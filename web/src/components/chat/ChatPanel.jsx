@@ -17,6 +17,8 @@ export default function ChatPanel({
   series = [],
   methodology = null,
   onSyncView,
+  onLaunchMission,
+  onProjectTurn,
   embedded = false,
   onOpenMethod,
 }) {
@@ -56,6 +58,17 @@ export default function ChatPanel({
       locale,
     });
 
+    const assistantTurn = {
+      id: `a-${Date.now() + 1}`,
+      role: "assistant",
+      content: built.text,
+      tools: built.tools || [],
+      chart: built.chart || null,
+      unverified: [],
+      verified: true,
+      isPreset: true,
+      done: true,
+    };
     setTurns((prev) => [
       ...prev.slice(-(MAX_HISTORY_MESSAGES - 2)),
       {
@@ -63,18 +76,11 @@ export default function ChatPanel({
         role: "user",
         content: questionText,
       },
-      {
-        id: `a-${Date.now() + 1}`,
-        role: "assistant",
-        content: built.text,
-        tools: built.tools || [],
-        chart: built.chart || null,
-        unverified: [],
-        verified: true,
-        isPreset: true,
-        done: true,
-      },
+      assistantTurn,
     ]);
+    if (onProjectTurn) {
+      onProjectTurn(assistantTurn);
+    }
   };
 
   const buildApiMessages = (nextUserQuestion) => {
@@ -274,6 +280,58 @@ export default function ChatPanel({
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {onLaunchMission && (
+              <div className="rounded-xl border border-forecast/40 bg-forecast/10 p-3.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+                    {locale === "es" ? "🛰️ HUD CENTRAL EN EL MAPA" : "🛰️ CENTER STAGE MISSION HUD"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("artifact", true)}
+                    className="rounded-md bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
+                  >
+                    ▶ {locale === "es" ? "Autopiloto 60s" : "60s Autopilot"}
+                  </button>
+                </div>
+                <p className="m-0 mb-2.5 text-xs text-muted">
+                  {locale === "es"
+                    ? "Proyecta las 4 misiones científicas con métricas animadas y vuelo 3D directamente en el centro del mapa:"
+                    : "Project the 4 scientific briefings with animated KPIs and 3D fly-to directly over the center map:"}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("artifact", false)}
+                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
+                  >
+                    🚨 {locale === "es" ? "Salto Falso 9× (2012)" : "2012 False 9× Jump"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("amazon3d", false)}
+                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
+                  >
+                    🛰️ {locale === "es" ? "Amazonía 3D (2024)" : "Amazon 3D (2024)"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("disagreement", false)}
+                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
+                  >
+                    🔬 {locale === "es" ? "Clasificador de Fuego" : "Fire Size Classifier"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("earlywarning", false)}
+                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
+                  >
+                    🛡️ {locale === "es" ? "Alerta T-60d SERFOR" : "T-60d SERFOR Alert"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-xl border border-line bg-surface p-3.5">
               <p className="m-0 mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted">
                 {t("chat.presets.heading")}
@@ -376,6 +434,20 @@ export default function ChatPanel({
 
                   {turn.done && !turn.error && onSyncView && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                      {onProjectTurn && (
+                        <button
+                          type="button"
+                          onClick={() => onProjectTurn(turn)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-est/50 bg-est/15 px-2.5 py-1 text-[11px] font-bold text-est transition hover:border-est cursor-pointer"
+                        >
+                          <span>✨</span>
+                          <span>
+                            {locale === "es"
+                              ? "Proyectar en HUD Central"
+                              : "Project on Center HUD"}
+                          </span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() =>
