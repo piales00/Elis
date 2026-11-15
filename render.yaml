@@ -16,9 +16,9 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: CHAT_PRICE_INPUT_PER_MTOK
-        sync: false
+        value: "0.25"
       - key: CHAT_PRICE_OUTPUT_PER_MTOK
-        sync: false
+        value: "1.50"
       - key: CHAT_ENABLED
         value: "0"
       - key: CHAT_DAILY_BUDGET_USD
