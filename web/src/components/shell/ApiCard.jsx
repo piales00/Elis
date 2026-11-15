@@ -393,11 +393,6 @@ function Citation({ text }) {
   );
 }
 
-function splitSource(s) {
-  const i = s.indexOf(": ");
-  return i > 0 ? [s.slice(0, i), s.slice(i + 2)] : [s, ""];
-}
-
 export default function ApiCard({ regionIds, note }) {
   const { t } = useI18n();
   const root = apiRoot();
@@ -471,24 +466,6 @@ export default function ApiCard({ regionIds, note }) {
 
           <Citation text={citation} />
 
-          <details className="fc-disclosure">
-            <summary>
-              <span>{t("api.licence.title")}</span>
-              <Icon name="chevron" size={14} className="fc-disclosure-chev" />
-            </summary>
-            <ul className="m-0 grid list-none gap-2.5 p-0 pt-3 text-[13px] leading-snug">
-              {["firms", "gibs", "power", "mapbiomas", "enso", "inei"].map((k) => {
-                const [name, rest] = splitSource(t(`api.licence.${k}`));
-                return (
-                  <li key={k} className="grid gap-0.5">
-                    <span className="font-semibold">{name}</span>
-                    {rest && <span className="text-muted">{rest}</span>}
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="m-0 mt-3 text-xs leading-relaxed text-muted">{t("api.licence.ours")}</p>
-          </details>
         </aside>
       </div>
     </section>

@@ -8,6 +8,7 @@ import { ClassBadge } from "../../SlotDetails.jsx";
 import DataTable from "../DataTable.jsx";
 import StatusChip from "../StatusChip.jsx";
 import ApiCard from "../ApiCard.jsx";
+import Attributions from "../Attributions.jsx";
 
 const TABS = ["series", "cells", "outlook"];
 const STATUSES = ["observed", "low", "provisional", "partial", "forecast"];
@@ -278,6 +279,9 @@ export default function DataView({ regionIds, period, periods, forecast, apiNote
       </section>
 
       <ApiCard regionIds={regionIds} note={apiNote} />
+      <div className="border-t border-line pt-8">
+        <Attributions id="data-sources" />
+      </div>
     </div>
   );
 }

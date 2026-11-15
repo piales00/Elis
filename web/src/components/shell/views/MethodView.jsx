@@ -4,6 +4,7 @@ import { DOC_ONLY, EVIDENCE_DOCS } from "../../../content/evidence.js";
 import { skillSummary } from "../../../lib/forecast.js";
 import { Preferences } from "../Rail.jsx";
 import Icon from "../icons.jsx";
+import Attributions from "../Attributions.jsx";
 
 function Bars({ items, max = 1, format }) {
   return (
@@ -293,6 +294,8 @@ export default function MethodView({ methodology, forecast, theme, onTheme, onOp
         </div>
       </section>
 
+
+      <Attributions id="method-sources" />
 
       <details className="fc-disclosure fc-disclosure-card">
         <summary>

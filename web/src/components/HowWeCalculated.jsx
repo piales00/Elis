@@ -1,5 +1,5 @@
 import { useI18n } from "../i18n/I18nProvider.jsx";
-import { LIMITS, PENDING, SOURCES, STEPS } from "../content/sources.js";
+import { LIMITS, STEPS } from "../content/sources.js";
 
 function Card({ title, children }) {
   return (
@@ -7,15 +7,6 @@ function Card({ title, children }) {
       <h3 className="m-0 text-lg font-semibold">{title}</h3>
       {children}
     </div>
-  );
-}
-
-function PendingBadge() {
-  const { t } = useI18n();
-  return (
-    <span className="ml-2 rounded border border-dashed border-forecast px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-forecast">
-      {t("method.pending.badge")}
-    </span>
   );
 }
 
@@ -85,7 +76,6 @@ export default function HowWeCalculated({ methodology, region }) {
           ) : (
             <p className="m-0 mt-3 text-sm text-muted">
               {t("method.unavailable")}
-              <PendingBadge />
             </p>
           )}
         </Card>
@@ -104,7 +94,6 @@ export default function HowWeCalculated({ methodology, region }) {
                     {v.mapbiomas_corr === null || v.mapbiomas_corr === undefined ? (
                       <>
                         {t("series.na")}
-                        <PendingBadge />
                       </>
                     ) : (
                       <span className="font-semibold tabular-nums">{formatNumber(v.mapbiomas_corr, { maximumFractionDigits: 2 })}</span>
@@ -116,7 +105,6 @@ export default function HowWeCalculated({ methodology, region }) {
           ) : (
             <p className="m-0 mt-3 text-sm text-muted">
               {t("method.valid.empty")}
-              <PendingBadge />
             </p>
           )}
         </Card>
@@ -137,46 +125,15 @@ export default function HowWeCalculated({ methodology, region }) {
         ) : (
           <p className="m-0 mt-3 text-sm text-muted">
             {t("method.detect.empty")}
-            <PendingBadge />
           </p>
         )}
       </Card>
 
-      <div className="grid gap-4 @2xl:grid-cols-2">
+      <div className="grid gap-4">
         <Card title={t("method.limits.title")}>
           <ul className="m-0 mt-3 grid list-disc gap-2 pl-5 text-sm">
             {LIMITS.map((l) => (
               <li key={l}>{t(`method.limit.${l}`)}</li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card title={t("method.sources.title")}>
-          <ul className="m-0 mt-3 grid list-none gap-3 p-0 text-sm">
-            {SOURCES.map((s) => (
-              <li key={s.key}>
-                <a href={s.url} target="_blank" rel="noreferrer" className="font-semibold text-sat underline underline-offset-2">
-                  {t(`method.source.${s.key}.name`)}
-                </a>
-                <span className="block text-muted">{t(`method.source.${s.key}.text`)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="m-0 mt-4 text-sm text-muted">{t("method.firms.ack")}</p>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 @2xl:grid-cols-2">
-        <Card title={t("method.ai.title")}>
-          <p className="m-0 mt-2 text-sm text-muted">{t("method.ai.text")}</p>
-        </Card>
-        <Card title={t("method.pending.title")}>
-          <ul className="m-0 mt-3 grid list-none gap-2 p-0 text-sm">
-            {PENDING.map((p) => (
-              <li key={p}>
-                {t(`method.pending.${p}`)}
-                <PendingBadge />
-              </li>
             ))}
           </ul>
         </Card>
