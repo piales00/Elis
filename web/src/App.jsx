@@ -20,7 +20,7 @@ import Rail, { VIEWS } from "./components/shell/Rail.jsx";
 import TimeRibbon from "./components/shell/TimeRibbon.jsx";
 import LayerSwitcher from "./components/shell/LayerSwitcher.jsx";
 import CommandPalette from "./components/shell/CommandPalette.jsx";
-import TourCard, { TOUR_STEPS } from "./components/shell/Tour.jsx";
+import TourCard, { tourSteps } from "./components/shell/Tour.jsx";
 import Icon from "./components/shell/icons.jsx";
 import MapBoundary from "./components/shell/MapBoundary.jsx";
 import { useLabelContrast } from "./components/shell/useLabelContrast.js";
@@ -238,8 +238,8 @@ export default function App() {
   }, [playing, imagery, period, map.status, seriesLoading, lastObserved, img.detections.status, img.date]);
 
   const applyStep = useCallback(
-    (i) => {
-      const s = TOUR_STEPS[i];
+    (i, auto) => {
+      const s = tourSteps(auto)[i];
       if (!s) return;
       setPlaying(false);
       setView(s.view);
@@ -247,6 +247,10 @@ export default function App() {
       setRibbonMetric(s.metric);
       selectRegion(s.region);
       if (s.unit) setUnit(s.unit);
+      if (s.group) {
+        setGroup(s.group);
+        setSub(DEFAULT_SUB[s.group]);
+      }
       if (s.layer === "cells") img.setView("cells");
       else {
         img.setBase(s.layer);
@@ -255,24 +259,19 @@ export default function App() {
       if (s.heat !== undefined) img.setHeat(s.heat);
       if (s.date) img.setDate(s.date);
       else if (s.period) setPeriod(s.period);
-      setTour((tr) => ({ auto: tr?.auto ?? false, step: i }));
     },
     [img, selectRegion],
   );
 
-  const startTour = useCallback(
-    (auto = false) => {
-      setTour({ step: 0, auto });
-      applyStep(0);
-    },
-    [applyStep],
-  );
+  const startTour = useCallback((auto = false) => setTour({ step: 0, auto, run: Date.now() }), []);
 
   const tourStep = tour?.step;
+  const tourAuto = tour?.auto;
+  const tourRun = tour?.run;
   useEffect(() => {
     if (tourStep === undefined || tourStep === null) return;
-    applyStep(tourStep);
-  }, [tourStep]);
+    applyStep(tourStep, tourAuto);
+  }, [tourStep, tourAuto, tourRun]);
 
   useEffect(() => {
     try {
@@ -560,7 +559,13 @@ export default function App() {
 
         {tour && (
           <div className="fc-overlay-tour">
-            <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={() => setTour(null)} />
+            <TourCard step={tour.step} auto={tour.auto} onStep={(i) => setTour((tr) => ({ ...tr, step: i }))} onClose={() => setTour(null)}
+              onDone={() => {
+                setTour(null);
+                setView("explore");
+                setPanelOpen(true);
+              }}
+            />
           </div>
         )}
       </main>

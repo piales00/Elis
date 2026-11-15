@@ -1709,15 +1709,14 @@ th.text-right .fc-th-btn {
     top: 56px;
     font-size: 12px;
   }
-  .fc-overlay-tour {
-    bottom: 8px;
-    right: 0;
-    justify-content: center;
-  }
+  .fc-overlay-tour,
   .fc-app[data-wide] .fc-overlay-tour {
+    position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(72px + env(safe-area-inset-bottom));
+    bottom: calc(68px + env(safe-area-inset-bottom));
+    justify-content: center;
+    z-index: 60;
   }
 }
 

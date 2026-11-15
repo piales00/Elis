@@ -68,6 +68,7 @@ export default function Rail({ view, panelOpen, onSelect, onTour, theme, onTheme
                 aria-keyshortcuts={String(i + 1)}
                 title={`${t(`view.${v}`)} (${i + 1})`}
                 className="fc-rail-item"
+                data-tour={`view-${v}`}
                 data-on={on || undefined}
               >
                 <span className="relative">

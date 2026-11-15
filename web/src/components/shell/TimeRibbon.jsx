@@ -142,6 +142,7 @@ export default function TimeRibbon({
               <button
                 type="button"
                 data-picker-trigger
+                data-tour="calendar"
                 aria-expanded={picker}
                 aria-haspopup="dialog"
                 aria-label={`${t("imagery.day.label")}: ${imageryDate.day} ${t(`month.${imageryDate.month}`)} ${imageryDate.year}`}
@@ -162,6 +163,7 @@ export default function TimeRibbon({
               <button
                 type="button"
                 data-picker-trigger
+                data-tour="calendar"
                 aria-expanded={picker}
                 aria-haspopup="dialog"
                 aria-label={`${t("picker.open")}: ${label(period)}`}
@@ -295,7 +297,7 @@ export default function TimeRibbon({
       </div>
 
       <div className="ml-auto flex items-center gap-3 md:ml-0">
-        <div role="radiogroup" aria-label={t("ribbon.metric")} className="fc-seg">
+        <div role="radiogroup" aria-label={t("ribbon.metric")} data-tour="metric" className="fc-seg">
           {["raw", "estimated"].map((m) => (
             <button key={m} type="button" role="radio" aria-checked={metric === m} onClick={() => onMetricChange(m)} className="fc-seg-item">
               <span aria-hidden="true" className="inline-block size-2 rounded-full" style={{ background: m === "raw" ? "var(--c-raw)" : "var(--c-est)" }} />

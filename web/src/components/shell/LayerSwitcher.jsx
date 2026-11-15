@@ -18,6 +18,7 @@ function LayerOptions({ layer, onLayer, heat, onHeat, disabled }) {
       </div>
       <button
         type="button"
+        data-tour="heat"
         aria-pressed={heat && layer !== "cells"}
         disabled={disabled}
         onClick={onHeat}
@@ -63,7 +64,7 @@ export default function LayerSwitcher(props) {
   }, [open]);
 
   return (
-    <div ref={wrap} className="pointer-events-auto relative">
+    <div ref={wrap} data-tour="layers" className="pointer-events-auto relative">
       <div className="hidden flex-col items-end gap-2 xl:flex">
         <div className="fc-float flex items-center gap-1.5 rounded-xl p-1.5">
           <LayerOptions {...props} />
