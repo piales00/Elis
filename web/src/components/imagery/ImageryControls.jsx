@@ -25,6 +25,7 @@ export default function ImageryControls({
   minYear,
   maxYear,
   onTrueScale,
+  compact = false,
 }) {
   const { t } = useI18n();
   const days = Array.from({ length: daysInMonth(date.year, date.month) }, (_, i) => i + 1);
@@ -35,7 +36,7 @@ export default function ImageryControls({
 
   return (
     <div className="card grid gap-4 p-4">
-      <fieldset className="m-0 border-0 p-0">
+      {!compact && <fieldset className="m-0 border-0 p-0">
         <legend className="mb-2 p-0 text-xs font-bold uppercase tracking-[0.12em] text-muted">{t("imagery.view.label")}</legend>
         <div className="flex flex-wrap gap-2">
           {VIEWS.map((v) => (
@@ -45,11 +46,11 @@ export default function ImageryControls({
             </label>
           ))}
         </div>
-      </fieldset>
+      </fieldset>}
 
       {view === "imagery" && (
         <>
-          <div className="border-t border-line pt-4">
+          {!compact && <div className="border-t border-line pt-4">
             <label htmlFor="imagery-day" className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-muted">
               {t("imagery.day.label")}
             </label>
@@ -74,18 +75,18 @@ export default function ImageryControls({
               </button>
             </div>
             <p className="m-0 mt-2 text-xs leading-relaxed text-muted">{t("imagery.day.note")}</p>
-          </div>
+          </div>}
 
-          <fieldset className="m-0 border-0 border-t border-line p-0 pt-4">
-            <legend className="mb-2 p-0 text-xs font-bold uppercase tracking-[0.12em] text-muted">{t("imagery.base.label")}</legend>
-            <div className="flex flex-wrap gap-2">
+          <fieldset className={`m-0 border-0 p-0 ${compact ? "" : "border-t border-line pt-4"}`}>
+            <legend className={compact ? "sr-only" : "mb-2 p-0 text-xs font-bold uppercase tracking-[0.12em] text-muted"}>{t("imagery.base.label")}</legend>
+            {!compact && <div className="flex flex-wrap gap-2">
               {BASES.map((b) => (
                 <label key={b} className={`chip ${base === b ? "chip-on" : ""}`}>
                   <input type="radio" name="imagery-base" value={b} checked={base === b} onChange={() => onBaseChange(b)} className="sr-only" />
                   {t(`imagery.base.${b}`)}
                 </label>
               ))}
-            </div>
+            </div>}
             <p className="m-0 mt-3 text-sm leading-relaxed">{t("imagery.base.why")}</p>
             {satellites.length > 1 && (
               <div role="radiogroup" aria-label={t("imagery.satellite.label")} className="mt-3 flex flex-wrap items-center gap-2">
@@ -106,10 +107,10 @@ export default function ImageryControls({
             </p>
           </fieldset>
 
-          <label className="flex items-center gap-2 text-sm">
+          {!compact && <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={heat} onChange={(e) => onHeatChange(e.target.checked)} />
             {t("imagery.heat.toggle")}
-          </label>
+          </label>}
 
           <button type="button" className="btn-icon justify-self-start px-3 font-medium" onClick={onTrueScale}>
             {t("imagery.trueScale")}

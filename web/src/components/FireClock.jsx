@@ -142,7 +142,7 @@ export default function FireClock({ series, region, period, onSelectPeriod }) {
   const selRow = yearSlots[period.month - 1].row;
 
   return (
-    <div>
+    <div className="@container">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
@@ -177,7 +177,7 @@ export default function FireClock({ series, region, period, onSelectPeriod }) {
       {series.length === 0 ? (
         <p className="m-0 text-muted">{t("chart.empty")}</p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-8 @3xl:grid-cols-[minmax(0,1fr)_300px]">
           <div>
             <div ref={ref} className="flex justify-center">
               {width > 0 && (

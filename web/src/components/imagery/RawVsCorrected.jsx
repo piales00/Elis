@@ -24,7 +24,7 @@ export default function RawVsCorrected({ methodology, region, regionLabel }) {
   const years = sides[0].trend.years;
 
   return (
-    <section aria-labelledby="raw-vs-corrected-title" className="card mt-6 p-4 sm:p-6">
+    <section aria-labelledby="raw-vs-corrected-title" className="@container card mt-6 p-4 sm:p-6">
       <p className="eyebrow">{t("rvc.eyebrow")}</p>
       <h3 id="raw-vs-corrected-title" className="m-0 mt-1 font-head text-2xl font-extrabold">
         {t("rvc.title")}
@@ -36,7 +36,7 @@ export default function RawVsCorrected({ methodology, region, regionLabel }) {
           test: `${demo.test_years[0]}–${demo.test_years[1]}`,
         })}
       </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 @md:grid-cols-2">
         {sides.map(({ series, trend, cross }) => {
           const raw = series === "raw_detections";
           return (

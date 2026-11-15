@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 import { getRegions, getSeries, getMethodology } from "../data/client.js";
 
 export function useRegions() {
-  const [state, setState] = useState({ status: "loading", error: null, regions: null });
+  const [state, setState] = useState({ status: "loading", error: null, regions: null, departments: null });
 
   useEffect(() => {
     let cancelled = false;
     getRegions()
       .then((geo) => {
         const regions = { ...geo, features: geo.features.filter((f) => f.properties.level !== "department") };
-        if (!cancelled) setState({ status: "ready", error: null, regions });
+        const departments = { ...geo, features: geo.features.filter((f) => f.properties.level === "department") };
+        if (!cancelled) setState({ status: "ready", error: null, regions, departments });
       })
       .catch((error) => {
-        if (!cancelled) setState({ status: "error", error, regions: null });
+        if (!cancelled) setState({ status: "error", error, regions: null, departments: null });
       });
     return () => {
       cancelled = true;

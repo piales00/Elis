@@ -46,8 +46,8 @@ export default function HowWeCalculated({ methodology, region }) {
   const range = (a) => (Array.isArray(a) ? a.join("–") : t("series.na"));
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="@container grid gap-6">
+      <div className="grid gap-4 @2xl:grid-cols-3">
         {["observed", "estimate", "forecast"].map((k) => (
           <Card key={k} title={t(`method.kind.${k}.title`)}>
             <p className="m-0 mt-2 text-muted">{t(`method.kind.${k}.text`)}</p>
@@ -56,7 +56,7 @@ export default function HowWeCalculated({ methodology, region }) {
       </div>
 
       <Card title={t("method.steps.title")}>
-        <ol className="m-0 mt-4 grid list-none gap-4 p-0 md:grid-cols-2">
+        <ol className="m-0 mt-4 grid list-none gap-4 p-0 @xl:grid-cols-2">
           {STEPS.map((s, i) => (
             <li key={s} className="flex gap-3">
               <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-full border border-line text-sm font-semibold">
@@ -71,7 +71,7 @@ export default function HowWeCalculated({ methodology, region }) {
         </ol>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @2xl:grid-cols-2">
         <Card title={t("method.params.title")}>
           {params ? (
             <dl className="m-0 mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 tabular-nums">
@@ -125,7 +125,7 @@ export default function HowWeCalculated({ methodology, region }) {
       <Card title={t("method.detect.title")}>
         <p className="m-0 mt-1 text-sm text-muted">{t("method.detect.sub", { region: regionName })}</p>
         {detection.length ? (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-4 @md:grid-cols-2 @3xl:grid-cols-3">
             {detection.map((d) => (
               <div key={`${d.region}-${d.month}`} className="grid gap-1.5">
                 <p className="m-0 font-semibold">{t(`month.${d.month}`)}</p>
@@ -142,7 +142,7 @@ export default function HowWeCalculated({ methodology, region }) {
         )}
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @2xl:grid-cols-2">
         <Card title={t("method.limits.title")}>
           <ul className="m-0 mt-3 grid list-disc gap-2 pl-5 text-sm">
             {LIMITS.map((l) => (
@@ -166,7 +166,7 @@ export default function HowWeCalculated({ methodology, region }) {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @2xl:grid-cols-2">
         <Card title={t("method.ai.title")}>
           <p className="m-0 mt-2 text-sm text-muted">{t("method.ai.text")}</p>
         </Card>

@@ -29,7 +29,7 @@ export default function SlotDetails({ slot, withReference = false }) {
   const hasRef = row && row.hist_median !== null && row.hist_median !== undefined;
 
   return (
-    <aside role="status" aria-live="polite" className="self-start border-t border-line pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+    <aside role="status" aria-live="polite" className="self-start border-t border-line pt-5 @3xl:border-l @3xl:border-t-0 @3xl:pl-6 @3xl:pt-0">
       <p className="eyebrow !text-muted">{t("details.title")}</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
         <p className="m-0 font-head text-2xl font-extrabold tabular-nums">

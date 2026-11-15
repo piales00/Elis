@@ -73,6 +73,11 @@ export async function getMap({ year, month, region }) {
   return cells.filter((cell) => inRing(cell.lon, cell.lat, feature.geometry.coordinates[0]));
 }
 
+export async function getForecast(region) {
+  if (isMock) throw new NoDataError("The season outlook is only available with the API");
+  return getJson(`${API_BASE}/forecast${query({ region })}`);
+}
+
 export async function getMethodology(region) {
   if (!isMock) return getJson(`${API_BASE}/methodology${query({ region })}`);
   const data = await getJson(methodologyUrl);

@@ -14,7 +14,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -22,7 +22,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const live = useRef({});
   const [ready, setReady] = useState(false);
 
-  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region };
+  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady };
   const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
 
   const fit = (duration) => {
@@ -41,7 +41,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       bounds: featureBounds(regions.features.find((f) => f.properties.id === "peru") ?? regions.features[0]),
       fitBoundsOptions: { padding: 32 },
       attributionControl: { compact: true },
-      cooperativeGestures: true,
+      cooperativeGestures: !fill,
       locale: {
         "CooperativeGesturesHandler.WindowsHelpText": t("map.gesture.desktop", { key: "Ctrl" }),
         "CooperativeGesturesHandler.MacHelpText": t("map.gesture.desktop", { key: "⌘" }),
@@ -56,8 +56,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       },
     });
     mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
-    map.addControl(new maplibregl.FullscreenControl(), "top-right");
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), fill ? "bottom-right" : "top-right");
+    if (!fill) map.addControl(new maplibregl.FullscreenControl(), "top-right");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
     popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
 
@@ -115,6 +115,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         },
       });
       setReady(true);
+      live.current.onReady?.(map);
     });
 
     const showCell = (e) => {
@@ -167,6 +168,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     });
 
     return () => {
+      live.current.onReady?.(null);
       map.remove();
       mapRef.current = null;
       setReady(false);
@@ -196,20 +198,20 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   }, [ready, region]);
 
   return (
-    <div className="relative">
+    <div className={fill ? "relative h-full w-full" : "relative"}>
       <div
         ref={containerRef}
         role="region"
         aria-label={ariaLabel}
-        className="h-[460px] w-full overflow-hidden rounded-2xl border border-line sm:h-[560px] lg:h-[640px]"
+        className={fill ? "h-full w-full" : "h-[460px] w-full overflow-hidden rounded-2xl border border-line sm:h-[560px] lg:h-[640px]"}
       />
-      <button
+      {!fill && <button
         type="button"
         onClick={() => fit(prefersReducedMotion() ? 0 : 600)}
         className="btn-icon absolute left-3 top-3 font-medium"
       >
         {t("map.reset")}
-      </button>
+      </button>}
       {overZoom && (
         <p role="note" className="pointer-events-none absolute bottom-16 right-3 m-0 max-w-[16rem] rounded-xl border border-line bg-bg/90 px-3 py-2 text-xs">
           {t("imagery.zoomNote", { meters: imagery.raster.pixel ?? 375 })}

@@ -93,7 +93,7 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
   else summary = t("normal.summary.observed", { label, class: cls });
 
   return (
-    <div>
+    <div className="@container">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <p role="status" className={`m-0 max-w-[58ch] font-head text-xl font-bold ${sel.row?.is_forecast ? "text-forecast" : ""}`}>
           {summary}
@@ -106,7 +106,7 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
       {!hasYear ? (
         <p className="m-0 rounded-2xl border border-dashed border-line p-8 text-center text-muted">{t("normal.empty", { year: period.year })}</p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-8 @3xl:grid-cols-[minmax(0,1fr)_300px]">
           <div>
             <div ref={ref}>
               {width > 0 && (
