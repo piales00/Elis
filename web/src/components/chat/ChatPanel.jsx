@@ -404,7 +404,7 @@ export default function ChatPanel({
               <button
                 type="submit"
                 disabled={streaming || !input.trim()}
-                className="rounded-xl bg-accent px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40 cursor-pointer"
+                className="rounded-xl bg-accent px-3.5 py-2 text-xs font-semibold text-on-accent transition hover:opacity-90 disabled:opacity-40 cursor-pointer"
               >
                 {streaming ? "…" : t("chat.send")}
               </button>

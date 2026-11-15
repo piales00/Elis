@@ -68,7 +68,7 @@ export function useOutlookLayer(map, { departments, forecast, active, selected, 
       before,
     );
     map.addLayer(
-      { id: "outlook-line", type: "line", source: "outlook", layout: { visibility: "none" }, paint: { "line-color": "#090e15", "line-width": 0.9 } },
+      { id: "outlook-line", type: "line", source: "outlook", layout: { visibility: "none" }, paint: { "line-color": "#0a130f", "line-width": 0.9 } },
       before,
     );
     map.addLayer(

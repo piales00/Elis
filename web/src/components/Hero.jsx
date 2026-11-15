@@ -22,7 +22,7 @@ export default function Hero() {
         <h1 className="m-0 mt-4 max-w-[17ch] font-head text-4xl font-extrabold leading-[1.04] sm:text-6xl">{t("hero.title")}</h1>
         <p className="mt-5 max-w-[60ch] text-lg text-muted sm:text-xl">{t("hero.lede")}</p>
         <div className="mt-7 flex flex-wrap gap-3">
-          <a href="#false-record" className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white no-underline hover:brightness-110">
+          <a href="#false-record" className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent no-underline hover:brightness-110">
             {t("hero.cta.record")}
           </a>
           <a href="#map" className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold text-fg no-underline hover:bg-surface">

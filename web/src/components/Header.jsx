@@ -17,9 +17,9 @@ function Logo() {
     <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M12 2c.6 3.2-1.2 4.6-2.6 6.3C8 10 7 11.4 7 13.6A5 5 0 0 0 12 19a5 5 0 0 0 5-5.1c0-2.1-1-3.5-2-4.7-.2 1.2-.8 2-1.7 2.4.5-3-.2-6.1-1.3-9.6Z"
-        fill="#d62839"
+        fill="var(--accent)"
       />
-      <path d="M12 22c-2.2 0-4-1.1-4-2.6h8c0 1.5-1.8 2.6-4 2.6Z" fill="#f5f4f0" />
+      <path d="M12 22c-2.2 0-4-1.1-4-2.6h8c0 1.5-1.8 2.6-4 2.6Z" fill="var(--fg)" />
     </svg>
   );
 }
@@ -42,7 +42,7 @@ export default function Header({ regionIds, region, onRegionChange }) {
               href={`#${id}`}
               aria-current={active === id ? "location" : undefined}
               className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm no-underline transition-colors ${
-                active === id ? "bg-accent font-semibold text-white" : "text-muted hover:text-fg"
+                active === id ? "bg-accent font-semibold text-on-accent" : "text-muted hover:text-fg"
               }`}
             >
               {t(`nav.${key}`)}
@@ -61,7 +61,7 @@ export default function Header({ regionIds, region, onRegionChange }) {
                 title={languageName(code)}
                 onClick={() => setLocale(code)}
                 className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                  locale === code ? "bg-accent text-white" : "text-muted hover:text-fg"
+                  locale === code ? "bg-accent text-on-accent" : "text-muted hover:text-fg"
                 }`}
               >
                 {code}

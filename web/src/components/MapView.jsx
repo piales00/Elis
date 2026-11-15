@@ -63,8 +63,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
     popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
 
+    map.on("style.load", () => tuneBasemap(map));
     map.on("load", () => {
-      tuneBasemap(map);
       const before = map.getStyle().layers.find((l) => l.type === "symbol")?.id;
       const addLayer = (layer) => map.addLayer(layer, before);
       map.addSource("regions", { type: "geojson", data: regions });
@@ -88,7 +88,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         type: "line",
         source: "regions",
         paint: {
-          "line-color": "#9daabd",
+          "line-color": "#a3b5aa",
           "line-width": 0.8,
           "line-opacity": 0.22,
           "line-dasharray": [3, 3],
