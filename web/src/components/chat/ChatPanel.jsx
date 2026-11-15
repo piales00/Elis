@@ -374,8 +374,57 @@ export default function ChatPanel({
 
                   {turn.chart && <ChatChart chartData={turn.chart} onSyncView={onSyncView} />}
 
+                  {turn.done && !turn.error && onSyncView && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSyncView({
+                            region: turn.chart?.region || region || "peru",
+                            year: turn.chart?.highlight_year || 2024,
+                            month: turn.chart?.highlight_month || 9,
+                            mode3d: true,
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-forecast/40 bg-forecast/10 px-2.5 py-1 text-[11px] font-semibold text-forecast transition hover:border-forecast cursor-pointer"
+                      >
+                        <span>🛰️</span>
+                        <span>
+                          {locale === "es"
+                            ? "Volar al relieve 3D de esta región"
+                            : "Fly to 3D relief for this region"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSyncView({
+                            region: turn.chart?.region || region || "peru",
+                            year: turn.chart?.highlight_year || 2024,
+                            month: turn.chart?.highlight_month || 9,
+                            mode3d: false,
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-bg px-2.5 py-1 text-[11px] font-medium text-fg transition hover:border-est cursor-pointer"
+                      >
+                        <span>🗺️</span>
+                        <span>
+                          {locale === "es"
+                            ? "Sincronizar mapa 2D y línea de tiempo"
+                            : "Sync 2D map & timeline"}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
                   {turn.done && (
-                    <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2 text-xs">
+                    <div className="mt-2.5 flex flex-col gap-1 border-t border-line pt-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-muted">
+                        <span className="rounded border border-line bg-bg px-1.5 py-0.5">MODIS Aqua + VIIRS S-NPP</span>
+                        <span className="rounded border border-line bg-bg px-1.5 py-0.5">0.1° (~11 km)</span>
+                        <span className="rounded border border-line bg-bg px-1.5 py-0.5">Chapman 90% CI</span>
+                      </div>
+                      <div className="flex items-center justify-between">
                       <span className="text-[11px] text-muted">{t("chat.unitReminder")}</span>
                       <a
                         href="#method"
@@ -390,6 +439,7 @@ export default function ChatPanel({
                       >
                         {t("chat.howWeCalculateLink")} →
                       </a>
+                      </div>
                     </div>
                   )}
                 </div>

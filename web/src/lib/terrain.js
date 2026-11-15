@@ -1,6 +1,12 @@
 import { CELL_COLORS } from "./mapStyle.js";
 
 export const EXPLORE_CAMERA = { center: [-72.5, -13.2], zoom: 9.5, pitch: 65, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
+export const REGION_3D_CAMERAS = {
+  peru: { center: [-72.5, -13.2], zoom: 9.2, pitch: 65, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  amazonia: { center: [-74.5, -8.4], zoom: 9.2, pitch: 65, bearing: -15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  sierra: { center: [-72.1, -13.5], zoom: 9.5, pitch: 65, bearing: -25, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  costa: { center: [-79.8, -6.8], zoom: 9.3, pitch: 62, bearing: 15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+};
 export const SATELLITE_ATTRIBUTION = "Sentinel-2 cloudless – https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2020)";
 
 export function addTerrainFire(map) {

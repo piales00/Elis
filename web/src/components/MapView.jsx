@@ -5,7 +5,7 @@ import { useI18n } from "../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../lib/hooks.js";
 import { useGibsLayers } from "./imagery/useGibsLayers.js";
 import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, mapPadding, tuneBasemap } from "../lib/mapStyle.js";
-import { addTerrainFire, containsPoint, EXPLORE_CAMERA, setRelief } from "../lib/terrain.js";
+import { addTerrainFire, containsPoint, EXPLORE_CAMERA, REGION_3D_CAMERAS, setRelief } from "../lib/terrain.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -183,6 +183,14 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     });
 
     map.on("resetview", resetView);
+    map.on("fly3d", (e) => {
+      const targetRegion = e?.region || live.current.region || "peru";
+      const preset = REGION_3D_CAMERAS[targetRegion] || EXPLORE_CAMERA;
+      changeTerrain(true, false);
+      popupRef.current?.remove();
+      if (prefersReducedMotion()) map.jumpTo(preset);
+      else map.flyTo({ ...preset, duration: 1800 });
+    });
     map.on("dblclick", (e) => {
       if (!terrainRef.current) return;
       flyHere(e.lngLat);
@@ -281,7 +289,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     if (!ready || !map) return;
     map.setFilter("region-selected-line", ["==", ["get", "id"], region]);
     map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.07, 0.02]);
-    fit(prefersReducedMotion() ? 0 : 600);
+    if (!terrainRef.current) fit(prefersReducedMotion() ? 0 : 600);
   }, [ready, region, focus]);
 
   useEffect(() => {

@@ -94,6 +94,75 @@ def _format_sse(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {payload}\n\n"
 
 
+def _build_auto_chart(
+    tool_calls_made: list[tuple[str, dict[str, Any], dict[str, Any]]],
+    default_region: str | None,
+) -> dict[str, Any] | None:
+    if not tool_calls_made:
+        return None
+    if any(name == "show_chart" for name, _, _ in tool_calls_made):
+        return None
+
+    reg = default_region if default_region in VALID_REGIONS else "peru"
+    for name, inp, res in tool_calls_made:
+        if isinstance(inp, dict) and inp.get("region") in VALID_REGIONS:
+            reg = inp["region"]
+        if name == "rank_years" and isinstance(res, dict):
+            rankings = res.get("rankings") or []
+            top_year = rankings[0].get("year") if rankings else 2024
+            from_y = int(inp.get("from_year", 2003)) if isinstance(inp, dict) else 2003
+            to_y = int(inp.get("to_year", 2025)) if isinstance(inp, dict) else 2025
+            chart_ev, err = execute_tool(
+                "show_chart",
+                {
+                    "chart": "series",
+                    "region": reg,
+                    "from_year": max(2000, from_y),
+                    "to_year": min(2026, to_y),
+                    "highlight_year": top_year,
+                },
+            )[2], False
+            if chart_ev:
+                return chart_ev
+        if name == "compare_periods" and isinstance(res, dict):
+            pa = res.get("period_a") or {}
+            pb = res.get("period_b") or {}
+            ya = pa.get("year") or 2024
+            yb = pb.get("year") or 2025
+            hi = max(int(ya), int(yb))
+            chart_type = "year_vs_history" if pa.get("kind") == "month" else "series"
+            chart_ev = execute_tool(
+                "show_chart",
+                {
+                    "chart": chart_type,
+                    "region": reg,
+                    "from_year": min(int(ya), int(yb), 2003),
+                    "to_year": max(int(ya), int(yb), 2025),
+                    "highlight_year": hi,
+                },
+            )[2]
+            if chart_ev:
+                return chart_ev
+        if name == "get_series" and isinstance(inp, dict):
+            from_y = int(inp.get("from_year", 2003))
+            to_y = int(inp.get("to_year", 2026))
+            agg = inp.get("aggregate", "year")
+            chart_type = "year_vs_history" if agg == "month" and from_y == to_y else "series"
+            chart_ev = execute_tool(
+                "show_chart",
+                {
+                    "chart": chart_type,
+                    "region": reg,
+                    "from_year": from_y,
+                    "to_year": to_y,
+                    "highlight_year": to_y,
+                },
+            )[2]
+            if chart_ev:
+                return chart_ev
+    return None
+
+
 def _prepare_messages(
     messages: list[dict[str, Any]],
     region: str | None,
@@ -221,6 +290,8 @@ async def _stream_gemini_turns(
 
     accumulated_text_parts: list[str] = []
     tool_results_for_guard: list[dict[str, Any]] = []
+    tool_calls_made: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+    chart_emitted = False
     total_usage = {
         "input_tokens": 0,
         "output_tokens": 0,
@@ -277,8 +348,11 @@ async def _stream_gemini_turns(
                 )
                 tool_result, is_err, chart_event = execute_tool(fc.name, fc.args or {})
                 tool_results_for_guard.append(tool_result)
+                if not is_err:
+                    tool_calls_made.append((fc.name, fc.args or {}, tool_result))
 
                 if chart_event is not None and not is_err:
+                    chart_emitted = True
                     yield _format_sse("chart", chart_event)
 
                 tool_response_parts.append(
@@ -289,6 +363,12 @@ async def _stream_gemini_turns(
                 )
 
             contents.append(types.Content(role="user", parts=tool_response_parts))
+
+        if not chart_emitted and tool_calls_made:
+            auto_chart = _build_auto_chart(tool_calls_made, region)
+            if auto_chart is not None:
+                chart_emitted = True
+                yield _format_sse("chart", auto_chart)
 
         # If loop reached MAX_TOOL_TURNS and no text has been generated yet, force a synthesis turn
         if not accumulated_text_parts:
@@ -324,7 +404,7 @@ async def _stream_gemini_turns(
             "done",
             {
                 "verified": verification.get("verified", True),
-                "tools_used": [t.get("name", "") for t in tool_results_for_guard if "name" in t],
+                "tools_used": [name for name, _, _ in tool_calls_made],
                 "usage": total_usage,
             },
         )

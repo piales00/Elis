@@ -467,9 +467,13 @@ export default function App() {
               series={series}
               methodology={methodology}
               onOpenMethod={() => openView("method")}
-              onSyncView={({ region: nextRegion, year, month }) => {
+              onSyncView={({ region: nextRegion, year, month, mode3d }) => {
+                const targetReg = nextRegion && regionIds.includes(nextRegion) ? nextRegion : region;
                 if (nextRegion && regionIds.includes(nextRegion)) selectRegion(nextRegion);
                 if (year && month) setPeriod({ year, month });
+                if (mode3d) {
+                  mapInstance?.fire("fly3d", { region: targetReg });
+                }
               }}
             />
           </div>

@@ -89,19 +89,37 @@ export default function ChatChart({ chartData, onSyncView }) {
           </p>
         </div>
         {onSyncView && (
-          <button
-            type="button"
-            onClick={() =>
-              onSyncView({
-                region: region || "peru",
-                year: highlight_year || activePoint?.year || 2024,
-                month: activePoint?.month || 9,
-              })
-            }
-            className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1 text-[11px] font-medium text-fg transition hover:border-est cursor-pointer"
-          >
-            {t("chat.chart.syncView")}
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                onSyncView({
+                  region: region || "peru",
+                  year: highlight_year || activePoint?.year || 2024,
+                  month: activePoint?.month || 9,
+                  mode3d: false,
+                })
+              }
+              className="rounded-lg border border-line bg-surface px-2 py-1 text-[11px] font-medium text-fg transition hover:border-est cursor-pointer"
+            >
+              {t("chat.chart.syncView")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onSyncView({
+                  region: region || "peru",
+                  year: highlight_year || activePoint?.year || 2024,
+                  month: activePoint?.month || 9,
+                  mode3d: true,
+                })
+              }
+              className="rounded-lg border border-forecast/50 bg-forecast/10 px-2 py-1 text-[11px] font-bold text-forecast transition hover:border-forecast cursor-pointer"
+              title="Fly to 3D satellite relief and sync timeline"
+            >
+              3D Relief ↗
+            </button>
+          </div>
         )}
       </div>
 
