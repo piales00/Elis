@@ -248,6 +248,7 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 
 | Ruta | Parámetros | Devuelve |
 |---|---|---|
+| `GET /health` | — | `{"status": "ok"}`. Para comprobar que la API está viva sin descargar datos |
 | `GET /regions` | — | `regions.geojson` |
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
 | `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
