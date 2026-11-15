@@ -6,9 +6,9 @@ function Fallback({ message }) {
   return (
     <div role="alert" className="grid h-full place-items-center p-6 text-center">
       <div className="max-w-sm">
-        <p className="m-0 font-semibold text-white">{t("map.failed.title")}</p>
-        <p className="m-0 mt-1 text-sm text-[#9aa6b7]">{t("map.failed.text")}</p>
-        <p className="m-0 mt-2 text-xs text-[#9aa6b7]">{message}</p>
+        <p className="m-0 font-semibold text-[var(--on-map)]">{t("map.failed.title")}</p>
+        <p className="m-0 mt-1 text-sm text-[var(--on-map-muted)]">{t("map.failed.text")}</p>
+        <p className="m-0 mt-2 text-xs text-[var(--on-map-muted)]">{message}</p>
       </div>
     </div>
   );

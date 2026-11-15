@@ -10,7 +10,7 @@ const CLASS_BG = {
   low: "var(--sat)",
   normal: "var(--line-strong)",
   high: "var(--amber)",
-  very_high: "var(--accent)",
+  very_high: "var(--c-peak)",
 };
 
 function usePopover(onClose) {

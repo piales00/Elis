@@ -309,7 +309,7 @@ export default function FireClock({ series, region, period, onSelectPeriod }) {
                     return (
                       <g key={m}>
                         {on && <rect x={lx - 27} y={ly - 11} width="54" height="22" rx="11" style={{ fill: "var(--accent)" }} />}
-                        <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" style={{ fill: on ? "#fff" : "var(--muted)", fontSize: 11.5, fontWeight: on ? 700 : 500 }}>
+                        <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central" style={{ fill: on ? "var(--on-accent)" : "var(--muted)", fontSize: 11.5, fontWeight: on ? 700 : 500 }}>
                           {`${state ? `${GLYPH[state]} ` : ""}${t(`month.${m}`)}`}
                         </text>
                       </g>

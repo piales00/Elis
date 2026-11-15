@@ -10,7 +10,7 @@ const H = 300;
 const MT = 20;
 const MB = 62;
 const REFERENCE_START = 2003;
-const CLASS_COLOR = { low: "var(--sat)", normal: "var(--muted)", high: "var(--amber)", very_high: "#f08a6a" };
+const CLASS_COLOR = { low: "var(--sat)", normal: "var(--muted)", high: "var(--amber)", very_high: "var(--c-very-high)" };
 
 function Swatch({ children, label }) {
   return (
@@ -181,7 +181,7 @@ export default function NormalChart({ series, region, period, onSelectPeriod }) 
                           <line x1={x(month) - barW / 2} x2={x(month) + barW / 2} y1={y(0)} y2={y(0)} strokeDasharray="1 3" style={{ stroke: "var(--none)", strokeWidth: 2 }} />
                         )}
                         {on && <rect x={x(month) - 20} y={y(0) + 7} width="40" height="20" rx="10" style={{ fill: "var(--accent)" }} />}
-                        <text x={x(month)} y={y(0) + 17.5} textAnchor="middle" dominantBaseline="central" style={{ fill: on ? "#fff" : "var(--muted)", fontSize: 11.5, fontWeight: on ? 700 : 500 }}>
+                        <text x={x(month)} y={y(0) + 17.5} textAnchor="middle" dominantBaseline="central" style={{ fill: on ? "var(--on-accent)" : "var(--muted)", fontSize: 11.5, fontWeight: on ? 700 : 500 }}>
                           {t(`month.${month}`)}
                         </text>
                         {row?.anomaly_class && hasRef(row) ? (

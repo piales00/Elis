@@ -88,7 +88,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         type: "line",
         source: "regions",
         paint: {
-          "line-color": "#9daabd",
+          "line-color": "#a3b5aa",
           "line-width": 0.8,
           "line-opacity": 0.22,
           "line-dasharray": [3, 3],

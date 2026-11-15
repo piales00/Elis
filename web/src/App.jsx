@@ -116,7 +116,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#eef0f3" : "#090e15");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#eef2ef" : "#0a130f");
   }, [theme]);
 
   const outlook = view === "outlook";

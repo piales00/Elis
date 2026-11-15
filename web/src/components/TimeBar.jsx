@@ -108,7 +108,7 @@ export default function TimeBar({ period, series, loading, onChange }) {
                     aria-label={`${t(`month.${m}`)} ${period.year}: ${t(`availability.${state}`)}`}
                     onClick={() => onChange({ year: period.year, month: m })}
                     className={`w-full rounded-lg border px-1 py-1.5 text-sm ${
-                      selected ? "border-accent bg-accent font-semibold text-white" : `${monthClass[state]} bg-surface-2 hover:border-muted`
+                      selected ? "border-accent bg-accent font-semibold text-on-accent" : `${monthClass[state]} bg-surface-2 hover:border-muted`
                     }`}
                   >
                     <span aria-hidden="true" className="mr-1 text-[10px]">

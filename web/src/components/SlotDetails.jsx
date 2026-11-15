@@ -7,7 +7,7 @@ const CLASS_TONE = {
   low: "border-sat text-sat",
   normal: "border-muted text-fg",
   high: "border-amber text-amber",
-  very_high: "border-[#f08a6a] text-[#f08a6a]",
+  very_high: "border-[var(--c-very-high)] text-[var(--c-very-high)]",
 };
 
 export function ClassBadge({ value }) {
