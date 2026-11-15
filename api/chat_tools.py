@@ -853,8 +853,11 @@ def build_chart_event(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bool]
         return {"error": err, "unit": UNIT}, True
     if chart not in ("series", "raw_vs_corrected", "year_vs_history", "forecast"):
         return {"error": "Invalid chart type.", "unit": UNIT}, True
-    if highlight_year is not None and (not isinstance(highlight_year, int) or highlight_year < MIN_YEAR or highlight_year > MAX_YEAR):
-        return {"error": f"highlight_year must be null or an integer between {MIN_YEAR} and {MAX_YEAR}.", "unit": UNIT}, True
+    if highlight_year is not None:
+        if isinstance(highlight_year, str) and highlight_year.isdigit():
+            highlight_year = int(highlight_year)
+        if not isinstance(highlight_year, int) or highlight_year < MIN_YEAR or highlight_year > MAX_YEAR:
+            return {"error": f"highlight_year must be null or an integer between {MIN_YEAR} and {MAX_YEAR}.", "unit": UNIT}, True
 
     rows = _load_json("series.json")
     methodology = _load_json("methodology.json")

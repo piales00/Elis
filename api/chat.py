@@ -8,11 +8,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from api.chat_guard import limiter, validate_chat_request, verify_figures
-from api.chat_prompt import build_system_blocks
+from api.chat_prompt import build_system_blocks, SYSTEM_PROMPT_TEXT
 from api.chat_tools import TOOL_LABELS, TOOLS, VALID_REGIONS, execute_tool
 
 
-DEFAULT_MODEL = "claude-opus-5-5"
+DEFAULT_PROVIDER = "gemini"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
+DEFAULT_CLAUDE_MODEL = "claude-opus-5-5"
 DEFAULT_EFFORT = "low"
 MAX_TOKENS = 4000
 MAX_TOOL_TURNS = 6
@@ -28,8 +30,19 @@ def set_client_factory(factory: Callable[[], Any] | None) -> None:
     _client_factory = factory
 
 
+def get_chat_provider() -> str:
+    provider = os.environ.get("CHAT_PROVIDER", "").strip().lower()
+    if provider in ("gemini", "anthropic"):
+        return provider
+    if os.environ.get("GEMINI_API_KEY", "").strip():
+        return "gemini"
+    return "anthropic"
+
+
 def get_chat_model() -> str:
-    return os.environ.get("CHAT_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
+    provider = get_chat_provider()
+    default = DEFAULT_GEMINI_MODEL if provider == "gemini" else DEFAULT_CLAUDE_MODEL
+    return os.environ.get("CHAT_MODEL", default).strip() or default
 
 
 def get_chat_effort() -> str:
@@ -40,7 +53,14 @@ def get_chat_effort() -> str:
 def is_chat_enabled() -> tuple[bool, str]:
     if os.environ.get("CHAT_ENABLED", "0").strip() != "1":
         return False, "The data assistant is currently disabled (CHAT_ENABLED is not set to 1)."
-    if _client_factory is None and not os.environ.get("ANTHROPIC_API_KEY", "").strip():
+    if _client_factory is not None:
+        return True, ""
+    provider = get_chat_provider()
+    if provider == "gemini":
+        if not os.environ.get("GEMINI_API_KEY", "").strip():
+            return False, "The data assistant is not configured (GEMINI_API_KEY is missing)."
+        return True, ""
+    if not os.environ.get("ANTHROPIC_API_KEY", "").strip():
         return False, "The data assistant is not configured (ANTHROPIC_API_KEY is missing)."
     return True, ""
 
@@ -48,40 +68,89 @@ def is_chat_enabled() -> tuple[bool, str]:
 def _create_client() -> Any:
     if _client_factory is not None:
         return _client_factory()
+    provider = get_chat_provider()
+    if provider == "gemini":
+        from google import genai
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        return genai.Client(api_key=api_key)
     from anthropic import AsyncAnthropic
-
-    return AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
-
-class ChatRequestPayload(BaseModel):
-    messages: list[dict[str, Any]]
-    region: str | None = "peru"
-    locale: str | None = "en"
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    return AsyncAnthropic(api_key=api_key)
 
 
-def format_sse(event: str, data: dict[str, Any]) -> str:
-    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    region: str | None = None
+    locale: str | None = None
+
+
+def _format_sse(event: str, data: dict[str, Any]) -> str:
+    payload = json.dumps(data, ensure_ascii=False)
     return f"event: {event}\ndata: {payload}\n\n"
 
 
-def _prepare_messages(messages: list[dict[str, Any]], region: str | None, locale: str | None) -> list[dict[str, Any]]:
+def _prepare_messages(
+    messages: list[dict[str, Any]],
+    region: str | None,
+    locale: str | None,
+) -> list[dict[str, Any]]:
     prepared: list[dict[str, Any]] = []
-    for msg in messages[:-1]:
-        role = msg.get("role")
-        content = msg.get("content")
-        if role in ("user", "assistant") and isinstance(content, (str, list)):
-            prepared.append({"role": role, "content": content})
-
-    last = messages[-1]
-    reg = region if region in VALID_REGIONS else "peru"
-    loc = locale if locale in ("en", "es") else "en"
-    context_suffix = f"\n\n[Screen context: region={reg}, locale={loc}]"
-    user_text = str(last.get("content", "")).strip() + context_suffix
-    prepared.append({"role": "user", "content": user_text})
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        prepared.append({"role": role, "content": content})
+    if prepared and prepared[-1]["role"] == "user":
+        extra: list[str] = []
+        if region:
+            extra.append(f"active screen region: {region}")
+        if locale:
+            extra.append(f"user locale: {locale}")
+        if extra:
+            suffix = f"\n\n[Context: {', '.join(extra)}]"
+            prepared[-1]["content"] = f"{prepared[-1]['content']}{suffix}"
     return prepared
 
 
-def _extract_usage_dict(usage_obj: Any) -> dict[str, int]:
+def _build_gemini_tools() -> list[Any]:
+    from google.genai import types
+    declarations = []
+    for t in TOOLS:
+        schema_props = {}
+        input_props = t["input_schema"].get("properties", {})
+        for k, v in input_props.items():
+            prop_type = types.Type.STRING
+            if v.get("type") == "integer":
+                prop_type = types.Type.INTEGER
+            elif v.get("type") == "number":
+                prop_type = types.Type.NUMBER
+            elif v.get("type") == "boolean":
+                prop_type = types.Type.BOOLEAN
+            enum_vals = v.get("enum")
+            schema_props[k] = types.Schema(
+                type=prop_type,
+                description=v.get("description"),
+                enum=enum_vals,
+            )
+        declarations.append(
+            types.FunctionDeclaration(
+                name=t["name"],
+                description=t["description"],
+                parameters=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties=schema_props,
+                    required=t["input_schema"].get("required", []),
+                ),
+            )
+        )
+    return [types.Tool(function_declarations=declarations)]
+
+
+def _normalize_usage(usage_obj: Any) -> dict[str, int]:
     if usage_obj is None:
         return {
             "input_tokens": 0,
@@ -124,15 +193,151 @@ def _open_stream(client: Any, **kwargs: Any) -> Any:
     if messages_api is not None and hasattr(messages_api, "stream"):
         fallback_kwargs = {k: v for k, v in kwargs.items() if k not in ("betas", "fallbacks")}
         return messages_api.stream(**fallback_kwargs)
-    raise RuntimeError("Anthropic client does not expose a compatible stream method.")
+    raise RuntimeError("Client does not expose a compatible stream method.")
 
 
-async def stream_chat_turns(
+async def _stream_gemini_turns(
+    client: Any,
     messages: list[dict[str, Any]],
     region: str | None,
     locale: str | None,
 ) -> AsyncIterator[str]:
-    client = _create_client()
+    from google.genai import types
+
+    model = get_chat_model()
+    gemini_tools = _build_gemini_tools()
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT_TEXT,
+        tools=gemini_tools,
+        thinking_config=types.ThinkingConfig(thinking_budget=0),
+        temperature=0.2,
+    )
+
+    prepared = _prepare_messages(messages, region, locale)
+    contents: list[types.Content] = []
+    for m in prepared:
+        role = "user" if m["role"] == "user" else "model"
+        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=m["content"])]))
+
+    accumulated_text_parts: list[str] = []
+    tool_results_for_guard: list[dict[str, Any]] = []
+    total_usage = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+    }
+
+    try:
+        for _ in range(MAX_TOOL_TURNS):
+            resp = await client.aio.models.generate_content(
+                model=model,
+                contents=contents,
+                config=config,
+            )
+            if hasattr(resp, "usage_metadata") and resp.usage_metadata:
+                total_usage["input_tokens"] += int(getattr(resp.usage_metadata, "prompt_token_count", 0) or 0)
+                total_usage["output_tokens"] += int(getattr(resp.usage_metadata, "candidates_token_count", 0) or 0)
+
+            fcalls = resp.function_calls or []
+            if not fcalls:
+                # If text was already returned in the non-streaming response:
+                if resp.text:
+                    accumulated_text_parts.append(resp.text)
+                    yield _format_sse("text", {"delta": resp.text})
+                else:
+                    # Stream synthesis using config without tools to force final text
+                    config_synthesis = types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT_TEXT,
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
+                        temperature=0.2,
+                    )
+                    async for chunk in await client.aio.models.generate_content_stream(
+                        model=model,
+                        contents=contents,
+                        config=config_synthesis,
+                    ):
+                        chunk_text = chunk.text or ""
+                        if chunk_text:
+                            accumulated_text_parts.append(chunk_text)
+                            yield _format_sse("text", {"delta": chunk_text})
+                break
+
+            # Handle tool calls
+            candidate_content = resp.candidates[0].content
+            contents.append(candidate_content)
+
+            tool_response_parts = []
+            for fc in fcalls:
+                call_id = getattr(fc, "id", None) or f"call_{fc.name}"
+                tool_label = TOOL_LABELS.get(fc.name, fc.name)
+                yield _format_sse(
+                    "tool",
+                    {"name": fc.name, "id": call_id, "label": tool_label, "input": fc.args or {}},
+                )
+                tool_result, is_err, chart_event = execute_tool(fc.name, fc.args or {})
+                tool_results_for_guard.append(tool_result)
+
+                if chart_event is not None and not is_err:
+                    yield _format_sse("chart", chart_event)
+
+                tool_response_parts.append(
+                    types.Part.from_function_response(
+                        name=fc.name,
+                        response={"result": tool_result},
+                    )
+                )
+
+            contents.append(types.Content(role="user", parts=tool_response_parts))
+
+        # If loop reached MAX_TOOL_TURNS and no text has been generated yet, force a synthesis turn
+        if not accumulated_text_parts:
+            config_synthesis = types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT_TEXT,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+                temperature=0.2,
+            )
+            async for chunk in await client.aio.models.generate_content_stream(
+                model=model,
+                contents=contents,
+                config=config_synthesis,
+            ):
+                chunk_text = chunk.text or ""
+                if chunk_text:
+                    accumulated_text_parts.append(chunk_text)
+                    yield _format_sse("text", {"delta": chunk_text})
+
+        final_text = "".join(accumulated_text_parts)
+        verification = verify_figures(final_text, tool_results_for_guard)
+        if not verification.get("verified", True):
+            yield _format_sse(
+                "notice",
+                {
+                    "kind": "unverified_figure",
+                    "values": verification.get("unverified_values", []),
+                    "message": "Some figures in the response could not be verified against tool outputs.",
+                },
+            )
+
+        limiter.record_usage(total_usage, model=model)
+        yield _format_sse(
+            "done",
+            {
+                "verified": verification.get("verified", True),
+                "tools_used": [t.get("name", "") for t in tool_results_for_guard if "name" in t],
+                "usage": total_usage,
+            },
+        )
+    except Exception as exc:
+        yield _format_sse("error", {"message": f"Gemini error: {exc}"})
+
+
+async def _stream_anthropic_turns(
+    client: Any,
+    messages: list[dict[str, Any]],
+    region: str | None,
+    locale: str | None,
+) -> AsyncIterator[str]:
     model = get_chat_model()
     effort = get_chat_effort()
     system_blocks = build_system_blocks()
@@ -158,136 +363,150 @@ async def stream_chat_turns(
                 max_tokens=MAX_TOKENS,
                 tool_choice={"type": "auto"},
                 output_config={"effort": effort},
-                fallbacks="default",
                 betas=[FALLBACK_BETA],
+                fallbacks="default",
             )
             async with stream_ctx as stream:
-                text_stream = getattr(stream, "text_stream", None)
-                if text_stream is not None:
-                    async for delta in text_stream:
-                        if delta:
-                            accumulated_text_parts.append(delta)
-                            yield format_sse("text", {"delta": delta})
-                final_message = await stream.get_final_message()
+                async for text_delta in stream.text_stream:
+                    if text_delta:
+                        accumulated_text_parts.append(text_delta)
+                        yield _format_sse("text", {"delta": text_delta})
 
-            turn_usage = _extract_usage_dict(getattr(final_message, "usage", None))
+                final_msg = await stream.get_final_message()
+
+            turn_usage = _normalize_usage(getattr(final_msg, "usage", None))
             for k in total_usage:
                 total_usage[k] += turn_usage[k]
-            limiter.record_usage(turn_usage, model=model)
 
-            stop_reason = getattr(final_message, "stop_reason", None)
-            content_blocks = list(getattr(final_message, "content", []) or [])
+            raw_content = getattr(final_msg, "content", []) or []
+            assistant_blocks: list[dict[str, Any]] = []
+            tool_calls: list[dict[str, Any]] = []
 
-            if stop_reason == "refusal":
-                refusal_msg = (
-                    "I can only answer questions about FireChronos Peru's harmonized fire activity series "
-                    "and methodology."
+            for blk in raw_content:
+                blk_type = getattr(blk, "type", None) or (blk.get("type") if isinstance(blk, dict) else None)
+                if blk_type == "thinking":
+                    thinking_val = getattr(blk, "thinking", None) or (blk.get("thinking") if isinstance(blk, dict) else "")
+                    signature_val = getattr(blk, "signature", None) or (blk.get("signature") if isinstance(blk, dict) else "")
+                    block_dict: dict[str, Any] = {"type": "thinking", "thinking": thinking_val}
+                    if signature_val:
+                        block_dict["signature"] = signature_val
+                    assistant_blocks.append(block_dict)
+                elif blk_type == "text":
+                    text_val = getattr(blk, "text", None) or (blk.get("text") if isinstance(blk, dict) else "")
+                    assistant_blocks.append({"type": "text", "text": text_val})
+                elif blk_type == "tool_use":
+                    tool_id = getattr(blk, "id", None) or (blk.get("id") if isinstance(blk, dict) else "")
+                    tool_name = getattr(blk, "name", None) or (blk.get("name") if isinstance(blk, dict) else "")
+                    tool_input = getattr(blk, "input", None) or (blk.get("input") if isinstance(blk, dict) else {})
+                    tool_dict = {"type": "tool_use", "id": tool_id, "name": tool_name, "input": tool_input}
+                    assistant_blocks.append(tool_dict)
+                    tool_calls.append(tool_dict)
+
+            conversation.append({"role": "assistant", "content": assistant_blocks})
+
+            if not tool_calls or getattr(final_msg, "stop_reason", "") != "tool_use":
+                break
+
+            user_tool_results: list[dict[str, Any]] = []
+            for tc in tool_calls:
+                call_id = tc["id"]
+                tool_name = tc["name"]
+                tool_input = tc["input"]
+                tool_label = TOOL_LABELS.get(tool_name, tool_name)
+                yield _format_sse("tool", {"name": tool_name, "id": call_id, "label": tool_label, "input": tool_input})
+
+                tool_result, is_err, chart_event = execute_tool(tool_name, tool_input)
+                tool_results_for_guard.append(tool_result)
+
+                if chart_event is not None and not is_err:
+                    yield _format_sse("chart", chart_event)
+
+                user_tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": call_id,
+                        "content": json.dumps(tool_result, ensure_ascii=False),
+                        "is_error": is_err,
+                    }
                 )
-                yield format_sse("text", {"delta": refusal_msg})
-                yield format_sse("done", {"usage": total_usage})
-                return
 
-            if stop_reason == "max_tokens":
-                incomplete_msg = "\n\n[Response truncated due to token limit.]"
-                yield format_sse("text", {"delta": incomplete_msg})
-                yield format_sse("done", {"usage": total_usage})
-                return
+            conversation.append({"role": "user", "content": user_tool_results})
 
-            if stop_reason == "end_turn":
-                full_text = "".join(accumulated_text_parts)
-                guard_check = verify_figures(full_text, tool_results_for_guard)
-                if not guard_check["verified"]:
-                    yield format_sse(
-                        "notice",
-                        {
-                            "kind": "unverified_figure",
-                            "values": guard_check["unverified_values"],
-                        },
-                    )
-                yield format_sse("done", {"usage": total_usage})
-                return
-
-            if stop_reason == "tool_use":
-                conversation.append({"role": "assistant", "content": content_blocks})
-                tool_result_blocks: list[dict[str, Any]] = []
-
-                for block in content_blocks:
-                    b_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
-                    if b_type != "tool_use":
-                        continue
-                    t_id = block.get("id") if isinstance(block, dict) else getattr(block, "id", "")
-                    t_name = block.get("name") if isinstance(block, dict) else getattr(block, "name", "")
-                    t_input = block.get("input") if isinstance(block, dict) else getattr(block, "input", {})
-
-                    label = TOOL_LABELS.get(t_name, f"Running {t_name}…")
-                    yield format_sse("tool", {"name": t_name, "label": label})
-
-                    res_dict, is_err, chart_event = execute_tool(t_name, t_input)
-                    if not is_err:
-                        tool_results_for_guard.append(res_dict)
-                        if chart_event is not None:
-                            tool_results_for_guard.append(chart_event)
-                            yield format_sse("chart", chart_event)
-
-                    tool_result_blocks.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": t_id,
-                            "content": json.dumps(res_dict, ensure_ascii=False),
-                            "is_error": is_err,
-                        }
-                    )
-
-                conversation.append({"role": "user", "content": tool_result_blocks})
-                if accumulated_text_parts and not accumulated_text_parts[-1].endswith((" ", "\n")):
-                    accumulated_text_parts.append(" ")
-                    yield format_sse("text", {"delta": " "})
-                continue
-
-            break
-
-        cap_notice = "\n\n[Reached maximum tool-consultation turns; showing partial answer above.]"
-        yield format_sse("text", {"delta": cap_notice})
-        full_text = "".join(accumulated_text_parts)
-        guard_check = verify_figures(full_text, tool_results_for_guard)
-        if not guard_check["verified"]:
-            yield format_sse(
+        final_text = "".join(accumulated_text_parts)
+        verification = verify_figures(final_text, tool_results_for_guard)
+        if not verification.get("verified", True):
+            yield _format_sse(
                 "notice",
                 {
                     "kind": "unverified_figure",
-                    "values": guard_check["unverified_values"],
+                    "values": verification.get("unverified_values", []),
+                    "message": "Some figures in the response could not be verified against tool outputs.",
                 },
             )
-        yield format_sse("done", {"usage": total_usage})
 
-    except Exception as exc:
-        yield format_sse(
-            "error",
-            {"message": f"Assistant error while processing your question: {exc}"},
+        limiter.record_usage(total_usage, model=model)
+        yield _format_sse(
+            "done",
+            {
+                "verified": verification.get("verified", True),
+                "tools_used": [t.get("name", "") for t in tool_results_for_guard if "name" in t],
+                "usage": total_usage,
+            },
         )
+    except Exception as exc:
+        yield _format_sse("error", {"message": f"Assistant error: {exc}"})
+
+
+async def stream_chat_turns(
+    messages: list[dict[str, Any]],
+    region: str | None,
+    locale: str | None,
+) -> AsyncIterator[str]:
+    client = _create_client()
+    provider = get_chat_provider()
+    # Check if client is custom/fake (e.g. tests)
+    if hasattr(client, "beta") or hasattr(client, "messages"):
+        async for chunk in _stream_anthropic_turns(client, messages, region, locale):
+            yield chunk
+    elif provider == "gemini":
+        async for chunk in _stream_gemini_turns(client, messages, region, locale):
+            yield chunk
+    else:
+        async for chunk in _stream_anthropic_turns(client, messages, region, locale):
+            yield chunk
 
 
 @router.post("/chat")
-async def post_chat(payload: ChatRequestPayload, request: Request) -> StreamingResponse:
-    enabled, reason = is_chat_enabled()
+async def chat_endpoint(request: Request, payload: ChatRequest) -> StreamingResponse:
+    enabled, disabled_msg = is_chat_enabled()
     if not enabled:
-        raise HTTPException(status_code=503, detail=reason)
-
-    budget_err = limiter.check_budget()
-    if budget_err:
-        raise HTTPException(status_code=503, detail=budget_err)
-
-    validation_err = validate_chat_request(payload.messages)
-    if validation_err:
-        raise HTTPException(status_code=422, detail=validation_err)
+        raise HTTPException(status_code=503, detail=disabled_msg)
 
     client_ip = request.client.host if request.client else "unknown"
-    rate_err = limiter.check_and_record_ip(client_ip)
-    if rate_err:
-        raise HTTPException(status_code=429, detail=rate_err)
+    rate_error = limiter.check_and_record_ip(client_ip)
+    if rate_error:
+        raise HTTPException(status_code=429, detail=rate_error)
 
+    budget_error = limiter.check_budget()
+    if budget_error:
+        raise HTTPException(status_code=429, detail=budget_error)
+
+    raw_messages = [m.model_dump() for m in payload.messages]
+
+    validation_error = validate_chat_request(raw_messages)
+    if validation_error:
+        raise HTTPException(status_code=422, detail=validation_error)
+
+    if payload.region and payload.region not in VALID_REGIONS:
+        raise HTTPException(status_code=422, detail=f"Invalid region: {payload.region}")
+
+    generator = stream_chat_turns(
+        messages=raw_messages,
+        region=payload.region,
+        locale=payload.locale,
+    )
     return StreamingResponse(
-        stream_chat_turns(payload.messages, payload.region, payload.locale),
+        generator,
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -98,3 +98,14 @@ def test_validate_chat_request_limits():
     assert validate_chat_request(too_long) is not None
     valid = [{"role": "user", "content": "Was 2024 a high fire year in the Amazon?"}]
     assert validate_chat_request(valid) is None
+
+
+def test_price_overrides_from_environment(monkeypatch):
+    from api.chat_guard import compute_usage_cost_usd
+    usage = {"input_tokens": 1_000_000, "output_tokens": 1_000_000}
+    monkeypatch.delenv("CHAT_PRICE_INPUT_PER_MTOK", raising=False)
+    monkeypatch.delenv("CHAT_PRICE_OUTPUT_PER_MTOK", raising=False)
+    assert compute_usage_cost_usd(usage, model="unknown-model") == 24.0
+    monkeypatch.setenv("CHAT_PRICE_INPUT_PER_MTOK", "0.1")
+    monkeypatch.setenv("CHAT_PRICE_OUTPUT_PER_MTOK", "0.4")
+    assert abs(compute_usage_cost_usd(usage, model="gemini-3.1-flash-lite") - 0.5) < 1e-9
