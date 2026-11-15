@@ -494,7 +494,7 @@ export default function App() {
             )}
           </div>
           {outlook ? (
-            <p className="fc-float pointer-events-auto m-0 flex h-10 items-center rounded-xl border-dashed !border-forecast px-3 text-sm font-semibold text-forecast">{t("outlook.mapBadge")}</p>
+            <p className="fc-float pointer-events-auto m-0 hidden h-10 items-center whitespace-nowrap rounded-xl border-dashed !border-forecast px-3 text-sm font-semibold text-forecast sm:flex">{t("outlook.mapBadge")}</p>
           ) : (
             <LayerSwitcher layer={layer} onLayer={setLayer} heat={img.heat} onHeat={toggleHeat} group={group} onGroup={(g) => { setGroup(g); setSub(DEFAULT_SUB[g]); }} />
           )}

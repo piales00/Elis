@@ -139,3 +139,23 @@ Inter para toda la interfaz, con `tabular-nums` en cifras. Manrope solo para la 
 ## Accesibilidad
 
 Riel como `nav` con `aria-current`; panel como `region` con título; barra de tiempo como `slider` con flechas, Inicio/Fin y `aria-valuetext`; foco visible en todo; tabla de celdas como alternativa textual al mapa; contraste AA en los dos temas.
+
+## Implementación (estado en la rama)
+
+Nuevos: `web/src/components/shell/` (Rail, TimeRibbon, LayerSwitcher, CommandPalette, Tour, StatusChip, MapBoundary, icons, `useOutlookLayer`, `useLabelContrast`, `views/*`), `web/src/hooks/useCellView.js` (lógica de `MapSection` extraída), `web/src/hooks/useForecast.js`, `web/src/lib/forecast.js`, `web/src/lib/status.js`.
+
+Archivos existentes tocados (cambios pequeños, para integrar con otras ramas):
+
+- `App.jsx`: reescrito como shell de herramienta.
+- `MapView.jsx`: props `fill` (ocupa el contenedor, controles abajo a la derecha, sin gestos cooperativos ni botón de reset propio) y `onReady(map)`.
+- `imagery/ImageryControls.jsx`: prop `compact` (oculta vista, fecha, bases y calor, que ya están en la barra de capas y en la línea de tiempo).
+- `chat/ChatPanel.jsx`: props `embedded` y `onOpenMethod`.
+- `data/client.js`: `getForecast(region?)` (en mock lanza `NoDataError`).
+- `hooks/useRegionData.js`: `useRegions` devuelve también `departments`.
+- `NormalChart`, `FireClock`, `SlotDetails`, `HowWeCalculated`, `imagery/RawVsCorrected`: breakpoints de viewport cambiados por container queries (`@3xl:` etc.) para que funcionen dentro del panel.
+- `index.css`: tokens claro/oscuro y estilos del shell; `vite.config.js`: proxy `/api` configurable con `VITE_API_PROXY`.
+- `i18n/locales/en.js` y `es.js`: claves nuevas.
+
+`Header`, `Hero`, `Section`, `MapSection` y `TimeBar` quedan sin uso; se pueden borrar al integrar.
+
+URL: `?view=&region=&y=&m=&unit=`; `?tour=1` abre el recorrido y `?tour=auto` lo reproduce solo.
