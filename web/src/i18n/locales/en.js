@@ -339,6 +339,8 @@ export default {
   "month.10": "Oct",
   "month.11": "Nov",
   "month.12": "Dec",
+  "chat.autopilot": "{seconds}s Autopilot",
+  "chat.greeting": "I’m Elis, your assistant for Peru’s harmonized MODIS–VIIRS fire record, 2000–2026. Explore the 2012 sensor artifact, the record with its 90% range, compare MODIS and VIIRS in a region and month, inspect the seasonal outlook separately from observations, or explore continuity after MODIS with the emulator.",
   "chat.trigger": "Ask Elis",
   "chat.title": "Ask Elis",
   "chat.subtitle": "Verified answers and charts from the harmonized 2000–2026 fire series.",

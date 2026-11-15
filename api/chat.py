@@ -249,8 +249,8 @@ def _build_decision_suggestions(
 
     target = label_es if is_es else label_en
     asked_forecast = any(w in q for w in ("pronostico", "pronóstico", "2027", "forecast", "outlook", "alerta temprana"))
-    asked_actions = any(
-        w in q for w in ("accion", "acción", "acciones", "indeci", "serfor", "minam", "presupuesto", "interven", "que hacer", "qué hacer", "action", "deploy", "t-60")
+    asked_continuity = any(
+        w in q for w in ("continuity", "continuidad", "emulador", "emulator")
     )
     asked_sensors = any(w in q for w in ("sensor", "modis", "viirs", "2012", "desacuerdo", "chapman", "salto", "disagreement"))
 
@@ -259,25 +259,25 @@ def _build_decision_suggestions(
         chips.append({
             "id": "ChipForecast2027",
             "label": f"🔮 Pronóstico 2027: {target}" if is_es else f"🔮 2027 Outlook: {target}",
-            "prompt": f"¿Cuál es el pronóstico estacional 2027, el rango al 90% y el nivel de alerta para {target}?" if is_es else f"What is the 2027 seasonal outlook, 90% range, and alert level for {target}?",
+            "prompt": f"¿Cuál es el pronóstico estacional 2027, el rango al 90% y la clase de anomalía para {target}?" if is_es else f"What is the 2027 seasonal outlook, 90% range, and anomaly class for {target}?",
             "region": macro,
             "cameraKey": camera,
             "mode3d": True,
         })
-    if not asked_actions:
+    if not asked_continuity:
         chips.append({
-            "id": "ChipActionT60",
-            "label": f"🛡️ Plan Operativo T-60d ({target})" if is_es else f"🛡️ T-60d Action Plan ({target})",
-            "prompt": f"¿Qué acciones operativas e intervención preventiva T-60d (INDECI / SERFOR / SERNANP) se recomiendan en {target}?" if is_es else f"What T-60d preventive operational actions (INDECI / SERFOR / SERNANP) are recommended in {target}?",
+            "id": "ChipContinuity",
+            "label": f"🛡️ Continuidad tras MODIS ({target})" if is_es else f"🛡️ Continuity after MODIS ({target})",
+            "prompt": f"¿Cómo mantiene el emulador la escala MODIS y cuáles son sus límites en {target}?" if is_es else f"How does the emulator maintain the MODIS scale and what are its limits in {target}?",
             "region": macro,
             "cameraKey": camera,
             "mode3d": True,
         })
     if not asked_sensors:
         chips.append({
-            "id": "ChipSensorRegime",
-            "label": "🛰️ Régimen: Quema vs. Bosque (Sensores)" if is_es else "🛰️ Fire Regime: Pasture vs. Forest",
-            "prompt": f"¿Qué revela la diferencia entre MODIS y VIIRS sobre el tipo de fuego en {target}?" if is_es else f"What does MODIS vs. VIIRS sensor disagreement reveal about the fire regime in {target}?",
+            "id": "ChipSensorComparison",
+            "label": "🛰️ Comparar MODIS y VIIRS" if is_es else "🛰️ Compare MODIS and VIIRS",
+            "prompt": f"Compara MODIS y VIIRS para septiembre en {target}?" if is_es else f"Compare MODIS and VIIRS for September in {target}?",
             "region": macro,
             "cameraKey": camera,
             "mode3d": False,
@@ -309,7 +309,7 @@ def _prepare_messages(
             lang_hint = locale or "es"
             prepared[-1]["content"] = (
                 f"{raw_user_text}\n\n[Context: user locale: {lang_hint}. "
-                "This is a conversational greeting. Do NOT call any tools; reply warmly in 2 short sentences as Elis and suggest 3 concrete topics to explore.]"
+                "This is a conversational greeting. Do NOT call any tools; reply warmly in 2 short sentences as Elis and suggest the challenge topics from the system prompt.]"
             )
             return prepared
         extra: list[str] = []

@@ -1,3 +1,4 @@
+import { AUTOPILOT_SECONDS } from "./ElisSpotlight.jsx";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import {
@@ -37,7 +38,7 @@ export default function ChatPanel({
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = turns.length ? scrollRef.current.scrollHeight : 0;
     }
   }, [turns, streaming, open]);
 
@@ -67,7 +68,7 @@ export default function ChatPanel({
       tools: built.tools || [],
       chart: built.chart || null,
       unverified: [],
-      verified: true,
+      verified: built.verified,
       isPreset: true,
       suggestions: buildDecisionSuggestions({ question: questionText, region: targetRegion, locale }),
       done: true,
@@ -291,24 +292,25 @@ export default function ChatPanel({
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {turns.length === 0 && <p className="rounded-xl border border-line bg-surface p-3 text-sm leading-relaxed">{t("chat.greeting")}</p>}
             {onLaunchMission && (
               <div className="rounded-xl border border-forecast/40 bg-forecast/10 p-3.5">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
-                    {locale === "es" ? "🛰️ HUD CENTRAL EN EL MAPA" : "🛰️ CENTER STAGE MISSION HUD"}
+                    {locale === "es" ? "HUD EN EL MAPA" : "MAP MISSION HUD"}
                   </span>
                   <button
                     type="button"
                     onClick={() => onLaunchMission("artifact", true)}
                     className="rounded-md bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
                   >
-                    ▶ {locale === "es" ? "Autopiloto 60s" : "60s Autopilot"}
+                    ▶ {t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
                   </button>
                 </div>
                 <p className="m-0 mb-2.5 text-xs text-muted">
                   {locale === "es"
-                    ? "Proyecta las 4 misiones científicas con métricas animadas y vuelo 3D directamente en el centro del mapa:"
-                    : "Project the 4 scientific briefings with animated KPIs and 3D fly-to directly over the center map:"}
+                    ? "Explora cuatro misiones del reto con gráficos, rangos de incertidumbre y navegación 3D:"
+                    : "Explore four challenge briefings with charts, uncertainty ranges and 3D navigation:"}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
@@ -323,21 +325,21 @@ export default function ChatPanel({
                     onClick={() => onLaunchMission("amazon3d", false)}
                     className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
                   >
-                    🛰️ {locale === "es" ? "Amazonía 3D (2024)" : "Amazon 3D (2024)"}
+                    🛰️ {locale === "es" ? "Amazonía 3D (2010)" : "Amazon 3D (2010)"}
                   </button>
                   <button
                     type="button"
                     onClick={() => onLaunchMission("disagreement", false)}
                     className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
                   >
-                    🏛️ {locale === "es" ? "Machu Picchu / Cusco" : "Machu Picchu / Cusco"}
+                    {locale === "es" ? "Continuidad tras MODIS" : "Continuity after MODIS"}
                   </button>
                   <button
                     type="button"
                     onClick={() => onLaunchMission("earlywarning", false)}
                     className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
                   >
-                    🛡️ {locale === "es" ? "Pronóstico 2027 INDECI" : "2027 INDECI Outlook"}
+                    🛡️ {locale === "es" ? "Pronóstico de temporada" : "Seasonal outlook"}
                   </button>
                 </div>
               </div>
@@ -354,13 +356,13 @@ export default function ChatPanel({
                   onClick={() =>
                     runLiveQuestion(
                       locale === "es"
-                        ? "¿Cuál es el pronóstico 2027 y el régimen de incendios en Cusco y Machu Picchu?"
-                        : "What is the 2027 fire season outlook and fire regime for Cusco and Machu Picchu?",
+                        ? "¿Cuál es el pronóstico de temporada de 2027 para Cusco, con su rango y método?"
+                        : "What is the 2027 seasonal outlook for Cusco, including its range and method?",
                     )
                   }
                   className="w-full rounded-lg border border-forecast/40 bg-forecast/10 px-3 py-2 text-left text-xs font-semibold text-forecast transition hover:border-forecast disabled:opacity-50 cursor-pointer"
                 >
-                  🏛️ {locale === "es" ? "¿Pronóstico 2027 e incendios en Cusco y Machu Picchu?" : "What is the 2027 outlook & fire regime in Cusco / Machu Picchu?"}
+                  🏛️ {locale === "es" ? "¿Pronóstico 2027 para Cusco con incertidumbre?" : "What is the 2027 Cusco outlook and uncertainty?"}
                 </button>
                 {PRESET_QUESTIONS.map((preset) => (
                   <button
@@ -411,7 +413,7 @@ export default function ChatPanel({
                           ⚙ {tl.name}
                         </span>
                       ))}
-                    {turn.done && !turn.error && turn.verified && (
+                    {turn.done && !turn.error && turn.verified && (turn.isPreset || turn.tools?.length > 0) && /\d/.test(turn.content) && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-line bg-bg px-2 py-0.5 text-[11px] font-medium text-[var(--c-viirs)]">
                         ✓ {t("chat.badge.verified")}
                       </span>
