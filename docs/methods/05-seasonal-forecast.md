@@ -1,6 +1,6 @@
 # 05 · Seasonal fire outlook
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 **Everything in this note is a forecast, not an observation**, except the rows marked *observed*.
 

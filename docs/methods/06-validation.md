@@ -1,6 +1,6 @@
 # 06 · Validation
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 ## Purpose
 

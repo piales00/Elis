@@ -1,6 +1,6 @@
 # 03 · Three satellites: dependence, flicker and why we do not use ×3
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 ## Purpose
 

@@ -1,6 +1,6 @@
 # 01 · Harmonization: capture–recapture on simultaneous overpasses
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026, *Harmonization of MODIS and VIIRS Hot Spots*
+Elis · Team Log N + 1 · NASA Space Apps 2026, *Harmonization of MODIS and VIIRS Hot Spots*
 
 ## Purpose
 
