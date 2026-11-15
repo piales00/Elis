@@ -216,3 +216,9 @@ def test_live(client, monkeypatch, tmp_path):
     assert client.get('/live').json()['latest_prediction'] == {'date': '2026-11-12'}
     preflight = client.options('/live', headers={'Origin': 'https://example.org', 'Access-Control-Request-Method': 'POST'})
     assert preflight.status_code == 400
+
+
+def test_health(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

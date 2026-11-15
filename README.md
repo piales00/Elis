@@ -16,8 +16,8 @@ MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire
 
 The unit is the **fire cell-day**: a 0.1° cell (about 11 km) on a date with at least one detection. It is not a count of fires and not hectares.
 
-- **Capture–recapture harmonization.** The Chapman estimator, calibrated only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart, estimates total fire including fire neither sensor saw. On those days the sensors agree on 80 % of Aqua cell-days, against 55–58 % when they pass 20–60 minutes apart. The false ×8.9 jump becomes ×1.36.
-- **Validation.** On the held-out years 2021–2024 the Aqua-only and VIIRS-only reconstructions of Peru differ by 3.5 % per year, against 334 % for the naive sum. The record correlates with MapBiomas burned area at 0.72 (0.85–0.98 within each Landsat era).
+- **Capture–recapture harmonization.** The Chapman estimator, calibrated only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart, estimates total fire including fire neither sensor saw. On those days the sensors agree on 80 % of Aqua cell-days, against 55–58 % when they pass 20–60 minutes apart. Aqua-era estimates are corrected for the Aqua-vs-VIIRS gap measured on 2013–2020. The false ×8.9 jump becomes ×1.39.
+- **Validation.** On the held-out years 2021–2024 the bias-corrected Aqua-only and the VIIRS-only reconstructions of Peru differ by 3.8 % per year (Amazon 2.3 %, Andes 7.0 %, Coast 9.0 %), against 334 % for the naive sum. The record correlates with MapBiomas burned area at 0.75 (0.85–0.98 within each Landsat era).
 - **MODIS emulator.** A gradient-boosting model (AUC 0.76) checks the record and shows that the drifting Aqua orbit sees 29 % fewer fire cell-days than an on-time Aqua in 2026.
 - **Honest uncertainty.** A three-satellite model and a simulator show the sensors are positively dependent, so the record is a lower bound, roughly 10–15 % low. No correction passed our tests, so none is applied. Every number has a 90 % range.
 - **Seasonal outlook.** A forecast built on the record beats climatology in a leave-one-year-out backtest. Forecasts are always labelled and kept apart from observations.
@@ -60,7 +60,11 @@ Build the data, in this order (parameters live in `scripts/config.py`):
 .venv/bin/python scripts/fetch_power.py
 .venv/bin/python scripts/forecast.py
 .venv/bin/python scripts/forecast_v2.py
+.venv/bin/python scripts/continuity.py
+.venv/bin/python scripts/export_static.py
 ```
+
+`export_static.py` runs last: it copies a snapshot of the published files to `web/public/data/` (about 11 MB, one compact map file per month). The web app reads the API first and switches to this snapshot automatically if the API does not answer within 7 s, so regenerate it whenever `data/processed/` changes.
 
 Start the API (it serves the precomputed files in `data/processed/`; interactive docs at `http://127.0.0.1:8000/docs`):
 
@@ -81,6 +85,8 @@ The web app reads `VITE_DATA_SOURCE` (`mock`, the default, uses the sample data 
 ```bash
 VITE_DATA_SOURCE=api VITE_API_BASE=http://localhost:8000 npm run dev
 ```
+
+With `VITE_DATA_SOURCE=api`, if the API is down or asleep the app keeps working from the static snapshot in `web/public/data/`, shows an "Archived data snapshot" badge, and retries the API every 60 s. The live check reads the daily sealed predictions from the public [elis-live](https://github.com/piales00/elis-live) repository first (`VITE_LIVE_FEED_URL` overrides its base URL), then the API, then the snapshot.
 
 The optional "Ask the data" assistant is off unless `CHAT_ENABLED=1` and `ANTHROPIC_API_KEY` are set for the API.
 

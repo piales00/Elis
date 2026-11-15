@@ -7,6 +7,7 @@ import {
 } from "../../data/chat.js";
 import ChatChart from "./ChatChart.jsx";
 import Icon from "../shell/icons.jsx";
+import { useDataMode } from "../../hooks/useDataMode.js";
 
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_INPUT_CHARS = 600;
@@ -20,6 +21,7 @@ export default function ChatPanel({
   onOpenMethod,
 }) {
   const { locale, t } = useI18n();
+  const snapshot = useDataMode() === "fallback";
   const [openState, setOpen] = useState(false);
   const open = embedded || openState;
   const [input, setInput] = useState("");
@@ -89,7 +91,7 @@ export default function ChatPanel({
 
   const runLiveQuestion = async (questionText) => {
     const trimmed = questionText.trim();
-    if (!trimmed || streaming) return;
+    if (!trimmed || streaming || snapshot) return;
 
     const userTurnId = `u-${Date.now()}`;
     const assistantTurnId = `a-${Date.now() + 1}`;
@@ -200,7 +202,7 @@ export default function ChatPanel({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!input.trim() || streaming) return;
+    if (!input.trim() || streaming || snapshot) return;
     const q = input;
     setInput("");
     runLiveQuestion(q);
@@ -291,7 +293,13 @@ export default function ChatPanel({
               </div>
             </div>
 
-            {liveStatus === "unavailable" && (
+            {snapshot && (
+              <div role="status" className="rounded-xl border border-line bg-warn-bg px-3 py-2 text-xs font-medium text-warn-fg">
+                {t("chat.status.snapshot")}
+              </div>
+            )}
+
+            {!snapshot && liveStatus === "unavailable" && (
               <div className="rounded-xl border border-line bg-warn-bg px-3 py-2 text-xs font-medium text-warn-fg">
                 {t("chat.status.offlineFallback")}
               </div>
@@ -395,15 +403,15 @@ export default function ChatPanel({
                 type="text"
                 value={input}
                 maxLength={MAX_INPUT_CHARS}
-                disabled={streaming}
+                disabled={streaming || snapshot}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={t("chat.input.placeholder")}
-                aria-label={t("chat.input.placeholder")}
+                placeholder={t(snapshot ? "chat.input.snapshot" : "chat.input.placeholder")}
+                aria-label={t(snapshot ? "chat.input.snapshot" : "chat.input.placeholder")}
                 className="flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-est focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={streaming || !input.trim()}
+                disabled={streaming || snapshot || !input.trim()}
                 className="rounded-xl bg-accent px-3.5 py-2 text-xs font-semibold text-on-accent transition hover:opacity-90 disabled:opacity-40 cursor-pointer"
               >
                 {streaming ? "…" : t("chat.send")}

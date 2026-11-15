@@ -6,6 +6,7 @@ if (source !== "mock" && source !== "api") {
 
 export const DATA_SOURCE = source;
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+export const LIVE_FEED_URL = (import.meta.env.VITE_LIVE_FEED_URL ?? "https://raw.githubusercontent.com/piales00/elis-live/main/data/processed/live").replace(/\/$/, "");
 export const FIRST_YEAR = 2000;
 export const LAST_YEAR = 2026;
 export const DEFAULT_PERIOD = { year: 2024, month: 9 };

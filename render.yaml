@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: elis-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+      - key: CHAT_ENABLED
+        value: "0"
+      - key: CHAT_DAILY_BUDGET_USD
+        value: "0.5"

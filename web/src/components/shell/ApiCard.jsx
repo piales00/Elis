@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { API_BASE } from "../../config.js";
-import { isMock } from "../../data/client.js";
+import { isMock, staticUrl } from "../../data/client.js";
+import { useDataMode } from "../../hooks/useDataMode.js";
 import Icon from "./icons.jsx";
 
 const REPO = "https://github.com/piales00/Elis";
@@ -322,7 +323,7 @@ function useSizes(files) {
     (async () => {
       for (const f of files) {
         try {
-          const res = await fetch(f.href, { signal: ctrl.signal });
+          const res = await fetch(f.href, { signal: AbortSignal.any([ctrl.signal, AbortSignal.timeout(8000)]) });
           const len = Number(res.headers.get("content-length"));
           const size = len > 0 ? len : (await res.blob()).size;
           if (len > 0) res.body?.cancel?.();
@@ -396,12 +397,14 @@ function Citation({ text }) {
 export default function ApiCard({ regionIds, note }) {
   const { t } = useI18n();
   const root = apiRoot();
+  const snapshot = useDataMode() === "fallback";
   const routes = buildRoutes(root);
-  const seriesFiles = regionIds.map((id) => ({ label: t(`region.${id}`), href: `${root}/series?region=${id}`, name: `series_${id}.json`, format: "JSON" }));
+  const fileHref = (apiPath, file) => (snapshot ? staticUrl(file) : `${root}${apiPath}`);
+  const seriesFiles = regionIds.map((id) => ({ label: t(`region.${id}`), href: fileHref(`/series?region=${id}`, `series/${id}.json`), name: `series_${id}.json`, format: "JSON" }));
   const otherFiles = [
-    { label: t("api.download.forecast"), href: `${root}/forecast`, name: "forecast.json", format: "JSON" },
-    { label: t("api.download.methodology"), href: `${root}/methodology`, name: "methodology.json", format: "JSON" },
-    { label: t("api.download.regions"), href: `${root}/regions`, name: "regions.geojson", format: "GeoJSON" },
+    { label: t("api.download.forecast"), href: fileHref("/forecast", "forecast.json"), name: "forecast.json", format: "JSON" },
+    { label: t("api.download.methodology"), href: fileHref("/methodology", "methodology.json"), name: "methodology.json", format: "JSON" },
+    { label: t("api.download.regions"), href: fileHref("/regions", "regions.geojson"), name: "regions.geojson", format: "GeoJSON" },
     { label: t("api.download.report"), href: "/firechronos-technical-report.pdf", name: "firechronos-technical-report.pdf", format: "PDF" },
   ];
   const sizes = useSizes([...seriesFiles, ...otherFiles]);

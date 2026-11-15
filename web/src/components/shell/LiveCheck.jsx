@@ -5,7 +5,7 @@ import { CopyButton } from "./ApiCard.jsx";
 import Icon from "./icons.jsx";
 import { EVIDENCE_DOCS } from "../../content/evidence.js";
 
-export const LIVE_BRANCH = "https://github.com/piales00/Elis/tree/live-data";
+export const LIVE_REPO = "https://github.com/piales00/elis-live";
 const SAME_RUN_MS = 6 * 3600 * 1000;
 
 let cache = null;
@@ -239,8 +239,9 @@ export default function LiveCheck({ onClose, titleId = "live-title" }) {
             <CopyButton text={sha} label="SHA-256" compact />
           </div>
           <p className="m-0 text-[12px] leading-relaxed text-muted">{t("live.verifyText")}</p>
+          <p className="m-0 text-[12px] leading-relaxed text-muted">{t("live.feedDaily")}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <a className="fc-link inline-flex items-center gap-1 text-[12.5px]" href={LIVE_BRANCH} target="_blank" rel="noopener">
+            <a className="fc-link inline-flex items-center gap-1 text-[12.5px]" href={LIVE_REPO} target="_blank" rel="noopener">
               {t("live.branch")}
               <Icon name="external" size={13} />
             </a>
