@@ -58,7 +58,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     else map.flyTo({ ...camera, duration: 1800 });
   };
 
-  const resetView = () => {
+  const resetView = (e) => {
     const map = mapRef.current;
     const country = live.current.regions?.features.find((f) => f.properties.id === "peru");
     if (!map || !country) return;
@@ -66,8 +66,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     popupRef.current?.remove();
     const bounds = featureBounds(country);
     const options = { padding: fill ? mapPadding(map) : 32, pitch: 0, bearing: 0 };
-    if (prefersReducedMotion()) map.jumpTo({ ...map.cameraForBounds(bounds, options), ...options });
-    else map.fitBounds(bounds, { ...options, duration: 700 });
+    map.fitBounds(bounds, { ...options, duration: e?.instant || prefersReducedMotion() ? 0 : 700 });
   };
 
   const finishDrop = (e) => {
