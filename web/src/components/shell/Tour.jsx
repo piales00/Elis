@@ -1,29 +1,22 @@
 import { useEffect, useRef } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../../lib/hooks.js";
-import Icon from "./icons.jsx";
 import { ElisMark } from "./Rail.jsx";
 
-const DAY = { year: 2024, month: 9, day: 10 };
-
 export const TOUR_STEPS = [
-  { id: "cells", view: "explore", region: "peru", period: { year: 2012, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", target: "layers" },
-  { id: "raw", view: "compare", region: "peru", period: { year: 2012, month: 9 }, metric: "raw", layer: "cells", group: "viirs", target: "metric" },
-  { id: "truecolor", view: "explore", region: "amazonia", date: DAY, metric: "estimated", layer: "truecolor", heat: false, target: "layers" },
-  { id: "thermal", view: "explore", region: "amazonia", date: DAY, metric: "estimated", layer: "thermal", heat: false, target: "layers" },
-  { id: "night", view: "explore", region: "amazonia", date: DAY, metric: "estimated", layer: "night", heat: false, target: "layers" },
-  { id: "heat", view: "explore", region: "amazonia", date: DAY, metric: "estimated", layer: "truecolor", heat: true, target: "heat" },
-  { id: "swir", view: "explore", region: "amazonia", date: DAY, metric: "estimated", layer: "swir", heat: false, target: "layers" },
-  { id: "calendar", view: "explore", region: "peru", period: { year: 2024, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", target: "calendar" },
-  { id: "year", view: "year", region: "peru", period: { year: 2026, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", target: "view-year" },
-  { id: "outlook", view: "outlook", region: "peru", unit: "peru", metric: "estimated", layer: "cells", target: "view-outlook" },
-  { id: "continuity", view: "continuity", region: "peru", metric: "estimated", layer: "cells", target: "view-continuity" },
-  { id: "live", view: "explore", region: "peru", period: { year: 2024, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", live: true, target: "live" },
-  { id: "data", view: "data", region: "peru", metric: "estimated", layer: "cells", target: "view-data" },
+  { id: "cells", view: "explore", target: "layers" },
+  { id: "imagery", view: "explore", layer: "truecolor", target: "layers" },
+  { id: "terrain", view: "explore", target: "terrain" },
+  { id: "hud", view: "explore", target: "hud" },
+  { id: "ask", view: "ask", target: "view-ask" },
+  { id: "compare", view: "compare", metric: "raw", target: "metric" },
+  { id: "continuity", view: "continuity", target: "view-continuity" },
+  { id: "outlook", view: "outlook", target: "view-outlook" },
+  { id: "live", view: "explore", live: true, target: "live" },
+  { id: "data", view: "data", target: "view-data" },
 ];
 
-export const AUTO_SKIP = new Set(["thermal", "night", "swir", "calendar", "year", "continuity", "live"]);
-export const AUTO_STEPS = TOUR_STEPS.filter((s) => !AUTO_SKIP.has(s.id));
+export const AUTO_STEPS = TOUR_STEPS.filter((s) => ["cells", "imagery", "hud", "ask", "outlook", "data"].includes(s.id));
 
 export const TOUR_STEP_MS = 5000;
 
@@ -31,28 +24,51 @@ export function tourSteps(auto) {
   return auto ? AUTO_STEPS : TOUR_STEPS;
 }
 
-function useSpotlight(target) {
+function useSpotlight(target, onPrepare) {
+  const prepare = useRef(onPrepare);
+  prepare.current = onPrepare;
   useEffect(() => {
-    if (!target) return;
+    const visible = (el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden";
+    let recovering = false;
     const mark = () => {
-      document.querySelectorAll("[data-tour-spot]").forEach((el) => el.removeAttribute("data-tour-spot"));
-      document.querySelectorAll(`[data-tour="${target}"]`).forEach((el) => el.setAttribute("data-tour-spot", ""));
+      const candidates = [...document.querySelectorAll(`[data-tour="${target}"]`)];
+      const found = candidates.find(visible);
+      if (found) recovering = false;
+      else if (!recovering) {
+        recovering = true;
+        prepare.current?.();
+      }
+      const selected = found || document.querySelector('[data-tour="active-panel"]');
+      document.querySelectorAll("[data-tour-spot]").forEach((el) => {
+        if (el !== selected) el.removeAttribute("data-tour-spot");
+      });
+      if (selected && visible(selected) && !selected.hasAttribute("data-tour-spot")) {
+        selected.setAttribute("data-tour-spot", "");
+        if (selected.closest("nav")) selected.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
     };
+    const observer = new MutationObserver(mark);
+    observer.observe(document.getElementById("root"), { childList: true, subtree: true });
+    window.addEventListener("resize", mark);
+    window.addEventListener("scroll", mark, true);
     const ids = [setTimeout(mark, 60), setTimeout(mark, 600)];
     return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", mark);
+      window.removeEventListener("scroll", mark, true);
       ids.forEach(clearTimeout);
       document.querySelectorAll("[data-tour-spot]").forEach((el) => el.removeAttribute("data-tour-spot"));
     };
   }, [target]);
 }
 
-export default function TourCard({ step, auto, onStep, onClose, onDone = onClose }) {
+export default function TourCard({ step, auto, onStep, onClose, onDone = onClose, onPrepare }) {
   const { t } = useI18n();
   const steps = tourSteps(auto);
   const total = steps.length;
   const current = steps[step] ?? steps[0];
   const last = step >= total - 1;
-  useSpotlight(current.target);
+  useSpotlight(current.target, onPrepare);
 
   const advance = useRef(null);
   advance.current = () => (last ? onClose() : onStep(step + 1));
@@ -70,7 +86,7 @@ export default function TourCard({ step, auto, onStep, onClose, onDone = onClose
           {auto && <span className="rounded-md border border-line px-1.5 py-px text-[10.5px]">{t("tour.auto")}</span>}
         </p>
         <button type="button" onClick={onClose} aria-label={t("tour.close")} aria-keyshortcuts="Escape" className="fc-icon-btn -mr-1 -mt-1">
-          <Icon name="close" size={16} />
+          {t("tour.skip")}
         </button>
       </div>
       {step === 0 && (

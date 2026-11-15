@@ -1302,7 +1302,7 @@ body {
   bottom: 24px;
   left: auto;
   margin: 0;
-  z-index: 60;
+  z-index: 90;
 }
 .fc-link {
   color: var(--sat);
@@ -1562,7 +1562,7 @@ th.text-right .fc-th-btn {
   display: flex;
   justify-content: flex-end;
   pointer-events: none;
-  z-index: 75;
+  z-index: 90;
 }
 .fc-map-message {
   position: absolute;
@@ -1960,7 +1960,7 @@ th.text-right .fc-th-btn {
     right: 0;
     bottom: calc(68px + env(safe-area-inset-bottom));
     justify-content: center;
-    z-index: 60;
+    z-index: 90;
   }
 }
 

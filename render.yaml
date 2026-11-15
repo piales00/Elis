@@ -13,6 +13,8 @@ services:
         sync: false
       - key: CHAT_PROVIDER
         value: gemini
+      - key: CHAT_FALLBACK_MODEL
+        value: gemini-3.5-flash-lite
       - key: GEMINI_API_KEY
         sync: false
       - key: CHAT_PRICE_INPUT_PER_MTOK

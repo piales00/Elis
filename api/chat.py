@@ -1,6 +1,11 @@
+import asyncio
 import inspect
 import json
+import logging
 import os
+import random
+
+import httpx
 from typing import Any, AsyncIterator, Callable
 
 from fastapi import APIRouter, HTTPException, Request
@@ -19,6 +24,8 @@ DEFAULT_EFFORT = "low"
 MAX_TOKENS = 4000
 MAX_TOOL_TURNS = 6
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -72,7 +79,7 @@ def _create_client() -> Any:
     if provider == "gemini":
         from google import genai
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        return genai.Client(api_key=api_key)
+        return genai.Client(api_key=api_key, http_options={"timeout": 30000, "retry_options": {"attempts": 1}})
     from anthropic import AsyncAnthropic
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     return AsyncAnthropic(api_key=api_key)
@@ -403,15 +410,72 @@ def _open_stream(client: Any, **kwargs: Any) -> Any:
     raise RuntimeError("Client does not expose a compatible stream method.")
 
 
+def _retryable_gemini_error(exc: Exception) -> bool:
+    code = (
+        getattr(exc, "code", None)
+        or getattr(exc, "status_code", None)
+        or getattr(getattr(exc, "response", None), "status_code", None)
+    )
+    return (
+        str(code) in {"429", "500", "503"}
+        or isinstance(exc, (TimeoutError, ConnectionError, httpx.TransportError))
+        or any(status in str(exc).upper() for status in ("UNAVAILABLE", "RESOURCE_EXHAUSTED"))
+    )
+
+
 async def _stream_gemini_turns(
     client: Any,
     messages: list[dict[str, Any]],
     region: str | None,
     locale: str | None,
 ) -> AsyncIterator[str]:
+    primary = get_chat_model()
+    fallback = os.environ.get("CHAT_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip()
+    models = list(dict.fromkeys(model for model in (primary, fallback) if model))
+    emitted_text = False
+    for model in models:
+        for attempt in range(4):
+            pending = []
+            try:
+                async for event in _stream_gemini_attempt(client, messages, region, locale, model):
+                    if event.startswith("event: text\n"):
+                        emitted_text = True
+                    if emitted_text or event.startswith("event: done\n"):
+                        for buffered in pending:
+                            yield buffered
+                        pending.clear()
+                        yield event
+                    else:
+                        pending.append(event)
+                return
+            except Exception as exc:
+                logger.exception("Gemini request failed: model=%s attempt=%s", model, attempt + 1)
+                if emitted_text or not _retryable_gemini_error(exc):
+                    break
+                if attempt < 3:
+                    await asyncio.sleep(2 ** attempt + random.uniform(0, 0.3))
+        if emitted_text:
+            break
+    yield _format_sse("error", {"message": _busy_message(locale)})
+
+
+def _busy_message(locale: str | None) -> str:
+    return (
+        "Elis está muy ocupada ahora. Aquí tienes respuestas verificadas que puedes abrir al instante."
+        if (locale or "en").lower().startswith("es") else
+        "Elis is very busy right now. Here are verified answers you can open instantly."
+    )
+
+
+async def _stream_gemini_attempt(
+    client: Any,
+    messages: list[dict[str, Any]],
+    region: str | None,
+    locale: str | None,
+    model: str,
+) -> AsyncIterator[str]:
     from google.genai import types
 
-    model = get_chat_model()
     gemini_tools = _build_gemini_tools()
     config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT_TEXT,
@@ -437,6 +501,19 @@ async def _stream_gemini_turns(
         "cache_creation_input_tokens": 0,
     }
 
+    async def synthesis_stream(config_synthesis):
+        usage = None
+        try:
+            async for chunk in await client.aio.models.generate_content_stream(
+                model=model, contents=contents, config=config_synthesis,
+            ):
+                usage = getattr(chunk, "usage_metadata", None) or usage
+                yield chunk
+        finally:
+            if usage:
+                total_usage["input_tokens"] += int(getattr(usage, "prompt_token_count", 0) or 0)
+                total_usage["output_tokens"] += int(getattr(usage, "candidates_token_count", 0) or 0)
+
     try:
         for _ in range(MAX_TOOL_TURNS):
             resp = await client.aio.models.generate_content(
@@ -450,29 +527,22 @@ async def _stream_gemini_turns(
 
             fcalls = resp.function_calls or []
             if not fcalls:
-                # If text was already returned in the non-streaming response:
                 if resp.text:
                     accumulated_text_parts.append(resp.text)
                     yield _format_sse("text", {"delta": resp.text})
                 else:
-                    # Stream synthesis using config without tools to force final text
                     config_synthesis = types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT_TEXT,
                         thinking_config=types.ThinkingConfig(thinking_budget=0),
                         temperature=0.2,
                     )
-                    async for chunk in await client.aio.models.generate_content_stream(
-                        model=model,
-                        contents=contents,
-                        config=config_synthesis,
-                    ):
+                    async for chunk in synthesis_stream(config_synthesis):
                         chunk_text = chunk.text or ""
                         if chunk_text:
                             accumulated_text_parts.append(chunk_text)
                             yield _format_sse("text", {"delta": chunk_text})
                 break
 
-            # Handle tool calls
             candidate_content = resp.candidates[0].content
             contents.append(candidate_content)
 
@@ -508,18 +578,13 @@ async def _stream_gemini_turns(
                 chart_emitted = True
                 yield _format_sse("chart", auto_chart)
 
-        # If loop reached MAX_TOOL_TURNS and no text has been generated yet, force a synthesis turn
         if not accumulated_text_parts:
             config_synthesis = types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT_TEXT,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
                 temperature=0.2,
             )
-            async for chunk in await client.aio.models.generate_content_stream(
-                model=model,
-                contents=contents,
-                config=config_synthesis,
-            ):
+            async for chunk in synthesis_stream(config_synthesis):
                 chunk_text = chunk.text or ""
                 if chunk_text:
                     accumulated_text_parts.append(chunk_text)
@@ -538,7 +603,6 @@ async def _stream_gemini_turns(
                 },
             )
 
-        limiter.record_usage(total_usage, model=model)
         yield _format_sse(
             "done",
             {
@@ -548,8 +612,8 @@ async def _stream_gemini_turns(
                 "suggestions": _build_decision_suggestions(messages, [], region, locale),
             },
         )
-    except Exception as exc:
-        yield _format_sse("error", {"message": f"Gemini error: {exc}"})
+    finally:
+        limiter.record_usage(total_usage, model=model)
 
 
 async def _stream_anthropic_turns(
@@ -683,9 +747,13 @@ async def stream_chat_turns(
     region: str | None,
     locale: str | None,
 ) -> AsyncIterator[str]:
-    client = _create_client()
+    try:
+        client = _create_client()
+    except Exception:
+        logger.exception("Assistant client initialization failed")
+        yield _format_sse("error", {"message": _busy_message(locale)})
+        return
     provider = get_chat_provider()
-    # Check if client is custom/fake (e.g. tests)
     if hasattr(client, "beta") or hasattr(client, "messages"):
         async for chunk in _stream_anthropic_turns(client, messages, region, locale):
             yield chunk

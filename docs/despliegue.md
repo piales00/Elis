@@ -257,3 +257,7 @@ El asistente usa Google Gemini por defecto en Render (`CHAT_PROVIDER=gemini`, mo
 | `CHAT_PRICE_OUTPUT_PER_MTOK` | `1.50` (USD por 1M tokens de salida en `gemini-3.1-flash-lite`, o `2.50` en `gemini-3.5-flash-lite`) |
 
 Además, en la consola de Google AI Studio conviene fijar un límite de uso o de gasto en la propia cuenta.
+
+`CHAT_FALLBACK_MODEL` configura el respaldo Gemini (por defecto `gemini-3.5-flash-lite`; vacío lo desactiva). Ante saturación, límites temporales o fallos de red, el chat hace hasta tres reintentos con esperas de aproximadamente 1, 2 y 4 segundos más jitter por modelo. Solo reintenta antes de emitir texto. El consumo se registra con el modelo utilizado; al fallar ambos, ofrece respuestas guardadas sin exponer detalles técnicos.
+
+Las variables `CHAT_PRICE_INPUT_PER_MTOK` y `CHAT_PRICE_OUTPUT_PER_MTOK` personalizan el precio del modelo principal; el respaldo conserva la tarifa propia de `api/chat_guard.py`. Si se configura otro respaldo, se debe añadir su precio a esa tabla.
