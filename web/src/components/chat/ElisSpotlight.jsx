@@ -5,7 +5,7 @@ import FormattedMessage, { detectAlertBadge } from "./FormattedMessage.jsx";
 import { ElisMark } from "../shell/Rail.jsx";
 import Icon from "../shell/icons.jsx";
 
-const AUTOPILOT_MS = 11000;
+const AUTOPILOT_MS = 10000;
 
 function useAnimatedNumber(target, duration = 750) {
   const [val, setVal] = useState(0);
@@ -56,6 +56,8 @@ export const ELIS_MISSIONS = [
       "Adding MODIS (1 km) and VIIRS (375 m) without correction fabricates a 9× jump in 2012 (+333.9% bias). Capture-recapture (Chapman) harmonizes 26 years with 3.77% residual error.",
     summaryEs:
       "Sumar MODIS (1 km) y VIIRS (375 m) sin corregir fabrica un salto falso de 9× en 2012 (+333.9% de sesgo). Captura y recaptura (Chapman) armoniza 26 años con 3.77% de error residual.",
+    userPromptEn: "Why did fire detections appear to explode 9× in 2012?",
+    userPromptEs: "¿Por qué el fuego pareció multiplicarse por 9 en 2012?",
     region: "peru",
     cameraKey: "peru",
     year: 2012,
@@ -66,6 +68,10 @@ export const ELIS_MISSIONS = [
     userRoleEs: "MINAM · Acuerdo de París (NDC)",
     actionEn: "Replaces the fake +16.8%/yr raw trend with the true +0.18%/yr baseline for national carbon inventories.",
     actionEs: "Corrige la tendencia artificial de +16.8%/año a la real (+0.18%/año) en el inventario nacional de emisiones.",
+    decisionChips: [
+      { labelEn: "📊 Compare 2012 Raw vs Chapman", labelEs: "📊 Comparar 2012 Crudo vs Chapman", action: "chart" },
+      { labelEn: "🔮 View 2027 Season Outlook", labelEs: "🔮 Ver Pronóstico 2027", action: "outlook" },
+    ],
     stats: [
       {
         value: 333.9,
@@ -116,6 +122,8 @@ export const ELIS_MISSIONS = [
       "In September, VIIRS captures 84.9% of active fire cell-days in the Amazon while MODIS sees 21.5%. Harmonizing proves 2005 and 2010 megadroughts remain the record highs, with Sept 2024 ranking 3rd.",
     summaryEs:
       "En septiembre, VIIRS captura el 84.9% de celdas-día de fuego en la Amazonía y MODIS solo el 21.5%. Al armonizar, las megasequías de 2005 y 2010 lideran la historia y septiembre 2024 ocupa el 3.er lugar.",
+    userPromptEn: "Are Amazon fires continuous deforestation fronts or small burns?",
+    userPromptEs: "¿Son frentes continuos de deforestación o quemas aisladas en Amazonía?",
     region: "amazonia",
     cameraKey: "madre_de_dios",
     year: 2024,
@@ -126,6 +134,10 @@ export const ELIS_MISSIONS = [
     userRoleEs: "SERNANP y Fiscalías Ambientales (FEMA)",
     actionEn: "Directs aerial interdiction to persistent canopy fire corridors in Madre de Dios & Ucayali.",
     actionEs: "Dirige vigilancia e interdicción aérea a corredores de fuego persistente en Madre de Dios y Ucayali.",
+    decisionChips: [
+      { labelEn: "🛰️ 3D Amazon Relief", labelEs: "🛰️ Relieve 3D Amazonía", action: "3d" },
+      { labelEn: "💬 Ask Elis About Megadroughts", labelEs: "💬 Preguntar por Megasequías", action: "chat" },
+    ],
     stats: [
       {
         value: 84.9,
@@ -176,6 +188,8 @@ export const ELIS_MISSIONS = [
       "In the Andes (Cusco / Sacred Valley), VIIRS detects 4.1× more activity than MODIS because fragmented pasture burns (1 VIIRS spot) have only 7% MODIS recall. For the 2027 season, Cusco is projected at High Alert (1,788 cell-days vs 1,261 median).",
     summaryEs:
       "En Cusco y el cañón de Machu Picchu, VIIRS detecta 4.1× más actividad que MODIS porque son quemas fragmentadas de pastizal (MODIS solo ve el 7%). Para la temporada 2027, Cusco tiene Alerta Alta (1,788 celdas-día predichas vs 1,261 histórica).",
+    userPromptEn: "What is the fire regime in Machu Picchu and why do raw sensors fail?",
+    userPromptEs: "¿Cuál es el riesgo en Machu Picchu y por qué fallan los satélites tradicionales?",
     region: "sierra",
     cameraKey: "cusco",
     year: 2024,
@@ -186,6 +200,10 @@ export const ELIS_MISSIONS = [
     userRoleEs: "SERNANP Machu Picchu · GORE Cusco · MIDAGRI",
     actionEn: "Deploy controlled community burn calendars and buffer-zone patrols in Urubamba ahead of the Aug–Oct 2027 High-risk season.",
     actionEs: "Activar calendarios de quema controlada y patrullaje perimetral en Urubamba antes de la temporada Alta ago–oct 2027.",
+    decisionChips: [
+      { labelEn: "🛡️ Andes Pre-positioning", labelEs: "🛡️ Pre-posicionamiento Andes", action: "outlook" },
+      { labelEn: "📊 Machu Picchu Pasture Bias", labelEs: "📊 Sesgo Pastizales Machu Picchu", action: "chart" },
+    ],
     stats: [
       {
         value: 1788,
@@ -236,6 +254,8 @@ export const ELIS_MISSIONS = [
       "Unaligned AI over-predicts by 6.6× due to the 2012 jump. Trained on our Chapman baseline, the 2026 out-of-sample forecast hit 22,939 vs 22,955 observed cell-days (99.9%). For 2027, Sierra (14,426) and Coast (1,895) project Very High anomalies.",
     summaryEs:
       "Sin armonizar, la IA sobrepredice 6.6× por el salto de 2012. Con nuestra serie Chapman, el pronóstico 2026 acertó 22,939 vs 22,955 celdas-día observadas (99.9%). Para 2027, Sierra (14,426) y Costa (1,895) proyectan temporada Muy Alta.",
+    userPromptEn: "Where should INDECI pre-position aerial resources for 2027?",
+    userPromptEs: "¿Dónde pre-posicionar recursos de INDECI 60 días antes para 2027?",
     region: "sierra",
     cameraKey: "sierra",
     year: 2026,
@@ -246,6 +266,10 @@ export const ELIS_MISSIONS = [
     userRoleEs: "INDECI y SERFOR · Pre-posicionamiento T-60d",
     actionEn: "Pre-position helicopters and brigades 60 days ahead in Cusco, Junín, Áncash, Pasco & La Libertad for the 2027 peak.",
     actionEs: "Pre-posicionar helicópteros y brigadas 60 días antes en Cusco, Junín, Áncash, Pasco y La Libertad para el pico 2027.",
+    decisionChips: [
+      { labelEn: "🛡️ INDECI T-60d Action Plan", labelEs: "🛡️ Plan de Acción INDECI T-60d", action: "outlook" },
+      { labelEn: "💬 Chat: Query 2027 Anomalies", labelEs: "💬 Chat: Consultar Anomalías 2027", action: "chat" },
+    ],
     stats: [
       {
         value: 99.9,
@@ -316,7 +340,7 @@ export default function ElisSpotlight({
   const advanceRef = useRef(null);
   advanceRef.current = () => {
     const nextIdx = (missionIndex + 1) % ELIS_MISSIONS.length;
-    onSelectMission(ELIS_MISSIONS[nextIdx]);
+    onSelectMission(ELIS_MISSIONS[nextIdx], true);
   };
 
   useEffect(() => {
@@ -420,7 +444,7 @@ export default function ElisSpotlight({
               autopilot ? "border-forecast bg-forecast text-bg" : "border-line bg-bg text-fg"
             }`}
           >
-            {autopilot ? "⏸" : "▶"} 60s
+            {autopilot ? "⏸" : "▶"} 40s
           </button>
           <button
             type="button"
@@ -483,6 +507,11 @@ export default function ElisSpotlight({
                   ? mission.badgeEs
                   : mission.badgeEn}
             </span>
+            {!customTurn && (
+              <span className="shrink-0 rounded border border-forecast/30 bg-forecast/10 px-1.5 py-0.5 font-mono text-[9.5px] font-extrabold text-forecast">
+                {missionIndex + 1} / {ELIS_MISSIONS.length}
+              </span>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
@@ -495,7 +524,7 @@ export default function ElisSpotlight({
                   : "border-line bg-bg text-fg hover:border-forecast"
               }`}
             >
-              {autopilot ? "⏸" : "▶"} 60s
+              {autopilot ? "⏸ 40s" : "▶ 40s Autopilot"}
             </button>
             <button
               type="button"
@@ -544,6 +573,18 @@ export default function ElisSpotlight({
             );
           })}
         </div>
+
+        {!customTurn && (
+          <div className="flex items-center gap-2 border-b border-line bg-bg/40 px-3.5 py-1.5 text-xs text-muted">
+            <span className="shrink-0 text-forecast">💬</span>
+            <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider text-forecast/90">
+              {isEs ? "Consulta Operativa:" : "Operator Query:"}
+            </span>
+            <span className="truncate italic text-fg font-medium">
+              "{isEs ? mission.userPromptEs : mission.userPromptEn}"
+            </span>
+          </div>
+        )}
 
         <div className="space-y-2.5 p-3.5">
           <div>
@@ -640,6 +681,38 @@ export default function ElisSpotlight({
               </button>
             </div>
           </div>
+
+          {!customTurn && mission.decisionChips && mission.decisionChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-muted">
+                {isEs ? "Decisión:" : "Action:"}
+              </span>
+              {mission.decisionChips.map((chip, cIdx) => (
+                <button
+                  key={`chip-${cIdx}`}
+                  type="button"
+                  onClick={() => {
+                    if (autopilot) onToggleAutopilot();
+                    if (chip.action === "chart") setShowChart(true);
+                    else if (chip.action === "outlook") onOpenOutlook();
+                    else if (chip.action === "chat") onOpenChatDrawer?.();
+                    else if (chip.action === "3d") {
+                      onSyncView?.({
+                        region: mission.region,
+                        cameraKey: mission.cameraKey,
+                        year: mission.year,
+                        month: mission.month,
+                        mode3d: true,
+                      });
+                    }
+                  }}
+                  className="rounded-lg border border-line bg-bg/80 px-2 py-1 text-[10.5px] font-semibold text-fg shadow-xs transition hover:border-forecast hover:bg-forecast/10 hover:text-forecast cursor-pointer"
+                >
+                  {isEs ? chip.labelEs : chip.labelEn}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
