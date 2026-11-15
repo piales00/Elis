@@ -169,19 +169,29 @@ def test_local_solar_time_and_legacy_cell_columns(tmp_path, monkeypatch):
         assert overpasses[-1][2:] == (None, 0)
 
 
+def load_bias_factors(con):
+    import json
+
+    sensitivity = json.loads((config.INTERIM_DIR / "sensitivity.json").read_text())
+    con.execute("CREATE TEMP TABLE bias (region VARCHAR, month INTEGER, factor DOUBLE)")
+    con.executemany("INSERT INTO bias VALUES (?,?,?)",
+                    [(r["region"], r["month"], r["factor"]) for r in sensitivity["aqua_bias"]["factors"]])
+
+
 def test_real_corrected_estimates_and_bootstrap_aggregation():
     with duckdb.connect() as con:
+        load_bias_factors(con)
         con.execute("CREATE TEMP TABLE e AS SELECT * FROM read_parquet(?)", [str(config.INTERIM_DIR / "estimates.parquet")])
         con.execute("CREATE TEMP TABLE p AS SELECT * FROM read_parquet(?)", [str(config.INTERIM_DIR / "detection_probs.parquet")])
         assert con.execute("SELECT count(*) FROM p WHERE sensor_pair <> 'aqua_snpp'").fetchone()[0] == 0
         assert con.execute("SELECT count(*) FROM e WHERE NOT (est_low <= estimated AND estimated <= est_high) OR NOT isfinite(estimated)").fetchone()[0] == 0
         assert con.execute("SELECT count(*) FROM e WHERE year >= ? AND source <> 'viirs_only'", [config.DRIFT_START_YEAR]).fetchone()[0] == 0
         failures = con.execute("""
-            SELECT count(*) FROM read_parquet(?) s JOIN p USING (region,month)
+            SELECT count(*) FROM read_parquet(?) s JOIN p USING (region,month) JOIN bias f USING (region,month)
             WHERE (mode IN ('both','snpp') AND abs(estimated - s.n2/p2) > 1e-8)
-                OR (mode='aqua' AND abs(estimated - s.n1/p1) > 1e-8)
+                OR (mode='aqua' AND abs(estimated - s.n1/p1 * CASE WHEN s.year < ? THEN f.factor ELSE 1 END) > 1e-8)
                 OR (mode='both' AND abs(chapman_direct - ((s.n1+1.0)*(s.n2+1)/(s.m+1)-1)) > 1e-8)
-        """, [str(config.INTERIM_DIR / "capture_segments.parquet")]).fetchone()[0]
+        """, [str(config.INTERIM_DIR / "capture_segments.parquet"), config.VIIRS_START.year]).fetchone()[0]
         assert failures == 0
         delta = con.execute("""
             WITH totals AS (
@@ -200,6 +210,7 @@ def test_real_terra_bridge_uses_training_only_and_combines_uncertainty():
     sensitivity = json.loads((config.INTERIM_DIR / "sensitivity.json").read_text())
     assert config.TERRA_BACKCAST_TEST_YEARS[1] < config.TERRA_BACKCAST_TRAIN_YEARS[0]
     with duckdb.connect() as con:
+        load_bias_factors(con)
         for row in sensitivity["terra_backcast"]:
             counts = dict(con.execute("""
                 SELECT month,
@@ -211,11 +222,12 @@ def test_real_terra_bridge_uses_training_only_and_combines_uncertainty():
                 nt = con.execute("SELECT count(*) FROM read_parquet(?) WHERE region=? AND year=? AND month=? AND sensor='terra'", [str(config.INTERIM_DIR / "cells.parquet"), row["region"], month["year"], month["month"]]).fetchone()[0]
                 assert month["predicted"] == pytest.approx(nt * counts[month["month"]])
         error = con.execute("""
-            SELECT max(abs(e.estimated - s.n_terra * b.ratio / p.p1))
+            SELECT max(abs(e.estimated - s.n_terra * b.ratio / p.p1 * f.factor))
             FROM read_parquet(?) e
             JOIN read_parquet(?) s USING(region,year,month)
             JOIN read_parquet(?) b USING(region,month,replicate)
             JOIN read_parquet(?) p USING(region,month,replicate)
+            JOIN bias f USING(region,month)
             WHERE s.mode='terra' AND make_date(e.year,e.month,1) < date_trunc('month', ?::DATE)
         """, [str(config.INTERIM_DIR / f) for f in ("estimate_replicates.parquet", "capture_segments.parquet", "terra_bridge_replicates.parquet", "detection_probability_replicates.parquet")] + [config.AQUA_START]).fetchone()[0]
         assert error < 1e-8
