@@ -3,6 +3,7 @@ import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../lib/hooks.js";
+import { useGibsLayers } from "./imagery/useGibsLayers.js";
 import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, tuneBasemap } from "../lib/mapStyle.js";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -13,7 +14,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, ariaLabel }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -21,7 +22,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const live = useRef({});
   const [ready, setReady] = useState(false);
 
-  live.current = { t, formatNumber, metric, onRegionSelect, regions, region };
+  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region };
+  useGibsLayers(mapRef.current, ready, imagery);
 
   const fit = (duration) => {
     const map = mapRef.current;
@@ -154,6 +156,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       const cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
       if (cell.length) {
         showCell({ features: cell, lngLat: e.lngLat });
+        live.current.onCellSelect?.(cell[0].properties);
         return;
       }
       popupRef.current.remove();
