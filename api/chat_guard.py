@@ -28,7 +28,25 @@ MODEL_PRICING_PER_MTOK: dict[str, dict[str, float]] = {
         "cache_read": 0.10,
         "cache_write": 2.50,
     },
+    "claude-haiku-5-5": {
+        "input": 0.10,
+        "output": 0.50,
+        "cache_read": 0.01,
+        "cache_write": 0.125,
+    },
 }
+
+
+def model_pricing(model: str) -> dict[str, float]:
+    base = dict(MODEL_PRICING_PER_MTOK.get(model, MODEL_PRICING_PER_MTOK["claude-opus-5-5"]))
+    for key in ("input", "output"):
+        raw = os.environ.get(f"CHAT_PRICE_{key.upper()}_PER_MTOK", "").strip()
+        if raw:
+            try:
+                base[key] = max(0.0, float(raw))
+            except ValueError:
+                pass
+    return base
 
 CONTRACT_CONSTANTS = {
     0.0,
@@ -148,7 +166,7 @@ def verify_figures(text: str, tool_results: list[dict[str, Any]]) -> dict[str, A
 
 
 def compute_usage_cost_usd(usage: dict[str, Any], model: str = "claude-opus-5-5") -> float:
-    pricing = MODEL_PRICING_PER_MTOK.get(model, MODEL_PRICING_PER_MTOK["claude-opus-5-5"])
+    pricing = model_pricing(model)
     input_tokens = float(usage.get("input_tokens", 0) or 0)
     output_tokens = float(usage.get("output_tokens", 0) or 0)
     cache_read_tokens = float(usage.get("cache_read_input_tokens", 0) or 0)

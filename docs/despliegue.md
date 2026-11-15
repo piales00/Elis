@@ -243,3 +243,16 @@ docker rm firechronos-api-check
 ```
 
 El tamaño anterior se expresa en bytes locales sin comprimir. No incluye una clave real ni prueba los servicios remotos. El README no se reescribió en esta tarea: aún propone todas las dependencias científicas para la API, solo muestra ejecución PowerShell de esta y no explica la configuración Vite, CORS, chat ni despliegue. La nota que llama a `scripts/recaptura.py` un borrador tampoco describe el flujo actual de `capture_recapture.py`.
+
+## Encender el asistente "Ask Elis" con Gemini
+
+El asistente usa Google Gemini por defecto en Render (`CHAT_PROVIDER=gemini`, modelo `gemini-3.1-flash-lite`). En Render → `elis-api` → **Environment**:
+
+| Variable | Valor |
+|---|---|
+| `GEMINI_API_KEY` | La clave de Google AI Studio. Solo aquí, nunca en Vercel ni en el código |
+| `CHAT_ENABLED` | `1` para encenderlo (`0` lo apaga y la web muestra solo las preguntas de ejemplo) |
+| `CHAT_DAILY_BUDGET_USD` | Tope diario de gasto estimado; por defecto `0.5` |
+| `CHAT_PRICE_INPUT_PER_MTOK`, `CHAT_PRICE_OUTPUT_PER_MTOK` | Precio por millón de tokens del modelo, según la página de precios de Google. Si se dejan vacíos, el control de gasto usa el precio de Claude Opus, que es mucho más alto, y el tope se alcanza antes: es seguro, pero corta el chat pronto |
+
+Además, en la consola de Google AI Studio conviene fijar un límite de uso o de gasto en la propia cuenta.
