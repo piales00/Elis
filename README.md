@@ -64,7 +64,7 @@ The interactive **Ask Elis** scientific copilot (60 s Autopilot, floating Missio
 |---|---|
 | [`docs/contrato-datos.md`](docs/contrato-datos.md) | **Source of truth** for paths, fields, coverage and parameters |
 | [`docs/methods/README.md`](docs/methods/README.md) | Seven technical notes: harmonization, MODIS emulator, three satellites, underestimation, seasonal outlook, validation, continuity after MODIS |
-| [`docs/report/firechronos-technical-report.pdf`](docs/report/firechronos-technical-report.pdf) | Technical report ([HTML source](docs/report/firechronos-technical-report.html)) |
+| [`docs/report/firechronos-technical-report.pdf`](docs/report/firechronos-technical-report.pdf) | Elis: Harmonizing the Fire Record of Peru, 2000–2026 ([HTML source](docs/report/firechronos-technical-report.html)) |
 | [`scripts/config.py`](scripts/config.py) | Pipeline parameters |
 
 ## Data sources
