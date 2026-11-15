@@ -467,13 +467,13 @@ export default function ElisSpotlight({
         <div
           onPointerDown={handlePointerDown}
           title={isEs ? "Arrastra para mover por la pantalla" : "Drag to move anywhere on screen"}
-          className="flex cursor-grab active:cursor-grabbing flex-wrap items-center justify-between gap-2 border-b border-line bg-bg/70 px-3.5 py-2 select-none"
+          className="flex cursor-grab active:cursor-grabbing items-center justify-between gap-2 border-b border-line bg-bg/70 px-3.5 py-2 select-none"
         >
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center rounded-lg bg-forecast/15 p-1 text-forecast">
-              <ElisMark size={16} />
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-forecast/15 p-1 text-forecast">
+              <ElisMark size={15} />
             </span>
-            <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+            <span className="truncate font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
               {customTurn
                 ? isEs
                   ? "ELIS · ANÁLISIS EN VIVO"
@@ -482,10 +482,9 @@ export default function ElisSpotlight({
                   ? mission.badgeEs
                   : mission.badgeEn}
             </span>
-            <span className="text-[10px] text-muted hidden sm:inline">⠿ {isEs ? "Mover" : "Drag"}</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={onToggleAutopilot}

@@ -198,6 +198,7 @@ export default function App() {
       }
       setView(v);
       setPanelOpen(true);
+      if (v === "ask") setSpotlightMinimized(true);
       if (v === "outlook" && !deptFeature) setUnit(region);
       if (v === "year" && period.year !== LAST_YEAR && lastObserved >= 0) setPeriod(fromIndex(lastObserved));
       requestAnimationFrame(() => panelRef.current?.scrollTo?.({ top: 0 }));
@@ -498,6 +499,7 @@ export default function App() {
               onOpenMethod={() => openView("method")}
               onLaunchMission={(missionId, auto = false) => {
                 const found = ELIS_MISSIONS.find((m) => m.id === missionId) || ELIS_MISSIONS[0];
+                setPanelOpen(false);
                 applyElisMission(found, auto, true);
               }}
               onProjectTurn={(turn) => {
@@ -665,7 +667,10 @@ export default function App() {
         <ElisSpotlight
           open={spotlightOpen}
           minimized={spotlightMinimized}
-          onToggleMinimized={setSpotlightMinimized}
+          onToggleMinimized={(min) => {
+            setSpotlightMinimized(min);
+            if (!min && view === "ask") setPanelOpen(false);
+          }}
           activeMissionId={activeMissionId}
           autopilot={autopilot}
           customTurn={projectedTurn}
