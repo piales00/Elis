@@ -16,10 +16,12 @@ export const TOUR_STEPS = [
   { id: "calendar", view: "explore", region: "peru", period: { year: 2024, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", target: "calendar" },
   { id: "year", view: "year", region: "peru", period: { year: 2026, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", target: "view-year" },
   { id: "outlook", view: "outlook", region: "peru", unit: "peru", metric: "estimated", layer: "cells", target: "view-outlook" },
+  { id: "continuity", view: "continuity", region: "peru", metric: "estimated", layer: "cells", target: "view-continuity" },
+  { id: "live", view: "explore", region: "peru", period: { year: 2024, month: 9 }, metric: "estimated", layer: "cells", group: "estimated", live: true, target: "live" },
   { id: "data", view: "data", region: "peru", metric: "estimated", layer: "cells", target: "view-data" },
 ];
 
-export const AUTO_SKIP = new Set(["thermal", "night", "swir", "calendar", "year"]);
+export const AUTO_SKIP = new Set(["thermal", "night", "swir", "calendar", "year", "continuity", "live"]);
 export const AUTO_STEPS = TOUR_STEPS.filter((s) => !AUTO_SKIP.has(s.id));
 
 export const TOUR_STEP_MS = 5000;

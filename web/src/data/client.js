@@ -88,3 +88,16 @@ export async function getMethodology(region) {
     validation: data.validation.filter((row) => row.region === region),
   };
 }
+
+export async function getContinuity({ region, shutdown } = {}) {
+  if (isMock) throw new NoDataError("Continuity is only available with the API");
+  return getJson(`${API_BASE}/continuity${query({ region, shutdown })}`);
+}
+
+export async function getLive() {
+  if (isMock) throw new NoDataError("The live check is only available with the API");
+  const response = await fetch(`${API_BASE}/live`);
+  if (response.status === 503 || response.status === 404) throw new NoDataError("No live scoreboard yet");
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.json();
+}

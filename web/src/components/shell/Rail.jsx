@@ -2,7 +2,7 @@ import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { LOCALES } from "../../config.js";
 import Icon from "./icons.jsx";
 
-export const VIEWS = ["explore", "compare", "year", "outlook", "ask", "method", "data"];
+export const VIEWS = ["explore", "compare", "continuity", "year", "outlook", "ask", "method", "data"];
 
 export function Logo({ size = 28 }) {
   return (

@@ -31,10 +31,12 @@ import YearView from "./components/shell/views/YearView.jsx";
 import OutlookView, { OutlookLegend } from "./components/shell/views/OutlookView.jsx";
 import MethodView from "./components/shell/views/MethodView.jsx";
 import DataView from "./components/shell/views/DataView.jsx";
+import ContinuityView from "./components/shell/views/ContinuityView.jsx";
+import LiveCheck, { LiveSummary } from "./components/shell/LiveCheck.jsx";
 
 const MapView = lazy(() => import("./components/MapView.jsx"));
 const NONE = [];
-const PANEL_WIDTH = { explore: 380, compare: 600, year: 540, outlook: 500, ask: 440 };
+const PANEL_WIDTH = { explore: 380, compare: 600, continuity: 560, year: 540, outlook: 500, ask: 440 };
 const WIDE = new Set(["method", "data"]);
 
 function readUrl() {
@@ -82,6 +84,7 @@ export default function App() {
   const [ribbonMetric, setRibbonMetric] = useState("estimated");
   const [playing, setPlaying] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
   const [tour, setTour] = useState(() => {
     if (initial.tour) return { step: 0, auto: initial.tour === "auto" };
     try {
@@ -259,6 +262,7 @@ export default function App() {
       if (s.heat !== undefined) img.setHeat(s.heat);
       if (s.date) img.setDate(s.date);
       else if (s.period) setPeriod(s.period);
+      setLiveOpen(Boolean(s.live));
     },
     [img, selectRegion],
   );
@@ -296,12 +300,22 @@ export default function App() {
       if (e.key === "/") {
         e.preventDefault();
         setPaletteOpen(true);
-      } else if (/^[1-7]$/.test(e.key)) openView(VIEWS[Number(e.key) - 1]);
+      } else if (new RegExp(`^[1-${VIEWS.length}]$`).test(e.key)) openView(VIEWS[Number(e.key) - 1]);
+      else if (e.key === "Escape" && liveOpen) setLiveOpen(false);
       else if (e.key === "Escape" && tour) setTour(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [paletteOpen, openView, tour]);
+  }, [paletteOpen, openView, tour, liveOpen]);
+
+  useEffect(() => {
+    if (!liveOpen) return;
+    const onDown = (e) => {
+      if (!e.target.closest?.('#fc-live, [data-tour="live"], .fc-tour')) setLiveOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [liveOpen]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -334,6 +348,8 @@ export default function App() {
     }
     VIEWS.forEach((v, i) => out.push({ id: `v-${v}`, group: t("palette.views"), label: t(`view.${v}`), hint: String(i + 1), run: () => openView(v) }));
     out.push({ id: "a-tour", group: t("palette.actions"), label: t("tour.start"), run: () => startTour(false) });
+    out.push({ id: "a-live", group: t("palette.actions"), label: t("live.title"), hint: t("live.badge"), run: () => setLiveOpen(true) });
+    out.push({ id: "a-continuity", group: t("palette.actions"), label: t("cont.toggle"), run: () => openView("continuity") });
     out.push({ id: "a-play", group: t("palette.actions"), label: t(playing ? "ribbon.pause" : "ribbon.play"), run: togglePlay });
     out.push({
       id: "a-metric",
@@ -364,6 +380,7 @@ export default function App() {
   let panel = null;
   if (view === "explore")
     panel = (
+      <div className="grid gap-6">
       <ExploreView
         regionLabel={regionLabel}
         period={period}
@@ -379,7 +396,10 @@ export default function App() {
           openView("data");
         }}
       />
+      <LiveSummary onOpen={() => setLiveOpen(true)} />
+      </div>
     );
+  else if (view === "continuity") panel = <ContinuityView region={region} />;
   else if (view === "compare") panel = <CompareView series={series} region={region} period={period} onSelectPeriod={setPeriod} methodology={methodology} />;
   else if (view === "year") panel = <YearView series={series} region={region} period={period} onSelectPeriod={setPeriod} />;
   else if (view === "outlook") panel = (
@@ -463,7 +483,7 @@ export default function App() {
         )}
       </aside>
 
-      <main className="fc-stage @container" aria-label={t("map.stage")}>
+      <main className="fc-stage" aria-label={t("map.stage")}>
         <MapBoundary>
         <Suspense fallback={<div className="fc-skel h-full w-full rounded-none" />}>
           <MapView
@@ -506,6 +526,26 @@ export default function App() {
             >
               <Icon name="fit" size={17} />
             </button>
+            <div className="relative">
+              <button
+                type="button"
+                data-tour="live"
+                aria-expanded={liveOpen}
+                aria-controls="fc-live"
+                onClick={() => setLiveOpen((o) => !o)}
+                className="fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold"
+                title={t("live.title")}
+                aria-label={t("live.title")}
+              >
+                <span className="fc-live-dot" aria-hidden="true" />
+                <span className="hidden sm:inline">{t("live.badge")}</span>
+              </button>
+              {liveOpen && (
+                <section id="fc-live" role="dialog" aria-labelledby="live-title" className="fc-float fc-pop fc-live-pop">
+                  <LiveCheck onClose={() => setLiveOpen(false)} />
+                </section>
+              )}
+            </div>
             {!tour && (
               <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>
                 <Icon name="tour" size={17} />
