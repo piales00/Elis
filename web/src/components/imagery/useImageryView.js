@@ -5,6 +5,7 @@ import {
   densestSpot,
   DEFAULT_IMAGERY_DAY,
   detectionsToFootprints,
+  detectionsToHeat,
   detectionsToPoints,
   imageryLayer,
   imagerySatellites,
@@ -18,6 +19,7 @@ export function useImageryView({ period, onPeriodChange, regions, region }) {
   const [view, setView] = useState("cells");
   const [base, setBase] = useState("truecolor");
   const [satellite, setSatellite] = useState(null);
+  const [heat, setHeat] = useState(true);
   const [day, setDay] = useState(DEFAULT_IMAGERY_DAY.day);
   const [cell, setCell] = useState(null);
   const [focus, setFocus] = useState(null);
@@ -39,11 +41,12 @@ export function useImageryView({ period, onPeriodChange, regions, region }) {
       modisFootprints: detectionsToFootprints(detections.modis),
       viirsPoints: detectionsToPoints(detections.viirs),
       viirsFootprints: detectionsToFootprints(detections.viirs),
+      heatPoints: detectionsToHeat(detections.modis, detections.viirs),
     }),
     [detections.modis, detections.viirs],
   );
 
-  const imagery = useMemo(() => ({ enabled: showing, raster, focus, ...geo }), [showing, raster, focus, geo]);
+  const imagery = useMemo(() => ({ enabled: showing, raster, focus, heat, ...geo }), [showing, raster, focus, heat, geo]);
 
   let message = null;
   let isError = false;
@@ -73,6 +76,8 @@ export function useImageryView({ period, onPeriodChange, regions, region }) {
     raster,
     satellites,
     setSatellite,
+    heat,
+    setHeat,
     detections,
     imagery,
     message,

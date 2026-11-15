@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "../../lib/hooks.js";
-import { FIRE_COLORS, FOOTPRINT_MIN_ZOOM, GIBS_ATTRIBUTION, RASTER_MAX_ZOOM } from "../../lib/gibs.js";
+import { FIRE_COLORS, FOOTPRINT_MIN_ZOOM, GIBS_ATTRIBUTION, HEAT_MAX_FRP, HEAT_RAMP } from "../../lib/gibs.js";
 
 const EMPTY = { type: "FeatureCollection", features: [] };
 const CELL_LAYERS = ["cells-fill", "cells-outline"];
-const FIRE_LAYERS = ["fires-viirs-fp", "fires-modis-fp", "fires-modis-fp-line", "fires-viirs-pt", "fires-modis-pt"];
+const FIRE_LAYERS = ["fires-heat", "fires-viirs-fp", "fires-modis-fp", "fires-modis-fp-line", "fires-viirs-pt", "fires-modis-pt"];
 
 function firstSymbol(map) {
   return map.getStyle().layers.find((l) => l.type === "symbol")?.id;
@@ -12,6 +12,24 @@ function firstSymbol(map) {
 
 function addFireLayers(map) {
   const before = firstSymbol(map);
+  map.addSource("fires-heat", { type: "geojson", data: EMPTY });
+  const ramp = HEAT_RAMP.flatMap((color, i) => [i / (HEAT_RAMP.length - 1), color]);
+  map.addLayer(
+    {
+      id: "fires-heat",
+      type: "heatmap",
+      source: "fires-heat",
+      maxzoom: FOOTPRINT_MIN_ZOOM + 1,
+      paint: {
+        "heatmap-weight": ["interpolate", ["linear"], ["coalesce", ["get", "frp"], 0], 0, 0.05, HEAT_MAX_FRP, 1],
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, 0.6, FOOTPRINT_MIN_ZOOM, 1.6],
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 4, 6, 6, 12, FOOTPRINT_MIN_ZOOM, 24],
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], ...ramp],
+        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], FOOTPRINT_MIN_ZOOM - 0.5, 0.85, FOOTPRINT_MIN_ZOOM + 1, 0],
+      },
+    },
+    before,
+  );
   for (const id of ["fires-modis-pt", "fires-modis-fp", "fires-viirs-pt", "fires-viirs-fp"]) map.addSource(id, { type: "geojson", data: EMPTY });
   map.addLayer(
     { id: "fires-viirs-fp", type: "fill", source: "fires-viirs-fp", minzoom: FOOTPRINT_MIN_ZOOM, paint: { "fill-color": FIRE_COLORS.viirs, "fill-opacity": 0.85 } },
@@ -69,13 +87,30 @@ function setVisibility(map, ids, visible) {
 export function useGibsLayers(map, ready, imagery) {
   const enabled = Boolean(imagery?.enabled);
   const tileUrl = enabled ? imagery.raster?.tiles[0] ?? null : null;
+  const rasterMaxZoom = enabled ? imagery.raster?.maxZoom ?? null : null;
+  const heat = enabled && Boolean(imagery?.heat);
+  const [zoom, setZoom] = useState(null);
 
   useEffect(() => {
     if (!ready || !map) return;
     if (!map.getSource("fires-modis-pt")) addFireLayers(map);
     setVisibility(map, CELL_LAYERS, !enabled);
     setVisibility(map, FIRE_LAYERS, enabled);
-  }, [map, ready, enabled]);
+    setVisibility(map, ["fires-heat"], heat);
+  }, [map, ready, enabled, heat]);
+
+  useEffect(() => {
+    if (!ready || !map) return;
+    const update = () => setZoom(map.getZoom());
+    update();
+    map.on("zoomend", update);
+    return () => map.off("zoomend", update);
+  }, [map, ready]);
+
+  useEffect(() => {
+    if (!ready || !map) return;
+    map.setMaxZoom(rasterMaxZoom === null ? 22 : Math.max(rasterMaxZoom, FOOTPRINT_MIN_ZOOM) + 1);
+  }, [map, ready, rasterMaxZoom]);
 
   useEffect(() => {
     if (!ready || !map) return;
@@ -86,11 +121,11 @@ export function useGibsLayers(map, ready, imagery) {
       type: "raster",
       tiles: [tileUrl],
       tileSize: 256,
-      maxzoom: RASTER_MAX_ZOOM,
+      maxzoom: rasterMaxZoom,
       attribution: `<a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">${GIBS_ATTRIBUTION}</a>`,
     });
     map.addLayer({ id: "gibs-imagery", type: "raster", source: "gibs-imagery", paint: { "raster-fade-duration": 0 } }, map.getLayer("country-fill") ? "country-fill" : firstSymbol(map));
-  }, [map, ready, tileUrl]);
+  }, [map, ready, tileUrl, rasterMaxZoom]);
 
   useEffect(() => {
     if (!ready || !map || !map.getSource("fires-modis-pt")) return;
@@ -98,7 +133,8 @@ export function useGibsLayers(map, ready, imagery) {
     map.getSource("fires-modis-fp").setData(imagery?.modisFootprints ?? EMPTY);
     map.getSource("fires-viirs-pt").setData(imagery?.viirsPoints ?? EMPTY);
     map.getSource("fires-viirs-fp").setData(imagery?.viirsFootprints ?? EMPTY);
-  }, [map, ready, imagery?.modisPoints, imagery?.modisFootprints, imagery?.viirsPoints, imagery?.viirsFootprints]);
+    map.getSource("fires-heat").setData(imagery?.heatPoints ?? EMPTY);
+  }, [map, ready, imagery?.modisPoints, imagery?.modisFootprints, imagery?.viirsPoints, imagery?.viirsFootprints, imagery?.heatPoints]);
 
   const focusKey = imagery?.focus?.key;
   useEffect(() => {
@@ -106,4 +142,6 @@ export function useGibsLayers(map, ready, imagery) {
     const { lon, lat, zoom } = imagery.focus;
     map.easeTo({ center: lon === undefined ? map.getCenter() : [lon, lat], zoom, duration: prefersReducedMotion() ? 0 : 900 });
   }, [map, ready, focusKey]);
+
+  return { overZoom: rasterMaxZoom !== null && zoom !== null && zoom > rasterMaxZoom + 0.05 };
 }

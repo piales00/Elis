@@ -2,7 +2,8 @@ import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { daysInMonth } from "../../lib/gibs.js";
 
 const VIEWS = ["cells", "imagery"];
-const BASES = ["truecolor", "swir"];
+const BASES = ["truecolor", "thermal", "night", "swir"];
+const SOURCE_KEYS = { truecolor: "imagery.base.source", swir: "imagery.base.sourceSwir", thermal: "imagery.base.sourceThermal", night: "imagery.base.sourceNight" };
 
 function shiftDay({ year, month, day }, delta) {
   const d = new Date(Date.UTC(year, month - 1, day + delta));
@@ -19,6 +20,8 @@ export default function ImageryControls({
   raster,
   satellites,
   onSatelliteChange,
+  heat,
+  onHeatChange,
   minYear,
   maxYear,
   onTrueScale,
@@ -83,24 +86,30 @@ export default function ImageryControls({
                 </label>
               ))}
             </div>
+            <p className="m-0 mt-3 text-sm leading-relaxed">{t("imagery.base.why")}</p>
             {satellites.length > 1 && (
               <div role="radiogroup" aria-label={t("imagery.satellite.label")} className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted">{t("imagery.satellite.label")}</span>
                 {satellites.map((s) => (
-                  <label key={s} className={`chip ${raster?.label === s ? "chip-on" : ""}`}>
-                    <input type="radio" name="imagery-satellite" value={s} checked={raster?.label === s} onChange={() => onSatelliteChange(s)} className="sr-only" />
-                    {s}
+                  <label key={s.id} className={`chip ${raster?.id === s.id ? "chip-on" : ""}`}>
+                    <input type="radio" name="imagery-satellite" value={s.id} checked={raster?.id === s.id} onChange={() => onSatelliteChange(s.id)} className="sr-only" />
+                    {s.pass ? `${s.label} · ${t(`imagery.pass.${s.pass}`)}` : s.label}
                   </label>
                 ))}
               </div>
             )}
             <p className="m-0 mt-3 text-xs leading-relaxed text-muted">
               {raster
-                ? t(base === "swir" ? "imagery.base.sourceSwir" : "imagery.base.source", { source: raster.label, bands: raster.bands ?? "" })
+                ? t(SOURCE_KEYS[base] ?? SOURCE_KEYS.truecolor, { source: raster.pass ? `${raster.label} · ${t(`imagery.pass.${raster.pass}`)}` : raster.label, bands: raster.bands ?? "" })
                 : t("imagery.base.none")}
               {raster?.label.startsWith("MODIS") && ` ${t("imagery.satellite.gaps")}`}
             </p>
           </fieldset>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={heat} onChange={(e) => onHeatChange(e.target.checked)} />
+            {t("imagery.heat.toggle")}
+          </label>
 
           <button type="button" className="btn-icon justify-self-start px-3 font-medium" onClick={onTrueScale}>
             {t("imagery.trueScale")}

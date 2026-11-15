@@ -1,7 +1,7 @@
 import { useI18n } from "../../i18n/I18nProvider.jsx";
-import { FIRE_COLORS } from "../../lib/gibs.js";
+import { FIRE_COLORS, HEAT_MAX_FRP, HEAT_RAMP } from "../../lib/gibs.js";
 
-export default function ImageryLegend({ dateLabel, detections, regionLabel }) {
+export default function ImageryLegend({ dateLabel, detections, regionLabel, heat }) {
   const { t, formatNumber } = useI18n();
   const ready = detections.status === "ready";
   const count = (sensor) => {
@@ -29,6 +29,16 @@ export default function ImageryLegend({ dateLabel, detections, regionLabel }) {
           <span className="font-semibold tabular-nums">{count("viirs")}</span>
         </li>
       </ul>
+      {heat && (
+        <div className="mt-2">
+          <p className="m-0 mb-1 font-semibold">{t("imagery.heat.legend")}</p>
+          <div className="h-2 w-40 rounded-full" style={{ background: `linear-gradient(to right, ${HEAT_RAMP.slice(1).join(", ")})` }} aria-hidden="true" />
+          <div className="flex w-40 justify-between tabular-nums text-muted">
+            <span>0</span>
+            <span>{`≥${HEAT_MAX_FRP}`}</span>
+          </div>
+        </div>
+      )}
       <p className="m-0 mt-2 hidden max-w-[20rem] text-muted sm:block">{t("imagery.legend.scale")}</p>
     </div>
   );

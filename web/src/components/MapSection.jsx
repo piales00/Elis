@@ -95,7 +95,7 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
           )}
           <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-5rem)]">
             {img.view === "imagery" ? (
-              <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} />
+              <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} heat={img.heat} />
             ) : (
               <MapLegend metric={metric} breaks={breaks} />
             )}
@@ -112,6 +112,8 @@ export default function MapSection({ regions, region, onRegionSelect, series, se
             raster={img.raster}
             satellites={img.satellites}
             onSatelliteChange={img.setSatellite}
+            heat={img.heat}
+            onHeatChange={img.setHeat}
             minYear={FIRST_YEAR}
             maxYear={LAST_YEAR}
             onTrueScale={img.trueScale}

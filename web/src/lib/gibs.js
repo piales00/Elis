@@ -6,6 +6,8 @@ export const FIRMS_ATTRIBUTION = "Detections: NASA FIRMS via GIBS";
 export const DEFAULT_IMAGERY_DAY = { year: 2024, month: 9, day: 10 };
 export const RASTER_MAX_ZOOM = 9;
 export const FOOTPRINT_MIN_ZOOM = 8;
+export const HEAT_RAMP = ["rgba(255,80,0,0)", "#7a1d00", "#d63a00", "#ff7a00", "#ffc23d", "#fff4c2"];
+export const HEAT_MAX_FRP = 100;
 export const FIRE_COLORS = { modis: "#ffb020", viirs: "#ff4fd8" };
 
 const WMTS_3857 = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
@@ -27,16 +29,51 @@ const SNPP_REFLECTANCE_RANGES = [
   ["2024-07-29", "2024-11-03"], ["2024-11-06", "2026-04-28"], ["2026-04-30", "2026-07-10"], ["2026-07-16", "2026-11-02"],
 ];
 
+const I5_SNPP_NIGHT = [
+  ["2012-01-19", "2012-03-24"], ["2012-03-26", "2015-04-18"], ["2015-04-20", "2015-04-20"], ["2015-04-22", "2015-04-25"],
+  ["2015-04-27", "2022-07-26"], ["2022-08-11", "2024-05-29"], ["2024-05-31", "2024-05-31"], ["2024-06-04", "2024-07-10"],
+  ["2024-07-16", "2024-07-24"], ["2024-07-29", "2024-09-25"], ["2024-09-27", "2024-11-03"], ["2024-11-06", "2025-11-03"],
+  ["2025-11-05", "2026-04-28"], ["2026-04-30", "2026-07-10"], ["2026-07-16", "2026-08-03"], ["2026-08-06", null],
+];
+const I5_SNPP_DAY = [
+  ["2012-01-19", "2012-03-24"], ["2012-03-26", "2022-07-27"], ["2022-08-10", "2024-05-31"], ["2024-06-04", "2024-07-11"],
+  ["2024-07-16", "2024-07-24"], ["2024-07-29", "2024-11-03"], ["2024-11-06", "2026-04-28"], ["2026-04-30", "2026-07-10"],
+  ["2026-07-16", null],
+];
+const I5_NOAA20_NIGHT = [["2018-01-05", "2018-02-21"], ["2018-02-24", "2018-03-12"], ["2018-03-14", "2022-01-12"], ["2022-01-14", null]];
+const AQUA_B31_NIGHT = [["2002-07-03", "2002-07-29"], ["2002-08-08", "2002-09-12"], ["2002-09-14", "2022-04-01"], ["2022-04-17", null]];
+const TERRA_B31_NIGHT = [
+  ["2000-02-24", "2000-04-25"], ["2000-04-28", "2000-08-05"], ["2000-08-18", "2001-06-15"], ["2001-07-03", "2002-03-19"],
+  ["2002-03-28", "2002-04-14"], ["2002-04-16", "2003-12-16"], ["2003-12-24", "2008-12-20"], ["2008-12-23", "2016-02-18"],
+  ["2016-02-28", "2022-10-10"], ["2022-10-23", null],
+];
+const DNB_SNPP = [["2012-03-01", "2026-04-28"], ["2026-04-30", "2026-07-10"], ["2026-07-16", null]];
+const DNB_NOAA20 = [["2018-01-05", null]];
+
 const IMAGERY = {
   truecolor: [
-    { id: "VIIRS_SNPP_CorrectedReflectance_TrueColor", label: "VIIRS S-NPP", ranges: SNPP_REFLECTANCE_RANGES },
-    { id: "MODIS_Aqua_CorrectedReflectance_TrueColor", label: "MODIS Aqua", ranges: AQUA_RANGES },
-    { id: "MODIS_Terra_CorrectedReflectance_TrueColor", label: "MODIS Terra", ranges: TERRA_RANGES },
+    { id: "VIIRS_SNPP_CorrectedReflectance_TrueColor", label: "VIIRS S-NPP", ranges: SNPP_REFLECTANCE_RANGES, pixel: 375 },
+    { id: "MODIS_Aqua_CorrectedReflectance_TrueColor", label: "MODIS Aqua", ranges: AQUA_RANGES, pixel: 250 },
+    { id: "MODIS_Terra_CorrectedReflectance_TrueColor", label: "MODIS Terra", ranges: TERRA_RANGES, pixel: 250 },
   ],
   swir: [
-    { id: "VIIRS_SNPP_CorrectedReflectance_BandsM11-I2-I1", label: "VIIRS S-NPP", bands: "M11-I2-I1", ranges: SNPP_REFLECTANCE_RANGES },
-    { id: "MODIS_Aqua_CorrectedReflectance_Bands721", label: "MODIS Aqua", bands: "7-2-1", ranges: AQUA_721_RANGES },
-    { id: "MODIS_Terra_CorrectedReflectance_Bands721", label: "MODIS Terra", bands: "7-2-1", ranges: TERRA_721_RANGES },
+    { id: "VIIRS_SNPP_CorrectedReflectance_BandsM11-I2-I1", label: "VIIRS S-NPP", bands: "M11-I2-I1", ranges: SNPP_REFLECTANCE_RANGES, pixel: 375 },
+    { id: "MODIS_Aqua_CorrectedReflectance_Bands721", label: "MODIS Aqua", bands: "7-2-1", ranges: AQUA_721_RANGES, pixel: 500 },
+    { id: "MODIS_Terra_CorrectedReflectance_Bands721", label: "MODIS Terra", bands: "7-2-1", ranges: TERRA_721_RANGES, pixel: 500 },
+  ],
+  thermal: [
+    { id: "VIIRS_SNPP_Brightness_Temp_BandI5_Night", label: "VIIRS S-NPP", pass: "night", bands: "I5 (11.45 µm)", ranges: I5_SNPP_NIGHT, format: "png", maxZoom: 9, pixel: 375 },
+    { id: "VIIRS_NOAA20_Brightness_Temp_BandI5_Night", label: "VIIRS NOAA-20", pass: "night", bands: "I5 (11.45 µm)", ranges: I5_NOAA20_NIGHT, format: "png", maxZoom: 9, pixel: 375 },
+    { id: "VIIRS_SNPP_Brightness_Temp_BandI5_Day", label: "VIIRS S-NPP", pass: "day", bands: "I5 (11.45 µm)", ranges: I5_SNPP_DAY, format: "png", maxZoom: 9, pixel: 375 },
+    { id: "VIIRS_NOAA20_Brightness_Temp_BandI5_Day", label: "VIIRS NOAA-20", pass: "day", bands: "I5 (11.45 µm)", ranges: [["2018-01-05", "2018-02-21"], ["2018-02-24", "2019-12-31"], ["2020-01-02", "2022-01-12"], ["2022-01-14", null]], format: "png", maxZoom: 9, pixel: 375 },
+    { id: "MODIS_Aqua_Brightness_Temp_Band31_Night", label: "MODIS Aqua", pass: "night", bands: "31 (11 µm)", ranges: AQUA_B31_NIGHT, format: "png", maxZoom: 7, pixel: 1000 },
+    { id: "MODIS_Terra_Brightness_Temp_Band31_Night", label: "MODIS Terra", pass: "night", bands: "31 (11 µm)", ranges: TERRA_B31_NIGHT, format: "png", maxZoom: 7, pixel: 1000 },
+    { id: "MODIS_Aqua_Brightness_Temp_Band31_Day", label: "MODIS Aqua", pass: "day", bands: "31 (11 µm)", ranges: AQUA_RANGES, format: "png", maxZoom: 7, pixel: 1000 },
+    { id: "MODIS_Terra_Brightness_Temp_Band31_Day", label: "MODIS Terra", pass: "day", bands: "31 (11 µm)", ranges: TERRA_RANGES, format: "png", maxZoom: 7, pixel: 1000 },
+  ],
+  night: [
+    { id: "VIIRS_NOAA20_DayNightBand", label: "VIIRS NOAA-20", ranges: DNB_NOAA20, format: "png", maxZoom: 7, pixel: 750 },
+    { id: "VIIRS_SNPP_DayNightBand", label: "VIIRS S-NPP", ranges: DNB_SNPP, format: "png", maxZoom: 7, pixel: 750 },
   ],
 };
 
@@ -92,18 +129,29 @@ function pick(list, date) {
   return list.find((layer) => inRanges(layer.ranges, date)) ?? null;
 }
 
+function available(mode, date) {
+  return (IMAGERY[mode] ?? IMAGERY.truecolor).filter((layer) => inRanges(layer.ranges, date));
+}
+
 export function imagerySatellites(mode, date) {
-  return (IMAGERY[mode] ?? IMAGERY.truecolor).filter((layer) => inRanges(layer.ranges, date)).map((layer) => layer.label);
+  return available(mode, date).map(({ id, label, pass }) => ({ id, label, pass }));
 }
 
 export function imageryLayer(mode, date, satellite) {
-  const list = (IMAGERY[mode] ?? IMAGERY.truecolor).filter((layer) => inRanges(layer.ranges, date));
-  const layer = list.find((l) => l.label === satellite) ?? list[0];
+  const list = available(mode, date);
+  const layer = list.find((l) => l.id === satellite) ?? list[0];
   if (!layer) return null;
+  const maxZoom = layer.maxZoom ?? RASTER_MAX_ZOOM;
   return {
     ...layer,
-    tiles: [`${WMTS_3857}/${layer.id}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpeg`],
+    maxZoom,
+    tiles: [`${WMTS_3857}/${layer.id}/default/${date}/GoogleMapsCompatible_Level${maxZoom}/{z}/{y}/{x}.${layer.format ?? "jpeg"}`],
   };
+}
+
+export function detectionsToHeat(modis, viirs) {
+  const feature = (p, sensor) => ({ type: "Feature", properties: { frp: p.frp ?? 0, sensor }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } });
+  return { type: "FeatureCollection", features: [...modis.map((p) => feature(p, "modis")), ...viirs.map((p) => feature(p, "viirs"))] };
 }
 
 export function fireLayers(date) {
