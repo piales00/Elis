@@ -2043,12 +2043,12 @@ th.text-right .fc-th-btn {
 
 @media (max-width: 1023px) {
   .fc-stage .maplibregl-ctrl-group button {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
   .fc-map-tools > button {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 }
 

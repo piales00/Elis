@@ -59,6 +59,9 @@ export function setRelief(map, enabled) {
         maxzoom: 14,
         attribution: "Mapzen / AWS Terrain Tiles",
       });
+    }
+    if (!map.getLayer("explore-hillshade")) {
+      const beforeLayer = map.getLayer("country-fill") ? "country-fill" : undefined;
       map.addLayer({
         id: "explore-hillshade",
         type: "hillshade",
@@ -69,8 +72,11 @@ export function setRelief(map, enabled) {
           "hillshade-highlight-color": "#779b88",
           "hillshade-accent-color": "#314d40",
         },
-      }, "country-fill");
+      }, beforeLayer);
+    } else {
+      map.setLayoutProperty("explore-hillshade", "visibility", "visible");
     }
+
     if (!map.getSource("explore-satellite")) {
       map.addSource("explore-satellite", {
         type: "raster",
@@ -79,21 +85,30 @@ export function setRelief(map, enabled) {
         maxzoom: 18,
         attribution: SATELLITE_ATTRIBUTION,
       });
+    }
+    if (!map.getLayer("explore-satellite")) {
       map.addLayer({
         id: "explore-satellite",
         type: "raster",
         source: "explore-satellite",
         paint: { "raster-saturation": -0.3, "raster-brightness-max": 0.82, "raster-fade-duration": 0 },
       }, "explore-hillshade");
+    } else {
+      map.setLayoutProperty("explore-satellite", "visibility", "visible");
     }
+
     map.setTerrain({ source: "explore-terrain", exaggeration: 1.5 });
-    if (typeof map.setSky === "function") map.setSky({ "sky-color": "#122b32", "horizon-color": "#718a87", "fog-color": "#233e39", "fog-ground-blend": 0.25 });
+    if (typeof map.setSky === "function") {
+      map.setSky({ "sky-color": "#122b32", "horizon-color": "#718a87", "fog-color": "#233e39", "fog-ground-blend": 0.25 });
+    }
   } else {
     map.setTerrain(null);
     if (typeof map.setSky === "function") map.setSky(undefined);
-    if (map.getLayer("explore-satellite")) map.removeLayer("explore-satellite");
-    if (map.getSource("explore-satellite")) map.removeSource("explore-satellite");
-    if (map.getLayer("explore-hillshade")) map.removeLayer("explore-hillshade");
-    if (map.getSource("explore-terrain")) map.removeSource("explore-terrain");
+    if (map.getLayer("explore-satellite")) {
+      map.setLayoutProperty("explore-satellite", "visibility", "none");
+    }
+    if (map.getLayer("explore-hillshade")) {
+      map.setLayoutProperty("explore-hillshade", "visibility", "none");
+    }
   }
 }
