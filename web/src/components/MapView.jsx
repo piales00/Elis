@@ -5,7 +5,7 @@ import { useI18n } from "../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../lib/hooks.js";
 import { useGibsLayers } from "./imagery/useGibsLayers.js";
 import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, mapPadding, tuneBasemap } from "../lib/mapStyle.js";
-import { containsPoint, setRelief } from "../lib/terrain.js";
+import { addTerrainFire, containsPoint, EXPLORE_CAMERA, setRelief } from "../lib/terrain.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -15,7 +15,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady, focus = null }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady, onTerrainChange, focus = null }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -26,16 +26,22 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const [drag, setDrag] = useState(null);
   const dragRef = useRef(null);
   const terrainRef = useRef(false);
+  const flatCameraRef = useRef(null);
+  const cellFeaturesRef = useRef([]);
 
   const changeTerrain = (enabled, move = true) => {
     const map = mapRef.current;
     if (!map?.getLayer("country-fill")) return;
+    if (enabled && !terrainRef.current) flatCameraRef.current = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), padding: map.getPadding(), pitch: 0 };
     setRelief(map, enabled);
+    map.setLayoutProperty("terrain-fire", "visibility", enabled ? "visible" : "none");
+    map.setPaintProperty("cells-fill", "fill-opacity", enabled ? 0 : cellPaint().fillOpacity);
+    live.current.onTerrainChange?.(enabled);
     terrainRef.current = enabled;
     setTerrain(enabled);
     map.doubleClickZoom[enabled ? "disable" : "enable"]();
     if (move) {
-      const camera = { pitch: enabled ? 60 : 0 };
+      const camera = enabled ? EXPLORE_CAMERA : flatCameraRef.current ?? { pitch: 0, bearing: 0 };
       if (prefersReducedMotion()) map.jumpTo(camera);
       else map.easeTo({ ...camera, duration: 700 });
     }
@@ -47,7 +53,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     if (!map || !containsPoint(country, point)) return;
     changeTerrain(true, false);
     popupRef.current?.remove();
-    const camera = { center: point, zoom: 10, pitch: 65, bearing: 15, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
+    const camera = { center: point, zoom: EXPLORE_CAMERA.zoom, pitch: EXPLORE_CAMERA.pitch, bearing: EXPLORE_CAMERA.bearing, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
     if (prefersReducedMotion()) map.jumpTo(camera);
     else map.flyTo({ ...camera, duration: 1800 });
   };
@@ -74,8 +80,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     flyHere(map.unproject([e.clientX - box.left, e.clientY - box.top]));
   };
 
-  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady, focus };
-  const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
+  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady, onTerrainChange, focus };
+  const { overZoom } = useGibsLayers(mapRef.current, ready, imagery, terrain);
 
   const fit = (duration) => {
     const map = mapRef.current;
@@ -169,6 +175,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
           "line-width": cellPaint().lineWidth,
         },
       });
+      addTerrainFire(map);
       map.resize();
       fit(0);
       setReady(true);
@@ -225,7 +232,12 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       map.getCanvas().style.cursor = "";
     });
     map.on("click", (e) => {
-      const cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
+      let cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
+      if (terrainRef.current && !cell.length) {
+        const distance = (f) => Math.hypot((f.properties.lon - e.lngLat.lng) * Math.cos(e.lngLat.lat * Math.PI / 180), f.properties.lat - e.lngLat.lat);
+        const nearest = cellFeaturesRef.current.reduce((best, f) => f.properties.v > 0 && (!best || distance(f) < distance(best)) ? f : best, null);
+        if (nearest && distance(nearest) <= 0.12) cell = [nearest];
+      }
       if (cell.length) {
         showCell({ features: cell, lngLat: e.lngLat }, true);
         live.current.onCellSelect?.(cell[0].properties);
@@ -249,7 +261,10 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
-    map.getSource("cells").setData(cells ? cellsToGeoJSON(cells, metric) : EMPTY);
+    const data = cells ? cellsToGeoJSON(cells, metric) : EMPTY;
+    cellFeaturesRef.current = data.features;
+    map.getSource("cells").setData(data);
+    map.getSource("terrain-cells").setData({ ...data, features: data.features.filter((f) => f.properties.v > 0).map((f) => ({ ...f, geometry: { type: "Point", coordinates: [f.properties.lon, f.properties.lat] } })) });
   }, [ready, cells, metric]);
 
   useEffect(() => {
@@ -258,6 +273,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     const paint = cellPaint(breaks);
     map.setPaintProperty("cells-fill", "fill-color", paint.fillColor);
     map.setPaintProperty("cells-outline", "line-width", paint.lineWidth);
+    map.setPaintProperty("terrain-fire", "heatmap-weight", ["interpolate", ["linear"], ["get", "v"], 0, 0, breaks[3] * 1.25, 1]);
   }, [ready, breaks]);
 
   useEffect(() => {
@@ -346,7 +362,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       {drag && <div aria-hidden="true" className="pointer-events-none fixed z-[100] text-est" style={{ left: drag.x, top: drag.y, transform: "translate(-50%, -100%)" }}>
         <svg viewBox="0 0 32 40" width="32" height="40" fill="var(--surface)" stroke="currentColor" strokeWidth="2"><path d="M16 37S4 23 4 15a12 12 0 0 1 24 0c0 8-12 22-12 22Z" /><path d="m10 20 6-12 6 12-6-3-6 3Z" fill="currentColor" /></svg>
       </div>}
-      {overZoom && (
+      {overZoom && !terrain && (
         <p role="note" className="pointer-events-none absolute bottom-16 right-3 m-0 max-w-[16rem] rounded-xl border border-line bg-bg/90 px-3 py-2 text-xs">
           {t("imagery.zoomNote", { meters: imagery.raster.pixel ?? 375 })}
         </p>

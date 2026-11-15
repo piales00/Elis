@@ -97,6 +97,7 @@ export default function App() {
     return { step: 0, auto: false };
   });
   const [theme, setTheme] = useState(readTheme);
+  const [terrain, setTerrain] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
   const [dataTab, setDataTab] = useState("series");
   const panelRef = useRef(null);
@@ -503,6 +504,7 @@ export default function App() {
             imagery={outlook ? { ...img.imagery, enabled: false } : img.imagery}
             ariaLabel={t("map.aria", { period: periodLabel })}
             onReady={setMapInstance}
+            onTerrainChange={setTerrain}
             focus={outlook && deptFeature ? deptFeature : null}
           />
         </Suspense>
@@ -578,10 +580,10 @@ export default function App() {
           <div className="pointer-events-none max-w-[min(24rem,calc(100%-4rem))] [&>*]:pointer-events-auto">
             {outlook ? (
               forecast.data && <OutlookLegend />
-            ) : imagery ? (
+            ) : imagery && !terrain ? (
               <ImageryLegend dateLabel={img.dateLabel} detections={img.detections} regionLabel={regionLabel} heat={img.heat} />
             ) : cellView.cells.length > 0 ? (
-              <MapLegend metric={cellView.metric} breaks={cellView.breaks} />
+              <MapLegend terrain={terrain} metric={cellView.metric} breaks={cellView.breaks} />
             ) : null}
           </div>
         </div>
