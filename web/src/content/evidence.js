@@ -1,4 +1,4 @@
-export const METHODS = "https://github.com/piales00/firechronos-peru/blob/main/docs/methods";
+export const METHODS = "https://github.com/piales00/Elis/blob/main/docs/methods";
 export const REPORT_PDF = "/firechronos-technical-report.pdf";
 
 export const EVIDENCE_DOCS = {
