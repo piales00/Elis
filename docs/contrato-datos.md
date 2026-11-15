@@ -121,8 +121,42 @@ Alimenta "Cómo lo calculamos".
 - `periods`: tramos de la serie con la fuente usada (`terra_bridge`, `aqua`, `viirs`) y su confianza (`low`, `normal` o `provisional` para datos NRT). Campos opcionales: `note` y `partial_through` (fecha del último dato de un mes parcial). 2000-11 a 2002-06 es de confianza baja.
 - `detection` incluye filas `peru`: conteos sumados de las tres regiones y p = Σn / ΣN regional.
 - `findings`: cifras para la pantalla "How we calculate it": efecto de la hora de paso, sesgo de Chapman, deriva de Aqua (`emulator_drift_latest`), máscara de fuentes estáticas (`static_source_mask`) y razón NOAA-20/S-NPP (`noaa20_ratio`). Su forma la fija `scripts/validate.py`.
-- `forecast`: pieza 4. Modelo y predictores, backtesting 2003–2025 frente a climatología y persistencia (`backtest`), prueba fuera de muestra con 2026 (`out_of_sample`), la demo de crudo frente a corregido (`raw_vs_corrected`) y las filas publicadas con su método (`published`). Lo escribe `scripts/forecast.py`, que se ejecuta después de `validate.py`.
+- `forecast`: pieza 4. Modelo y predictores, backtesting 2003–2025 frente a climatología y persistencia (`backtest`), prueba fuera de muestra con 2026 (`out_of_sample`), la demo de crudo frente a corregido (`raw_vs_corrected`) y las filas publicadas con su método (`published`). Lo escribe `scripts/forecast.py`, que se ejecuta después de `validate.py`. `forecast.season_outlook` resume `forecast.json` (variante, origen, temporada objetivo, anticipación, filas publicadas de `peru` y macrorregiones y métricas); lo añade `scripts/forecast_v2.py`, que se ejecuta después de `forecast.py`.
 - `emulator`: resultados del emulador MODIS (pieza 2) en los años de prueba. `auc` mide si distingue bien qué celdas ve MODIS y cuáles no (de 0,5 a 1). `brier` es el error de sus probabilidades (cuanto más bajo, mejor). `monthly_error_pct` es el error medio del total mensual frente al Aqua real, y `monthly_error_pct_fixed_ratio` es el mismo error con un factor fijo, para comparar.
+
+### `forecast.json` — pronóstico de temporada (pieza 4)
+
+Pronóstico probabilístico de la temporada agosto–octubre (suma de `estimated`, en celdas-día con fuego) para `peru`, las tres macrorregiones y los departamentos. Lo escribe `scripts/forecast_v2.py`. Un solo objeto JSON:
+
+| Campo | Qué es |
+|---|---|
+| `unit`, `season_months` | Unidad y meses de la temporada (`[8, 9, 10]`) |
+| `origin` | Último mes completo usado como predictor (`YYYY-MM`). El mes parcial (`excluded_partial_month`) nunca se usa |
+| `target_year`, `lead` | Temporada pronosticada y anticipación en meses desde el origen hasta agosto |
+| `classes`, `class_percentiles`, `climatology_probabilities` | `low`, `normal`, `high`, `very_high` con los percentiles de `ANOMALY_PERCENTILES` (25, 75, 90) de las temporadas 2003–2025; la climatología da 0,25 / 0,50 / 0,15 / 0,10 |
+| `variant`, `candidates`, `variant_scores`, `rules` | Variante publicada, conjuntos de predictores que puede elegir, puntaje de cada variante y reglas de decisión |
+| `regions` | Una entrada por unidad (ver abajo) |
+| `metrics` | Resumen por anticipación y nivel: unidades con habilidad, RPSS medio, habilidad en error y cobertura; departamentos publicados, con modelo, con climatología y bajo el umbral |
+| `backtest` | `scheme`, `years` y `rows`: una fila por unidad, variante y anticipación con `n`, `mae_log_model`, `mae_log_climatology`, `mae_skill`, `rps_model`, `rps_climatology`, `rpss`, `coverage_model`, `coverage_climatology`, `class_hit_model`, `class_hit_climatology` y `chosen` (cuántas veces se eligió cada conjunto de predictores). Los departamentos solo tienen la variante publicada |
+| `out_of_sample` | `year` (2026) y `rows`: por unidad, anticipación y tipo (`model` o `climatology`), el pronóstico de 2026 entrenado con 2003–2025 frente a lo observado; `published_method` marca el que se habría publicado |
+| `raw_vs_corrected` | La demo crudo frente a corregido con el modelo de temporada publicado (entrena 2003–2011, prueba 2013–2025) |
+| `departments_check` | Celdas asignadas, celdas reasignadas a su macrorregión y diferencia máxima entre la suma de departamentos y la serie de cada macrorregión |
+| `sources`, `notes` | Fuentes (ONI, ICEN, NASA POWER) y límites declarados |
+
+Cada entrada de `regions`:
+
+| Campo | Qué es |
+|---|---|
+| `region`, `name`, `level`, `macroregion` | Identificador (el `id` de `regions.geojson`), nombre en inglés, `country`/`macro`/`department` y macrorregión del departamento |
+| `season_median_2003_2025`, `active` | Mediana de la temporada en 2003–2025 y si supera el umbral de actividad (`FORECAST_DEPARTMENT_MIN_SEASON`) |
+| `published`, `method`, `reason` | Si hay pronóstico, `model` o `climatology` (sin habilidad a esa anticipación), y por qué. Bajo el umbral: `published: false`, `method: null` y sin cifras |
+| `median`, `low`, `high` | Mediana y rango al 90 % de la temporada |
+| `probabilities`, `most_likely_class`, `median_class` | Probabilidad de cada clase, la clase más probable y la clase de la mediana |
+| `hist_median`, `thresholds` | Mediana 2003–2025 y los tres umbrales de clase |
+| `predictors`, `spread_log` | Solo con `method: "model"`: predictores usados y dispersión en logaritmo |
+| `skill`, `skill_by_lead` | Habilidad del backtesting a la anticipación publicada y a cada anticipación (1, 4, 7 y 10 meses) |
+
+Los departamentos con poca actividad no tienen pronóstico. Antes de 2012 la serie por departamento hereda el reparto por celda con la climatología de VIIRS. Las probabilidades salen de una distribución normal en logaritmo con la dispersión de los residuos de validación cruzada. Es un pronóstico, no un dato observado.
 
 ### `map.parquet` — solo lo lee la API
 
@@ -158,10 +192,12 @@ Lo genera T2 con `scripts/build_map.py`, porque `estimated` necesita la calibrac
 | `GET /series` | `region` (obligatorio), `from`, `to` (años) | Filas de `series.json` |
 | `GET /map` | `year`, `month` (obligatorios), `region` | Lista de celdas: `lat`, `lon`, `raw_terra`, `raw_aqua`, `raw_modis`, `raw_viirs`, `raw_viirs_noaa20`, `raw_viirs_noaa21`, `estimated` |
 | `GET /methodology` | `region` (opcional) | `methodology.json` |
+| `GET /forecast` | `region` (opcional: `peru`, macrorregión o departamento) | `forecast.json`. Con `region`, `regions`, `backtest.rows` y `out_of_sample.rows` se filtran a esa unidad; una región desconocida da 404 |
+| `POST /chat` | Cuerpo JSON: `messages` (lista de `{role, content}`), `region` (opcional), `locale` (opcional) | `text/event-stream` con eventos `text`, `tool`, `chart`, `notice`, `done` y `error` (ver `docs/plan-chat-ia.md`) |
 
 El reloj del fuego y la comparación crudo/corregido se dibujan con `/series`; no necesitan rutas propias.
 
-La API solo acepta `GET` y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés.
+La API acepta `GET` en las rutas de datos y `POST` únicamente en `/chat`, y responde con CORS. Los orígenes permitidos se fijan con la variable de entorno `CORS_ORIGINS` (separados por comas; por defecto `*`). Los mensajes de error van en inglés. Si `CHAT_ENABLED` no es `1` o falta `ANTHROPIC_API_KEY`, `POST /chat` responde `503`.
 
 ## 5. Datos de prueba
 

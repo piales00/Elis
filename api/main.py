@@ -6,6 +6,26 @@ from typing import Any
 import duckdb
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+from api.chat import router as chat_router
+
+
+class RouteCORSMiddleware:
+    def __init__(self, app: ASGIApp, allow_origins: list[str]) -> None:
+        self.get_cors = CORSMiddleware(app, allow_origins=allow_origins, allow_methods=["GET"], allow_headers=["*"])
+        self.chat_cors = CORSMiddleware(
+            app,
+            allow_origins=allow_origins,
+            allow_methods=["POST", "OPTIONS"],
+            allow_headers=["*"],
+        )
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") == "http" and scope.get("path") == "/chat":
+            await self.chat_cors(scope, receive, send)
+            return
+        await self.get_cors(scope, receive, send)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -13,11 +33,12 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 CORS_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()]
 
 app = FastAPI(
-    title="FireChronos Perú API",
+    title="FireChronos Peru API",
     description="Comparable fire-activity calendar for Peru (2000-2026), in fire cell-days.",
     version="0.1.0",
 )
-app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["GET"], allow_headers=["*"])
+app.add_middleware(RouteCORSMiddleware, allow_origins=CORS_ORIGINS)
+app.include_router(chat_router)
 
 
 def read_json(filename: str) -> Any:
@@ -75,7 +96,7 @@ def get_map(
         raise HTTPException(status_code=503, detail="map.parquet is not available yet.")
     sql = "SELECT lat, lon, raw_terra, raw_aqua, raw_modis, raw_viirs, raw_viirs_noaa20, raw_viirs_noaa21, estimated FROM read_parquet(?) WHERE year = ? AND month = ?"
     parameters: list[Any] = [str(path), year, month]
-    if region is not None:
+    if region is not None and region != "peru":
         sql += " AND region = ?"
         parameters.append(region)
     sql += " ORDER BY lat, lon"
@@ -99,4 +120,21 @@ def get_methodology(region: str | None = Query(default=None, min_length=1)) -> d
     for key in ("detection", "validation"):
         if isinstance(filtered.get(key), list):
             filtered[key] = [row for row in filtered[key] if row.get("region") == region]
+    return filtered
+
+
+@app.get("/forecast")
+def get_forecast(region: str | None = Query(default=None, min_length=1)) -> dict[str, Any]:
+    value = read_json("forecast.json")
+    if not isinstance(value, dict) or not isinstance(value.get("regions"), list):
+        raise HTTPException(status_code=500, detail="forecast.json has an invalid format.")
+    if region is None:
+        return value
+    regions = [row for row in value["regions"] if row.get("region") == region]
+    if not regions:
+        raise HTTPException(status_code=404, detail=f"No forecast entry for region '{region}'.")
+    filtered = dict(value, regions=regions)
+    for key in ("backtest", "out_of_sample"):
+        if isinstance(filtered.get(key), dict) and isinstance(filtered[key].get("rows"), list):
+            filtered[key] = dict(filtered[key], rows=[row for row in filtered[key]["rows"] if row.get("region") == region])
     return filtered
