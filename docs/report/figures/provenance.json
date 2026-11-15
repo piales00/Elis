@@ -2,8 +2,17 @@
   "data/processed/series.json": "b0ea0f6fcff9ac7c6f7b308a90084b3715f9a7afccc714740ecf7320a0ee7b61",
   "data/processed/forecast.json": "6017c4401fbe19797ef5e4e0fe2e98b0d533af528752ab87eb6c9dd0d753edc7",
   "data/processed/continuity.json": "9ffbd33bf88fe880aa4808e2a203913bee366eea86fd9e53256b7b19357eeff3",
+  "data/processed/regions.geojson": "238b5e2ed5e4dc4eb3c1b07219d77c5e34960e3ac6611951f47e80904f667626",
   "docs/report/figures/season-ranges.json": "e8135c93c8eb8aa9b5e3818629d39dadcc9067890ed379a250992a22e40a820f",
-  "docs/report/figures/aqua-drift.svg": "7d5c5c61cb81c456b8efc5d5bb5fda95cccc84be03e230ba4143fe139894b1e7",
-  "docs/report/figures/forecast-2026.svg": "f586d159db7ca6c28c6ba3bb2bdf440cfcd12be574e701228703fb73b3f45f49",
-  "docs/report/figures/record.svg": "57d8f18abd1680a94b5db9591cbcf572c4e604e8141a94a196b67113c18f1e7b"
+  "docs/report/figures/report-exports.json": "3810f66537ea0aad4e62a107b7c5e326f933905b63d0312b3ee07940f827a63d",
+  "docs/report/figures/aqua-drift.svg": "69f8afa4d169afefeec89512992121bc6a5ed4a19d12ba9c51b80de4837fb1a9",
+  "docs/report/figures/detection-fractions.svg": "1ce271809713f93e70fe3b0b5aa13159333a7a3c58e3e30011c9f6f4145d7454",
+  "docs/report/figures/emulator-drift.svg": "1c735b4c1122a6ffb846a0b6c62276d29689e96af631e6c6b80d9c94f0d90c9d",
+  "docs/report/figures/footprints-venn.svg": "7b3e530ac83e1a22c4a14dc24bdaed0f4fcf7861dccb52d13cffd2c93cedfbd3",
+  "docs/report/figures/forecast-2026.svg": "c2354f490ced490f400ded73522c3e8822b172d60e9d330d3bb66c78d7a6bda0",
+  "docs/report/figures/forecast-skill.svg": "608c72a849f41152e336c0e17446594806ef7673cb18e3559fdf776b4e718319",
+  "docs/report/figures/heldout-validation.svg": "ced302b7051795c186964f14cb5cfcb4c7ea0f72bfe906c41738289347e85e0d",
+  "docs/report/figures/mapbiomas.svg": "f257555e6036e720cdc0d83666eb1e911e7488da8098d1c26f2825f1134544d2",
+  "docs/report/figures/record.svg": "549f7b80b63bec52411e0a823e5abcc2e38c6e0e94b48788f67be653bcdd20e3",
+  "docs/report/figures/study-area.svg": "b99a7ff2b484152e34a60338775d8612b4fd22b0c7ac38700aa8e5f30abbccf3"
 }
