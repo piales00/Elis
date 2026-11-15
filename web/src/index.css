@@ -363,6 +363,7 @@ body {
     "rail panel stage"
     "rail panel ribbon";
   background: var(--bg);
+  overflow: hidden;
 }
 .fc-app > [role="status"]:first-child {
   grid-area: banner;
@@ -1810,8 +1811,15 @@ th.text-right .fc-th-btn {
 
 .fc-tour {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: calc(100dvh - 24px);
+  overscroll-behavior: contain;
   animation: fc-rise 240ms var(--ease-out);
+}
+.fc-tour[data-placed] {
+  position: fixed;
+  z-index: 90;
 }
 @keyframes fc-rise {
   from {
