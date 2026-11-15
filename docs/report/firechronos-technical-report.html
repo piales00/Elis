@@ -150,22 +150,22 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
   <p><strong>Problem.</strong> MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire differently. Adding their detections makes fire in Peru appear to multiply by 8.9 between 2011 (10,375 detections) and 2012 (92,807). The fire did not change; the instrument did. With raw data, nobody can honestly compare one year with another.</p>
   <p><strong>What we built.</strong> One record of fire in Peru, 2000–2026, by macroregion (Amazon, Andes, Coast) and month, in <em>fire cell-days</em>. We estimate the total, including fire neither satellite saw, with capture–recapture (the Chapman estimator, used by biologists to count fish), calibrated only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart. Every number has a 90&#8239;% range.</p>
   <div class="kpis">
-    <div class="kpi"><b>3.5&#8239;%</b><span>Annual error of our method on held-out years 2021–2024, Peru (Aqua-only vs VIIRS-only)</span></div>
+    <div class="kpi"><b>3.8&#8239;%</b><span>Annual error of our method on held-out years 2021–2024, Peru (bias-corrected Aqua-only vs VIIRS-only)</span></div>
     <div class="kpi"><b>334&#8239;%</b><span>Error of the naive sum of detections on the same years</span></div>
     <div class="kpi"><b>80&#8239;% vs 55–58&#8239;%</b><span>Sensor agreement when passes are &lt; 20 min vs 20–60 min apart: small fire flickers</span></div>
-    <div class="kpi"><b>0.72</b><span>Correlation with MapBiomas burned area (0.85–0.98 within each Landsat era)</span></div>
+    <div class="kpi"><b>0.75</b><span>Correlation with MapBiomas burned area (0.85–0.98 within each Landsat era)</span></div>
     <div class="kpi"><b>−28.8&#8239;%</b><span>Aqua sees this much less than an on-time Aqua in 2026 (orbital drift)</span></div>
     <div class="kpi"><b>≈ −11&#8239;%</b><span>Simulated undercount of the headline number: it is a lower bound</span></div>
   </div>
   <p><strong>Main findings.</strong></p>
   <ul>
-    <li>The false ×8.9 jump of 2012 becomes ×1.36 (33,238 to 45,117 fire cell-days), within normal year-to-year variation. The false jumps of 2018 (NOAA-20) and 2023 (NOAA-21) also disappear.</li>
+    <li>The false ×8.9 jump of 2012 becomes ×1.39 (32,397 to 45,117 fire cell-days), within the range of other year-to-year changes. Aqua-era estimates are corrected for the Aqua-vs-VIIRS gap measured on 2013–2020. The false jumps of 2018 (NOAA-20) and 2023 (NOAA-21) also disappear.</li>
     <li>The highest months are August 2005 (21,512 [19,552–27,338] fire cell-days) and August 2010 (20,616 [18,857–26,739]), both drought years. September 2024, the record in the naive sum, is 15,520 [15,219–15,940].</li>
     <li>Aqua sees 16&#8239;% and S-NPP sees 79&#8239;% of afternoon fire cell-days. Sensors are positively dependent, so the record is a <strong>lower bound</strong>. No correction passed our tests, so none is applied.</li>
     <li>The record does not depend on MODIS after 2012: without MODIS it changes by at most 0.05 fire cell-days in any region-month.</li>
-    <li>A seasonal outlook built on the record beats climatology in a leave-one-year-out backtest (lead-1 RPSS 0.35). Trained on raw detections, the same model under-predicts every post-2012 season by ×4.5: <em>without harmonization, even AI gets it wrong.</em></li>
+    <li>A seasonal outlook built on the record beats climatology in a leave-one-year-out backtest (lead-1 RPSS 0.31). Trained on raw detections, the same model under-predicts every post-2012 season by ×4.5: <em>without harmonization, even AI gets it wrong.</em></li>
   </ul>
-  <p><strong>What we do not claim.</strong> We count fire cell-days, not fires and not hectares. Ranges after 2012 cover calibration uncertainty only. The Coast has a 32&#8239;% annual error. 2000–2002 (Terra only) and August–November 2026 (near-real-time data) are low-confidence or provisional. Forecasts are always labelled and shown apart from observations.</p>
+  <p><strong>What we do not claim.</strong> We count fire cell-days, not fires and not hectares. Ranges after 2012 cover calibration uncertainty only. The Coast has a 9&#8239;% annual error (32&#8239;% before the Aqua-era correction). 2000–2002 (Terra only) and August–November 2026 (near-real-time data) are low-confidence or provisional. Forecasts are always labelled and shown apart from observations.</p>
 </section>
 
 <section class="page">
@@ -174,12 +174,13 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
   <p><strong>Method.</strong> Per region and calendar month, list 1 = Aqua cell-days, list 2 = S-NPP cell-days, <em>m</em> = both. Chapman: N = (n₁+1)(n₂+1)/(m+1) − 1. We calibrate on 2013–2020, only on days with an overpass gap under 20 minutes, and get the share each sensor sees, p<sub>aqua</sub> = n₁/N and p<sub>viirs</sub> = n₂/N (500-replicate year bootstrap). Each period then uses its available sensor:</p>
   <table>
     <tr><th>Period</th><th>Estimate</th><th>Confidence</th></tr>
-    <tr><td>2000-11 to 2002-06</td><td>Terra bridged to Aqua scale (ratio from 2003–2011), ÷ p<sub>aqua</sub></td><td>low</td></tr>
-    <tr><td>2002-07 to 2011-12</td><td>n<sub>aqua</sub> / p<sub>aqua</sub></td><td>low in 2002, then normal</td></tr>
+    <tr><td>2000-11 to 2002-06</td><td>Terra bridged to Aqua scale (ratio from 2003–2011), ÷ p<sub>aqua</sub>, × c</td><td>low</td></tr>
+    <tr><td>2002-07 to 2011-12</td><td>n<sub>aqua</sub> / p<sub>aqua</sub> × c</td><td>low in 2002, then normal</td></tr>
     <tr><td>2012-01 to 2026-07</td><td>n<sub>snpp</sub> / p<sub>viirs</sub> (Aqua fills S-NPP outage days)</td><td>normal</td></tr>
     <tr><td>2026-08 to 2026-10</td><td>Same, from near-real-time data with a static-source mask</td><td>provisional</td></tr>
     <tr><td>2026-11 (to 11-13)</td><td>NOAA-20 scaled to S-NPP (ratio 0.97–0.98) after S-NPP ends on 11-01</td><td>provisional</td></tr>
   </table>
+  <p><strong>Aqua-era bias correction, c.</strong> On the calibration years 2013–2020 (held-out years untouched) the Aqua-based rule gives +11.9&#8239;% [+8.6, +15.0] more fire than the VIIRS-based rule in the Amazon and −31.5&#8239;% [−38.1, −24.8] on the Coast (90&#8239;% year-bootstrap intervals); the Andes gap, +0.3&#8239;% [−3.0, +3.4], is not significant and is not corrected. Season intervals do not overlap, so c = exp(−bias) is applied separately for July–November and December–June: ×0.85 and ×1.14 in the Amazon, ×1.30 and ×1.68 on the Coast. Structural residuals for the Aqua-era ranges also come from 2013–2020, centred after the correction.</p>
   <h3>The overpass-time finding</h3>
   <table>
     <tr><th>Aqua – S-NPP gap</th><th class="n">Aqua cell-days also seen by S-NPP</th><th class="n">Chapman N / S-NPP</th></tr>
@@ -213,15 +214,15 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
 <text x="624.0" y="237" text-anchor="middle" fill="#555">2025</text>
 <line x1="317.4" x2="317.4" y1="18" y2="221" stroke="#999" stroke-dasharray="3 3"/>
 <text x="321.4" y="28" fill="#555">VIIRS starts (2012)</text>
-<polygon points="58.0,201.3 81.6,202.7 105.2,187.0 128.8,195.3 152.3,172.0 175.9,189.9 199.5,183.3 223.1,191.2 246.7,194.9 270.2,178.7 293.8,196.1 317.4,190.0 341.0,195.4 364.6,197.3 388.2,192.5 411.8,185.0 435.3,196.7 458.9,194.9 482.5,192.0 506.1,181.2 529.7,193.7 553.2,185.3 576.8,188.9 600.4,184.1 624.0,197.9 624.0,198.5 600.4,184.8 576.8,189.6 553.2,185.9 529.7,194.4 506.1,182.4 482.5,192.6 458.9,195.5 435.3,197.2 411.8,185.8 388.2,193.0 364.6,197.8 341.0,195.9 317.4,190.7 293.8,198.3 270.2,182.8 246.7,197.6 223.1,193.9 199.5,186.9 175.9,192.8 152.3,175.9 128.8,198.3 105.2,190.8 81.6,205.0 58.0,211.2" fill="#1f5f8b" opacity="0.25"/>
+<polygon points="58.0,201.8 81.6,203.5 105.2,188.7 128.8,195.7 152.3,173.9 175.9,192.4 199.5,186.7 223.1,193.0 246.7,197.0 270.2,180.9 293.8,197.4 317.4,190.0 341.0,195.4 364.6,197.3 388.2,192.5 411.8,185.0 435.3,196.7 458.9,194.9 482.5,192.0 506.1,181.2 529.7,193.7 553.2,185.3 576.8,188.9 600.4,184.1 624.0,197.9 624.0,198.5 600.4,184.8 576.8,189.6 553.2,185.9 529.7,194.4 506.1,182.4 482.5,192.6 458.9,195.5 435.3,197.2 411.8,185.8 388.2,193.0 364.6,197.8 341.0,195.9 317.4,190.7 293.8,200.7 270.2,187.2 246.7,199.8 223.1,196.6 199.5,190.7 175.9,196.0 152.3,182.3 128.8,199.1 105.2,192.9 81.6,205.7 58.0,210.7" fill="#1f5f8b" opacity="0.25"/>
 <polyline fill="none" stroke="#b5452a" stroke-width="2" points="58.0,220.3 81.6,216.4 105.2,211.4 128.8,213.9 152.3,206.8 175.9,213.0 199.5,209.8 223.1,212.4 246.7,213.8 270.2,208.4 293.8,214.0 317.4,158.2 341.0,173.1 364.6,178.1 388.2,167.8 411.8,151.9 435.3,178.3 458.9,137.2 482.5,117.0 506.1,86.8 529.7,128.3 553.2,99.1 576.8,67.4 600.4,18.2 624.0,117.0"/>
-<polyline fill="none" stroke="#1f5f8b" stroke-width="2.2" points="58.0,204.5 81.6,204.4 105.2,190.5 128.8,197.2 152.3,177.4 175.9,193.8 199.5,187.5 223.1,194.0 246.7,197.8 270.2,183.2 293.8,198.5 317.4,190.5 341.0,195.8 364.6,197.7 388.2,192.9 411.8,185.6 435.3,197.1 458.9,195.3 482.5,192.4 506.1,182.0 529.7,194.2 553.2,185.8 576.8,189.4 600.4,184.6 624.0,198.3"/>
+<polyline fill="none" stroke="#1f5f8b" stroke-width="2.2" points="58.0,204.6 81.6,204.1 105.2,190.8 128.8,197.1 152.3,178.5 175.9,194.4 199.5,188.6 223.1,194.7 246.7,198.4 270.2,184.4 293.8,199.1 317.4,190.5 341.0,195.8 364.6,197.7 388.2,192.9 411.8,185.6 435.3,197.1 458.9,195.3 482.5,192.4 506.1,182.0 529.7,194.2 553.2,185.8 576.8,189.4 600.4,184.6 624.0,198.3"/>
 <text x="482.5" y="12.2" fill="#b5452a" font-weight="600">Naive sum of detections</text>
 <text x="62.0" y="156.7" fill="#1f5f8b" font-weight="600">Harmonized estimate</text>
 <text x="62.0" y="169.7" fill="#1f5f8b">fire cell-days, 90% range shaded</text>
 <text x="12" y="119.5" transform="rotate(-90 12 119.5)" text-anchor="middle" fill="#555">per year</text>
 </svg>
-    <figcaption>Figure 1. Peru, fire per year, 2001–2025. Red: naive sum of all detections. Blue: harmonized estimate in fire cell-days with its 90&#8239;% range (shaded). In most Aqua-era years the range sits above the point estimate because the structural error from the held-out years is uncentred. Sources: <code>series.json</code>, aligned replicates.</figcaption>
+    <figcaption>Figure 1. Peru, fire per year, 2001–2025. Red: naive sum of all detections. Blue: harmonized estimate in fire cell-days with its 90&#8239;% range (shaded). Aqua-era values include the bias correction; every annual range contains its estimate. Sources: <code>series.json</code>, aligned replicates.</figcaption>
   </figure>
   <p class="meta">Detail: docs/methods/01-harmonization.md</p>
 </section>
@@ -339,32 +340,32 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
   <p>Ridge regression on log anomalies of the August–October season of the harmonized record. Candidate predictors: recent fire, ENSO (NOAA CPC ONI, ENFEN ICEN) and drought (SPI-3/6/12 from NASA POWER precipitation). Leads of 1, 4, 7 and 10 months. Leave-one-year-out backtest 2003–2025 with predictor selection inside each fold. The model is published only where RPSS ≥ 0.05 and MAE skill &gt; 0; otherwise climatology, labelled as such.</p>
   <table>
     <tr><th>Lead</th><th class="n">Macroregions with skill</th><th class="n">Mean RPSS</th><th class="n">Mean MAE skill</th><th class="n">Departments with skill</th></tr>
-    <tr><td>1 month</td><td class="n">3 of 3</td><td class="n">0.347</td><td class="n">0.239</td><td class="n">18 of 20</td></tr>
-    <tr><td>4 months</td><td class="n">2 of 3</td><td class="n">0.204</td><td class="n">0.143</td><td class="n">8 of 20</td></tr>
-    <tr><td>7 months</td><td class="n">2 of 3</td><td class="n">0.253</td><td class="n">0.177</td><td class="n">10 of 20</td></tr>
-    <tr><td>10 months</td><td class="n">2 of 3</td><td class="n">0.223</td><td class="n">0.105</td><td class="n">8 of 20</td></tr>
+    <tr><td>1 month</td><td class="n">3 of 3</td><td class="n">0.306</td><td class="n">0.261</td><td class="n">15 of 20</td></tr>
+    <tr><td>4 months</td><td class="n">2 of 3</td><td class="n">0.193</td><td class="n">0.147</td><td class="n">6 of 20</td></tr>
+    <tr><td>7 months</td><td class="n">2 of 3</td><td class="n">0.203</td><td class="n">0.145</td><td class="n">9 of 20</td></tr>
+    <tr><td>10 months</td><td class="n">2 of 3</td><td class="n">0.142</td><td class="n">0.100</td><td class="n">6 of 20</td></tr>
   </table>
-  <p><strong>2026, out of sample</strong> (fitted on 2003–2025; observation provisional): Peru lead-1 forecast 25,231 [19,624–32,439] fire cell-days, observed 22,955, inside the range and in the forecast class (normal). All three macroregions fell inside their ranges; the most likely class was wrong for the Amazon and the Coast.</p>
+  <p><strong>2026, out of sample</strong> (fitted on 2003–2025; observation provisional): Peru lead-1 forecast 24,392 [18,848–31,568] fire cell-days, observed 22,955, inside the range and in the forecast class (normal). All three macroregions fell inside their ranges; the most likely class was wrong only for the Coast.</p>
   <table>
     <tr><th>2027 outlook (origin 2026-10)</th><th>Method</th><th class="n">Median [90&#8239;% range]</th><th>Most likely class</th></tr>
-    <tr><td>Peru</td><td>climatology</td><td class="n">27,301 [19,726–37,650]</td><td>normal (50&#8239;%)</td></tr>
-    <tr><td>Amazon</td><td>climatology</td><td class="n">14,059 [10,832–20,280]</td><td>normal (50&#8239;%)</td></tr>
+    <tr><td>Peru</td><td>climatology</td><td class="n">27,301 [18,224–35,565]</td><td>normal (50&#8239;%)</td></tr>
+    <tr><td>Amazon</td><td>climatology</td><td class="n">13,624 [10,292–17,539]</td><td>normal (50&#8239;%)</td></tr>
     <tr><td>Andes</td><td>model</td><td class="n">14,426 [10,153–20,499]</td><td>very high (52&#8239;%)</td></tr>
-    <tr><td>Coast</td><td>model</td><td class="n">1,677 [1,137–2,472]</td><td>normal (38&#8239;%)</td></tr>
+    <tr><td>Coast</td><td>model</td><td class="n">1,895 [1,328–2,703]</td><td>very high (36&#8239;%)</td></tr>
   </table>
-  <div class="note warn"><strong>Without harmonization, even AI gets it wrong.</strong> Trained on 2003–2011 and tested on 2013–2025 seasons, the model trained on raw detections under-predicts by a median ×4.49; trained on the harmonized record, 0.94. Fitted trend 2003–2025: +16.8&#8239;% per year on raw detections, −0.3&#8239;% per year on the harmonized record.</div>
+  <div class="note warn"><strong>Without harmonization, even AI gets it wrong.</strong> Trained on 2003–2011 and tested on 2013–2025 seasons, the model trained on raw detections under-predicts by a median ×4.49; trained on the harmonized record, 1.02. Fitted trend 2003–2025: +16.8&#8239;% per year on raw detections, +0.2&#8239;% per year on the harmonized record.</div>
   <p class="meta">Detail: docs/methods/05-seasonal-forecast.md</p>
 </section>
 
 <section>
   <h2><span class="num">6</span>Validation</h2>
-  <p>Held-out years 2021–2024 are never used for fitting. In those years we reconstruct Peru twice on identical days: with Aqua only (the rule used before 2012) and with VIIRS only (the rule used since 2012).</p>
+  <p>Held-out years 2021–2024 are never used for fitting. In those years we reconstruct Peru twice on identical days: with Aqua only (the bias-corrected rule used before 2012) and with VIIRS only (the rule used since 2012). Values before the Aqua-era correction in brackets. For Peru the error rises slightly because the Amazon excess and the Coast deficit used to cancel; the Peru monthly error falls from 28&#8239;% to 19&#8239;%.</p>
   <table>
     <tr><th>Annual error, 2021–2024</th><th class="n">Our method</th><th class="n">Naive sum</th><th class="n">Correlation with MapBiomas</th></tr>
-    <tr class="hl"><td>Peru</td><td class="n">3.5&#8239;%</td><td class="n">334&#8239;%</td><td class="n">0.72</td></tr>
-    <tr><td>Amazon</td><td class="n">11.3&#8239;%</td><td class="n">361&#8239;%</td><td class="n">0.54</td></tr>
-    <tr><td>Andes</td><td class="n">7.0&#8239;%</td><td class="n">337&#8239;%</td><td class="n">0.72</td></tr>
-    <tr><td>Coast</td><td class="n">32.0&#8239;%</td><td class="n">199&#8239;%</td><td class="n">0.66</td></tr>
+    <tr class="hl"><td>Peru</td><td class="n">3.8&#8239;% [3.5]</td><td class="n">334&#8239;%</td><td class="n">0.75 [0.72]</td></tr>
+    <tr><td>Amazon</td><td class="n">2.3&#8239;% [11.3]</td><td class="n">361&#8239;%</td><td class="n">0.65 [0.54]</td></tr>
+    <tr><td>Andes</td><td class="n">7.0&#8239;% [7.0]</td><td class="n">337&#8239;%</td><td class="n">0.72 [0.72]</td></tr>
+    <tr><td>Coast</td><td class="n">9.0&#8239;% [32.0]</td><td class="n">199&#8239;%</td><td class="n">0.67 [0.66]</td></tr>
   </table>
   <p>MapBiomas Fuego Peru (Landsat, 30 m) has its own steps when its satellites change: around 2013 (Landsat 8) and 2021–2022 (Landsat 9; Peru jumps from 220,139 to 445,776 ha). Within each Landsat era the Peru correlation is 0.85 (2001–2012), 0.98 (2013–2020) and 0.92 (2021–2025). In the Andes MapBiomas filters burn scars with FIRMS hot spots, so there it is not fully independent. The record keeps 2005 and 2010 as the high years of the MODIS era, the known drought years, which MapBiomas also shows.</p>
   <p class="meta">Detail: docs/methods/06-validation.md</p>
@@ -390,7 +391,7 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 3pt; }
   <ul>
     <li><strong>Lower bound.</strong> Sensors are positively dependent; clouds and smoke hide fire from both. The simulated undercount is about 11&#8239;%, but no correction is applied.</li>
     <li><strong>Unit.</strong> Fire cell-days count places and days with active fire at the overpass. Not fires, not hectares. In years of large fires (2022–2024) burned area grows more than our count.</li>
-    <li><strong>Regional accuracy.</strong> Coast 32&#8239;%, Amazon 11&#8239;%, Andes 7&#8239;% annual error on held-out years. Single months are less accurate than seasons.</li>
+    <li><strong>Regional accuracy.</strong> Coast 9&#8239;%, Amazon 2&#8239;%, Andes 7&#8239;% annual error on held-out years after the Aqua-era correction (32, 11 and 7&#8239;% before). The Andes Aqua era is not corrected: its gap is seasonal and cancels over the year. Single months are less accurate than seasons.</li>
     <li><strong>Early and late periods.</strong> 2000-11 to 2002-12 relies on Terra (backcast annual error 16–28&#8239;% by region). August–November 2026 uses near-real-time data and is provisional.</li>
     <li><strong>Ranges.</strong> After 2012 they cover calibration uncertainty only (about ±1–2&#8239;% per year).</li>
     <li><strong>Forecasts</strong> rest on 23 seasons and are always shown apart from observations.</li>
