@@ -82,7 +82,16 @@ export default function App() {
   const [ribbonMetric, setRibbonMetric] = useState("estimated");
   const [playing, setPlaying] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [tour, setTour] = useState(initial.tour ? { step: 0, auto: initial.tour === "auto" } : null);
+  const [tour, setTour] = useState(() => {
+    if (initial.tour) return { step: 0, auto: initial.tour === "auto" };
+    try {
+      if (window.localStorage.getItem("fc-tour-seen")) return null;
+      window.localStorage.setItem("fc-tour-seen", "1");
+    } catch {
+      return null;
+    }
+    return { step: 0, auto: false };
+  });
   const [theme, setTheme] = useState(readTheme);
   const [mapInstance, setMapInstance] = useState(null);
   const [dataTab, setDataTab] = useState("series");
