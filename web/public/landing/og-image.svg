@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f1b16"/>
+  <rect x="0" y="0" width="18" height="630" fill="#ee8a3c"/>
+  <circle cx="104" cy="100" r="24" fill="none" stroke="#53adcb" stroke-width="4"/>
+  <text x="148" y="108" fill="#ecf2ee" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">FireChronos <tspan fill="#a7b7ad" font-weight="500">Peru</tspan></text>
+  <text x="96" y="236" fill="#ecf2ee" font-family="Segoe UI, Arial, sans-serif" font-size="70" font-weight="700" letter-spacing="-2">A comparable fire history.</text>
+  <text x="96" y="320" fill="#a7b7ad" font-family="Segoe UI, Arial, sans-serif" font-size="32">Harmonizing NASA MODIS and VIIRS observations,</text>
+  <text x="96" y="364" fill="#a7b7ad" font-family="Segoe UI, Arial, sans-serif" font-size="32">one cautious monthly record for Peru.</text>
+  <line x1="96" y1="525" x2="1100" y2="525" stroke="#647c6f" stroke-width="3"/>
+  <text x="96" y="574" fill="#a7b7ad" font-family="Segoe UI, Arial, sans-serif" font-size="23">NASA Space Apps Challenge 2026 · 2000–2026</text>
+  <text x="820" y="400" fill="#53adcb" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">RAW DETECTIONS · PERU</text>
+  <rect x="870" y="512" width="56" height="13" rx="3" fill="#ee8a3c"/>
+  <rect x="954" y="408" width="56" height="117" rx="3" fill="#ee8a3c"/>
+  <text x="898" y="501" fill="#ecf2ee" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16">10,375</text>
+  <text x="982" y="396" fill="#ecf2ee" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16">92,807</text>
+  <text x="898" y="550" fill="#ecf2ee" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17">2011</text>
+  <text x="982" y="550" fill="#ecf2ee" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17">2012</text>
+  <text x="820" y="584" fill="#a7b7ad" font-family="Segoe UI, Arial, sans-serif" font-size="15">Raw detections · source: series.json</text>
+</svg>
