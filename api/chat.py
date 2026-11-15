@@ -160,7 +160,7 @@ def _build_auto_chart(
             )[2]
             if chart_ev:
                 return chart_ev
-        if name == "get_methodology" and isinstance(inp, dict) and inp.get("topic") == "forecast":
+        if name == "get_methodology" and isinstance(inp, dict) and inp.get("topic") == "forecast" and not any(n in ("get_series", "rank_years", "compare_periods") for n, _, _ in tool_calls_made):
             chart_ev = execute_tool(
                 "show_chart",
                 {
@@ -196,6 +196,101 @@ def _is_greeting_only(text: str) -> bool:
     cleaned = "".join(ch.lower() if ch.isalnum() or ch.isspace() else " " for ch in text)
     normalized = " ".join(cleaned.split())
     return normalized in _GREETING_TOKENS
+
+
+_TARGET_PLACES = [
+    (("madre de dios", "tambopata", "manu"), "Madre de Dios", "Madre de Dios", "amazonia", "madre_de_dios"),
+    (("cusco", "cuzco", "machu picchu", "urubamba", "valle sagrado", "sacred valley"), "Cusco y Machu Picchu", "Cusco & Machu Picchu", "sierra", "cusco"),
+    (("ucayali", "pucallpa"), "Ucayali", "Ucayali", "amazonia", "ucayali"),
+    (("puno", "titicaca"), "Puno", "Puno", "sierra", "puno"),
+    (("junin", "junín"), "Junín", "Junín", "sierra", "junin"),
+    (("san martin", "san martín", "tarapoto"), "San Martín", "San Martín", "amazonia", "san_martin"),
+    (("loreto", "iquitos"), "Loreto", "Loreto", "amazonia", "loreto"),
+    (("ancash", "áncash", "huaraz"), "Áncash", "Áncash", "sierra", "sierra"),
+    (("piura",), "Piura", "Piura", "costa", "costa"),
+    (("cajamarca",), "Cajamarca", "Cajamarca", "sierra", "sierra"),
+    (("apurimac", "apurímac"), "Apurímac", "Apurímac", "sierra", "sierra"),
+    (("ayacucho",), "Ayacucho", "Ayacucho", "sierra", "sierra"),
+    (("huanuco", "huánuco"), "Huánuco", "Huánuco", "sierra", "sierra"),
+    (("pasco",), "Pasco", "Pasco", "sierra", "sierra"),
+]
+
+
+def _build_decision_suggestions(
+    messages: list[dict[str, Any]],
+    tool_calls_made: list[tuple[str, dict[str, Any], dict[str, Any]]],
+    default_region: str | None,
+    locale: str | None,
+) -> list[dict[str, Any]]:
+    raw_q = str(messages[-1].get("content", "")) if messages else ""
+    q = raw_q.lower()
+    is_es = (locale or "es").lower().startswith("es") or any(
+        w in q for w in ("cual", "cuál", "como", "cómo", "que", "qué", "incendio", "fuego", "pronostico", "pronóstico", "hola")
+    )
+
+    macro = default_region if default_region in VALID_REGIONS else "peru"
+    for _, inp, _ in tool_calls_made:
+        if isinstance(inp, dict) and inp.get("region") in VALID_REGIONS:
+            macro = inp["region"]
+
+    region_labels_es = {"peru": "Perú", "amazonia": "la Amazonía", "sierra": "la Sierra (Andes)", "costa": "la Costa"}
+    region_labels_en = {"peru": "Peru", "amazonia": "the Amazon", "sierra": "the Andes (Sierra)", "costa": "the Coast"}
+    label_es = region_labels_es.get(macro, "Perú")
+    label_en = region_labels_en.get(macro, "Peru")
+    camera = macro
+
+    for keywords, t_es, t_en, t_macro, t_cam in _TARGET_PLACES:
+        if any(kw in q for kw in keywords):
+            label_es = t_es
+            label_en = t_en
+            macro = t_macro
+            camera = t_cam
+            break
+
+    target = label_es if is_es else label_en
+    asked_forecast = any(w in q for w in ("pronostico", "pronóstico", "2027", "forecast", "outlook", "alerta temprana"))
+    asked_actions = any(
+        w in q for w in ("accion", "acción", "acciones", "indeci", "serfor", "minam", "presupuesto", "interven", "que hacer", "qué hacer", "action", "deploy", "t-60")
+    )
+    asked_sensors = any(w in q for w in ("sensor", "modis", "viirs", "2012", "desacuerdo", "chapman", "salto", "disagreement"))
+
+    chips: list[dict[str, Any]] = []
+    if not asked_forecast:
+        chips.append({
+            "id": "ChipForecast2027",
+            "label": f"🔮 Pronóstico 2027: {target}" if is_es else f"🔮 2027 Outlook: {target}",
+            "prompt": f"¿Cuál es el pronóstico estacional 2027, el rango al 90% y el nivel de alerta para {target}?" if is_es else f"What is the 2027 seasonal outlook, 90% range, and alert level for {target}?",
+            "region": macro,
+            "cameraKey": camera,
+            "mode3d": True,
+        })
+    if not asked_actions:
+        chips.append({
+            "id": "ChipActionT60",
+            "label": f"🛡️ Plan Operativo T-60d ({target})" if is_es else f"🛡️ T-60d Action Plan ({target})",
+            "prompt": f"¿Qué acciones operativas e intervención preventiva T-60d (INDECI / SERFOR / SERNANP) se recomiendan en {target}?" if is_es else f"What T-60d preventive operational actions (INDECI / SERFOR / SERNANP) are recommended in {target}?",
+            "region": macro,
+            "cameraKey": camera,
+            "mode3d": True,
+        })
+    if not asked_sensors:
+        chips.append({
+            "id": "ChipSensorRegime",
+            "label": "🛰️ Régimen: Quema vs. Bosque (Sensores)" if is_es else "🛰️ Fire Regime: Pasture vs. Forest",
+            "prompt": f"¿Qué revela la diferencia entre MODIS y VIIRS sobre el tipo de fuego en {target}?" if is_es else f"What does MODIS vs. VIIRS sensor disagreement reveal about the fire regime in {target}?",
+            "region": macro,
+            "cameraKey": camera,
+            "mode3d": False,
+        })
+    chips.append({
+        "id": "ChipComparePeaks",
+        "label": "📊 Comparar 2024 vs. Récords Históricos" if is_es else "📊 Compare 2024 vs. Record Years",
+        "prompt": f"Compara la actividad de fuego de 2024 frente a los años récord históricos desde 2003 en {target}." if is_es else f"Compare 2024 fire activity against the historical peak record years since 2003 in {target}.",
+        "region": macro,
+        "cameraKey": camera,
+        "mode3d": False,
+    })
+    return chips[:3]
 
 
 def _prepare_messages(
@@ -450,6 +545,7 @@ async def _stream_gemini_turns(
                 "verified": verification.get("verified", True),
                 "tools_used": [name for name, _, _ in tool_calls_made],
                 "usage": total_usage,
+                "suggestions": _build_decision_suggestions(messages, [], region, locale),
             },
         )
     except Exception as exc:
@@ -575,6 +671,7 @@ async def _stream_anthropic_turns(
                 "verified": verification.get("verified", True),
                 "tools_used": [t.get("name", "") for t in tool_results_for_guard if "name" in t],
                 "usage": total_usage,
+                "suggestions": _build_decision_suggestions(messages, [], region, locale),
             },
         )
     except Exception as exc:

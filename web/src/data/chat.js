@@ -378,4 +378,91 @@ export async function streamChat({ messages, region, locale, onEvent, signal }) 
   }
 }
 
+const TARGET_PLACES = [
+  { kw: ["madre de dios", "tambopata", "manu"], es: "Madre de Dios", en: "Madre de Dios", macro: "amazonia", cam: "madre_de_dios" },
+  { kw: ["cusco", "cuzco", "machu picchu", "urubamba", "valle sagrado", "sacred valley"], es: "Cusco y Machu Picchu", en: "Cusco & Machu Picchu", macro: "sierra", cam: "cusco" },
+  { kw: ["ucayali", "pucallpa"], es: "Ucayali", en: "Ucayali", macro: "amazonia", cam: "ucayali" },
+  { kw: ["puno", "titicaca"], es: "Puno", en: "Puno", macro: "sierra", cam: "puno" },
+  { kw: ["junin", "junín"], es: "Junín", en: "Junín", macro: "sierra", cam: "junin" },
+  { kw: ["san martin", "san martín", "tarapoto"], es: "San Martín", en: "San Martín", macro: "amazonia", cam: "san_martin" },
+  { kw: ["loreto", "iquitos"], es: "Loreto", en: "Loreto", macro: "amazonia", cam: "loreto" },
+  { kw: ["ancash", "áncash", "huaraz"], es: "Áncash", en: "Áncash", macro: "sierra", cam: "sierra" },
+  { kw: ["piura"], es: "Piura", en: "Piura", macro: "costa", cam: "costa" },
+];
+
+export function buildDecisionSuggestions({ question = "", region = "peru", locale = "en" }) {
+  const q = String(question || "").toLowerCase();
+  const isEs = locale === "es" || /(cual|cuál|como|cómo|que|qué|incendio|fuego|pronostico|pronóstico|madre de dios)/i.test(q);
+  let macro = region || "peru";
+  let cam = macro;
+  const regMapEs = { peru: "Perú", amazonia: "la Amazonía", sierra: "la Sierra (Andes)", costa: "la Costa" };
+  const regMapEn = { peru: "Peru", amazonia: "the Amazon", sierra: "the Andes (Sierra)", costa: "the Coast" };
+  let labelEs = regMapEs[macro] || "Perú";
+  let labelEn = regMapEn[macro] || "Peru";
+
+  for (const p of TARGET_PLACES) {
+    if (p.kw.some((k) => q.includes(k))) {
+      labelEs = p.es;
+      labelEn = p.en;
+      macro = p.macro;
+      cam = p.cam;
+      break;
+    }
+  }
+
+  const target = isEs ? labelEs : labelEn;
+  const askedForecast = /(pronostico|pronóstico|2027|forecast|outlook|alerta temprana)/i.test(q);
+  const askedActions = /(accion|acción|acciones|indeci|serfor|minam|presupuesto|interven|que hacer|qué hacer|action|deploy|t-60)/i.test(q);
+  const askedSensors = /(sensor|modis|viirs|2012|desacuerdo|chapman|salto|disagreement)/i.test(q);
+
+  const chips = [];
+  if (!askedForecast) {
+    chips.push({
+      id: "ChipForecast2027",
+      label: isEs ? `🔮 Pronóstico 2027: ${target}` : `🔮 2027 Outlook: ${target}`,
+      prompt: isEs
+        ? `¿Cuál es el pronóstico estacional 2027, el rango al 90% y el nivel de alerta para ${target}?`
+        : `What is the 2027 seasonal outlook, 90% range, and alert level for ${target}?`,
+      region: macro,
+      cameraKey: cam,
+      mode3d: true,
+    });
+  }
+  if (!askedActions) {
+    chips.push({
+      id: "ChipActionT60",
+      label: isEs ? `🛡️ Plan Operativo T-60d (${target})` : `🛡️ T-60d Action Plan (${target})`,
+      prompt: isEs
+        ? `¿Qué acciones operativas e intervención preventiva T-60d (INDECI / SERFOR / SERNANP) se recomiendan en ${target}?`
+        : `What T-60d preventive operational actions (INDECI / SERFOR / SERNANP) are recommended in ${target}?`,
+      region: macro,
+      cameraKey: cam,
+      mode3d: true,
+    });
+  }
+  if (!askedSensors) {
+    chips.push({
+      id: "ChipSensorRegime",
+      label: isEs ? "🛰️ Régimen: Quema vs. Bosque (Sensores)" : "🛰️ Fire Regime: Pasture vs. Forest",
+      prompt: isEs
+        ? `¿Qué revela la diferencia entre MODIS y VIIRS sobre el tipo de fuego en ${target}?`
+        : `What does MODIS vs. VIIRS sensor disagreement reveal about the fire regime in ${target}?`,
+      region: macro,
+      cameraKey: cam,
+      mode3d: false,
+    });
+  }
+  chips.push({
+    id: "ChipComparePeaks",
+    label: isEs ? "📊 Comparar 2024 vs. Récords Históricos" : "📊 Compare 2024 vs. Record Years",
+    prompt: isEs
+      ? `Compara la actividad de fuego de 2024 frente a los años récord históricos desde 2003 en ${target}.`
+      : `Compare 2024 fire activity against the historical peak record years since 2003 in ${target}.`,
+    region: macro,
+    cameraKey: cam,
+    mode3d: false,
+  });
+  return chips.slice(0, 3);
+}
+
 export { fmtInt, fmtNum };

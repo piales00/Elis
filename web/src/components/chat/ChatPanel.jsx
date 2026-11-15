@@ -6,6 +6,8 @@ import {
   streamChat,
 } from "../../data/chat.js";
 import ChatChart from "./ChatChart.jsx";
+import FormattedMessage, { detectAlertBadge } from "./FormattedMessage.jsx";
+import { buildDecisionSuggestions } from "../../data/chat.js";
 import Icon from "../shell/icons.jsx";
 import { useDataMode } from "../../hooks/useDataMode.js";
 
@@ -67,6 +69,7 @@ export default function ChatPanel({
       unverified: [],
       verified: true,
       isPreset: true,
+      suggestions: buildDecisionSuggestions({ question: questionText, region: targetRegion, locale }),
       done: true,
     };
     setTurns((prev) => [
@@ -181,6 +184,9 @@ export default function ChatPanel({
                   ...item,
                   done: true,
                   usage: data.usage || null,
+                  suggestions: Array.isArray(data.suggestions) && data.suggestions.length
+                    ? data.suggestions
+                    : buildDecisionSuggestions({ question: trimmed, region, locale }),
                 };
               }
               return item;
@@ -410,6 +416,18 @@ export default function ChatPanel({
                         ✓ {t("chat.badge.verified")}
                       </span>
                     )}
+                    {turn.done && !turn.error && (() => {
+                      const badge = detectAlertBadge(turn.content, locale === "es");
+                      return badge ? (
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-extrabold ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                      ) : null;
+                    })()}
+                    {false && (
+                      <span>
+                      </span>
+                    )}
                     {turn.done && !turn.verified && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-line bg-warn-bg px-2 py-0.5 text-[11px] font-semibold text-warn-fg">
                         ⚠ {t("chat.notice.unverified")}: {turn.unverified.join(", ")}
@@ -426,7 +444,12 @@ export default function ChatPanel({
                   )}
 
                   {turn.content && (
-                    <p className="m-0 whitespace-pre-line leading-relaxed text-sm text-fg">
+                    <div className="m-0 text-sm text-fg">
+                      <FormattedMessage content={turn.content} />
+                    </div>
+                  )}
+                  {false && (
+                    <p>
                       {turn.content}
                     </p>
                   )}
@@ -450,6 +473,38 @@ export default function ChatPanel({
                   )}
 
                   {turn.chart && <ChatChart chartData={turn.chart} onSyncView={onSyncView} />}
+
+                  {turn.done && !turn.error && Array.isArray(turn.suggestions) && turn.suggestions.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-line bg-bg/75 p-2.5">
+                      <p className="m-0 mb-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+                        {locale === "es" ? "🧭 RUTAS DE DECISIÓN (ELIGE QUÉ PROFUNDIZAR)" : "🧭 NEXT DECISION PATHS (CLICK TO DRILL DOWN)"}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {turn.suggestions.map((chip) => (
+                          <button
+                            key={chip.id || chip.label}
+                            type="button"
+                            disabled={streaming || snapshot}
+                            onClick={() => {
+                              if (onSyncView && chip.region) {
+                                onSyncView({
+                                  region: chip.region,
+                                  cameraKey: chip.cameraKey || chip.region,
+                                  year: 2024,
+                                  month: 9,
+                                  mode3d: Boolean(chip.mode3d),
+                                });
+                              }
+                              runLiveQuestion(chip.prompt);
+                            }}
+                            className="rounded-lg border border-forecast/40 bg-forecast/10 px-2.5 py-1 text-left text-[11px] font-semibold text-fg transition hover:border-forecast hover:bg-forecast/20 disabled:opacity-50 cursor-pointer"
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {turn.done && !turn.error && onSyncView && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">

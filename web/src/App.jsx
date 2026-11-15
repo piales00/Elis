@@ -507,6 +507,8 @@ export default function App() {
                 setProjectedTurn(turn);
                 setSpotlightOpen(true);
                 setSpotlightMinimized(false);
+                setPanelOpen(false);
+                setSpotlightMinimized(false);
                 const targetReg = turn?.chart?.region && regionIds.includes(turn.chart.region) ? turn.chart.region : region;
                 if (targetReg) selectRegion(targetReg);
                 if (turn?.chart?.highlight_year) {
