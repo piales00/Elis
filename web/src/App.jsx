@@ -677,7 +677,7 @@ export default function App() {
           autopilot={autopilot}
           customTurn={projectedTurn}
           series={series}
-          onSelectMission={(m) => applyElisMission(m, false, !spotlightMinimized)}
+          onSelectMission={(m, fromAutopilot = false) => applyElisMission(m, fromAutopilot ? true : false, !spotlightMinimized)}
           onToggleAutopilot={() => {
             if (!autopilot) {
               setProjectedTurn(null);
