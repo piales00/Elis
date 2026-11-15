@@ -1,3 +1,4 @@
+import os
 import json
 import shutil
 import subprocess
@@ -120,7 +121,7 @@ def test_download_requires_key(live_dir):
 def test_cli_predict(live_dir):
     result = subprocess.run([sys.executable, str(ROOT / 'scripts' / 'live_predict.py'), '--live-dir', str(live_dir),
                              'predict', '--date', '2026-11-12', '--csv', str(VIIRS_CSV)],
-                            capture_output=True, text=True, env={'PATH': '/usr/bin:/bin'})
+                            capture_output=True, text=True, env={**os.environ, 'PATH': '/usr/bin:/bin'} if os.name != 'nt' else os.environ)
     assert result.returncode == 0, result.stderr
     assert 'sha256' in result.stdout
 
