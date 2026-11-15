@@ -101,3 +101,11 @@ export function cellPaint(breaks = CELL_BREAKS) {
     lineWidth: ["interpolate", ["linear"], ["zoom"], 5.5, 0, 8, stepExpression(CELL_OUTLINE_WIDTHS, breaks)],
   };
 }
+
+export function mapPadding(map) {
+  const el = map?.getContainer?.();
+  const w = el?.clientWidth ?? 800;
+  const h = el?.clientHeight ?? 600;
+  if (w < 640) return { top: Math.min(60, h * 0.18), bottom: Math.min(36, h * 0.1), left: 16, right: 16 };
+  return { top: Math.min(72, h * 0.12), bottom: Math.min(64, h * 0.1), left: 40, right: 64 };
+}

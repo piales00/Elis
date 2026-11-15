@@ -8,7 +8,7 @@ import { DEFAULT_PERIOD, FIRST_YEAR, LAST_YEAR } from "./config.js";
 import { fromIndex, monthIndex, periodState, stepPeriod } from "./lib/period.js";
 import { periodStatus } from "./lib/status.js";
 import { chanceHigh, findUnit } from "./lib/forecast.js";
-import { featureBounds } from "./lib/mapStyle.js";
+import { featureBounds, mapPadding } from "./lib/mapStyle.js";
 import { prefersReducedMotion } from "./lib/hooks.js";
 import { DEFAULT_SUB } from "./content/sensors.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
@@ -129,7 +129,7 @@ export default function App() {
   const fitTo = useCallback(
     (feature) => {
       if (!mapInstance || !feature) return;
-      mapInstance.fitBounds(featureBounds(feature), { padding: 48, duration: prefersReducedMotion() ? 0 : 600, maxZoom: 8 });
+      mapInstance.fitBounds(featureBounds(feature), { padding: mapPadding(mapInstance), duration: prefersReducedMotion() ? 0 : 600, maxZoom: 8 });
     },
     [mapInstance],
   );
@@ -149,12 +149,6 @@ export default function App() {
     },
     [departments, regionIds],
   );
-
-  useEffect(() => {
-    if (!outlook || !deptFeature) return;
-    const id = requestAnimationFrame(() => fitTo(deptFeature));
-    return () => cancelAnimationFrame(id);
-  }, [outlook, deptFeature, fitTo]);
 
   useLabelContrast(mapInstance, imagery && Boolean(img.raster));
 
@@ -485,6 +479,7 @@ export default function App() {
             imagery={outlook ? { ...img.imagery, enabled: false } : img.imagery}
             ariaLabel={t("map.aria", { period: periodLabel })}
             onReady={setMapInstance}
+            focus={outlook && deptFeature ? deptFeature : null}
           />
         </Suspense>
         </MapBoundary>

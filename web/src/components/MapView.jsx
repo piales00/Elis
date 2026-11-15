@@ -4,7 +4,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../lib/hooks.js";
 import { useGibsLayers } from "./imagery/useGibsLayers.js";
-import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, tuneBasemap } from "../lib/mapStyle.js";
+import { BASE_STYLE_URL, CELL_OUTLINE_COLOR, cellPaint, cellsToGeoJSON, featureBounds, mapPadding, tuneBasemap } from "../lib/mapStyle.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -14,7 +14,7 @@ function coordLabel(t, value, pos, neg) {
   return `${Math.abs(value).toFixed(2)}°${t(`coord.${value < 0 ? neg : pos}`)}`;
 }
 
-export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady }) {
+export default function MapView({ regions, cells, metric, breaks, region, onRegionSelect, onCellSelect, imagery, ariaLabel, fill = false, onReady, focus = null }) {
   const { t, formatNumber } = useI18n();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -22,15 +22,17 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const live = useRef({});
   const [ready, setReady] = useState(false);
 
-  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady };
+  live.current = { t, formatNumber, metric, onRegionSelect, onCellSelect, regions, region, onReady, focus };
   const { overZoom } = useGibsLayers(mapRef.current, ready, imagery);
 
   const fit = (duration) => {
     const map = mapRef.current;
-    const { regions: geo, region: id } = live.current;
+    const { regions: geo, region: id, focus: target } = live.current;
     if (!map || !geo) return;
-    const feature = geo.features.find((f) => f.properties.id === id) ?? geo.features[0];
-    map.fitBounds(featureBounds(feature), { padding: 32, duration, maxZoom: 9 });
+    const el = map.getContainer();
+    if (el.clientWidth < 80 || el.clientHeight < 80) return;
+    const feature = target ?? geo.features.find((f) => f.properties.id === id) ?? geo.features[0];
+    map.fitBounds(featureBounds(feature), { padding: fill ? mapPadding(map) : 32, duration, maxZoom: target ? 8 : 9 });
   };
 
   useEffect(() => {
@@ -114,6 +116,8 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
           "line-width": cellPaint().lineWidth,
         },
       });
+      map.resize();
+      fit(0);
       setReady(true);
       live.current.onReady?.(map);
     });
@@ -195,7 +199,33 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
     map.setFilter("region-selected-line", ["==", ["get", "id"], region]);
     map.setPaintProperty("regions-fill", "fill-opacity", ["case", ["==", ["get", "id"], region], 0.07, 0.02]);
     fit(prefersReducedMotion() ? 0 : 600);
-  }, [ready, region]);
+  }, [ready, region, focus]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const el = containerRef.current;
+    if (!ready || !map || !el || typeof ResizeObserver === "undefined") return;
+    let frame = 0;
+    let last = { w: el.clientWidth, h: el.clientHeight };
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const w = el.clientWidth;
+        const h = el.clientHeight;
+        if (w < 80 || h < 80) return;
+        map.resize();
+        const widthChanged = Math.abs(w - last.w) > 2;
+        const heightChanged = Math.abs(h - last.h) > 40;
+        last = { w, h };
+        if (widthChanged || heightChanged) fit(0);
+      });
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
+  }, [ready]);
 
   return (
     <div className={fill ? "relative h-full w-full" : "relative"}>
