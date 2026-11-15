@@ -91,9 +91,13 @@ export default function ImageryControls({
             {satellites.length > 1 && (
               <div role="radiogroup" aria-label={t("imagery.satellite.label")} className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted">{t("imagery.satellite.label")}</span>
+                <label className={`chip ${raster?.automatic ? "chip-on" : ""}`}>
+                  <input type="radio" name="imagery-satellite" checked={Boolean(raster?.automatic)} onChange={() => onSatelliteChange(null)} className="sr-only" />
+                  {t("imagery.satellite.auto")}
+                </label>
                 {satellites.map((s) => (
-                  <label key={s.id} className={`chip ${raster?.id === s.id ? "chip-on" : ""}`}>
-                    <input type="radio" name="imagery-satellite" value={s.id} checked={raster?.id === s.id} onChange={() => onSatelliteChange(s.id)} className="sr-only" />
+                  <label key={s.id} className={`chip ${!raster?.automatic && raster?.id === s.id ? "chip-on" : ""}`}>
+                    <input type="radio" name="imagery-satellite" value={s.id} checked={!raster?.automatic && raster?.id === s.id} onChange={() => onSatelliteChange(s.id)} className="sr-only" />
                     {s.pass ? `${s.label} · ${t(`imagery.pass.${s.pass}`)}` : s.label}
                   </label>
                 ))}
@@ -101,7 +105,7 @@ export default function ImageryControls({
             )}
             <p className="m-0 mt-3 text-xs leading-relaxed text-muted">
               {raster
-                ? t(SOURCE_KEYS[base] ?? SOURCE_KEYS.truecolor, { source: raster.pass ? `${raster.label} · ${t(`imagery.pass.${raster.pass}`)}` : raster.label, bands: raster.bands ?? "" })
+                ? t(SOURCE_KEYS[base] ?? SOURCE_KEYS.truecolor, { source: raster.pass ? `${raster.sourceLabel} · ${t(`imagery.pass.${raster.pass}`)}` : raster.sourceLabel, bands: raster.bands ?? "" })
                 : t("imagery.base.none")}
               {raster?.label.startsWith("MODIS") && ` ${t("imagery.satellite.gaps")}`}
             </p>

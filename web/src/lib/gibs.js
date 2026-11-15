@@ -28,6 +28,10 @@ const SNPP_REFLECTANCE_RANGES = [
   ["2015-11-24", "2022-07-27"], ["2022-08-10", "2024-05-31"], ["2024-06-04", "2024-07-11"], ["2024-07-16", "2024-07-24"],
   ["2024-07-29", "2024-11-03"], ["2024-11-06", "2026-04-28"], ["2026-04-30", "2026-07-10"], ["2026-07-16", "2026-11-02"],
 ];
+const NOAA20_REFLECTANCE_RANGES = [
+  ["2018-01-05", "2018-02-21"], ["2018-02-24", "2018-03-12"], ["2018-03-14", "2019-12-31"],
+  ["2020-01-02", "2022-01-12"], ["2022-01-14", null],
+];
 
 const I5_SNPP_NIGHT = [
   ["2012-01-19", "2012-03-24"], ["2012-03-26", "2015-04-18"], ["2015-04-20", "2015-04-20"], ["2015-04-22", "2015-04-25"],
@@ -53,11 +57,13 @@ const DNB_NOAA20 = [["2018-01-05", null]];
 const IMAGERY = {
   truecolor: [
     { id: "VIIRS_SNPP_CorrectedReflectance_TrueColor", label: "VIIRS S-NPP", ranges: SNPP_REFLECTANCE_RANGES, pixel: 375 },
+    { id: "VIIRS_NOAA20_CorrectedReflectance_TrueColor", label: "VIIRS NOAA-20", ranges: NOAA20_REFLECTANCE_RANGES, pixel: 375 },
     { id: "MODIS_Aqua_CorrectedReflectance_TrueColor", label: "MODIS Aqua", ranges: AQUA_RANGES, pixel: 250 },
     { id: "MODIS_Terra_CorrectedReflectance_TrueColor", label: "MODIS Terra", ranges: TERRA_RANGES, pixel: 250 },
   ],
   swir: [
     { id: "VIIRS_SNPP_CorrectedReflectance_BandsM11-I2-I1", label: "VIIRS S-NPP", bands: "M11-I2-I1", ranges: SNPP_REFLECTANCE_RANGES, pixel: 375 },
+    { id: "VIIRS_NOAA20_CorrectedReflectance_BandsM11-I2-I1", label: "VIIRS NOAA-20", bands: "M11-I2-I1", ranges: [...NOAA20_REFLECTANCE_RANGES.slice(0, 4), ["2022-01-14", "2025-08-31"], ["2025-09-02", null]], pixel: 375 },
     { id: "MODIS_Aqua_CorrectedReflectance_Bands721", label: "MODIS Aqua", bands: "7-2-1", ranges: AQUA_721_RANGES, pixel: 500 },
     { id: "MODIS_Terra_CorrectedReflectance_Bands721", label: "MODIS Terra", bands: "7-2-1", ranges: TERRA_721_RANGES, pixel: 500 },
   ],
@@ -139,13 +145,27 @@ export function imagerySatellites(mode, date) {
 
 export function imageryLayer(mode, date, satellite) {
   const list = available(mode, date);
-  const layer = list.find((l) => l.id === satellite) ?? list[0];
+  const requested = Object.values(IMAGERY).flat().find((entry) => entry.id === satellite);
+  const selected = list.find((entry) => entry.id === satellite) ?? list.find((entry) =>
+    entry.label === requested?.label && (!requested.pass || !entry.pass || entry.pass === requested.pass));
+  const layer = selected ?? list[0];
   if (!layer) return null;
-  const maxZoom = layer.maxZoom ?? RASTER_MAX_ZOOM;
+  const raster = (entry) => {
+    const maxZoom = entry.maxZoom ?? RASTER_MAX_ZOOM;
+    const format = entry.format ?? "jpeg";
+    const url = `${WMTS_3857}/${entry.id}/default/${date}/GoogleMapsCompatible_Level${maxZoom}/{z}/{y}/{x}.${format}`;
+    return { ...entry, maxZoom, tiles: [format === "jpeg" ? `gibs-transparent://${url}` : url] };
+  };
+  const gapFill = selected || mode === "night" ? [] : list
+    .filter((entry) => entry.id !== layer.id && entry.label.split(" ")[0] === layer.label.split(" ")[0] && entry.pass === layer.pass)
+    .map(raster);
+  const sourceLabel = [layer, ...gapFill].map((entry) => entry.label).join(" + ");
   return {
-    ...layer,
-    maxZoom,
-    tiles: [`${WMTS_3857}/${layer.id}/default/${date}/GoogleMapsCompatible_Level${maxZoom}/{z}/{y}/{x}.${layer.format ?? "jpeg"}`],
+    ...raster(layer),
+    automatic: !selected,
+    gapFill,
+    sourceLabel,
+    attribution: `${GIBS_ATTRIBUTION} · ${sourceLabel} · ${date}`,
   };
 }
 
