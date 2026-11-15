@@ -102,10 +102,7 @@ const ES = {
   not4: "<b>No da causas.</b> Elis dice dónde y cuándo la actividad de fuego fue inusual, no por qué.",
   tTeam: "Equipo Log N + 1.",
   pTeam: "Cuatro estudiantes de Lima, cuatro habilidades distintas, 36 horas.",
-  roleP: "Métodos y estadística", doP: "Captura y recaptura, validación y pronóstico.",
-  roleJ: "Datos y API", doJ: "Flujo de datos de FIRMS, DuckDB y la API pública.",
-  roleS: "Web y diseño", doS: "La app, el mapa y cómo se lee todo.",
-  roleV: "Asistente de IA y HUD", doV: "Pregúntale a Elis, el HUD de 40 s y su verificación determinista de cifras.",
+  roleTm: "Integrante del equipo",
   close: "Estudiantes peruanos. Si funciona aquí, puede funcionar en cualquier lugar.",
   tCred: "Datos y créditos",
   cr1: "Detecciones de fuego activo MODIS y VIIRS",
@@ -120,9 +117,23 @@ const ES = {
   foot: "Proyecto de NASA Space Apps Challenge 2026, reto <em>Harmonization of MODIS and VIIRS Hot Spots</em>. No es un producto oficial de la NASA.",
   top: "Volver arriba",
   tipRaw: "Detecciones crudas", tipEst: "Armonizado", tipUnit: "celdas-día", tipRange: "rango del 90 %",
+  tReg: "Perú en tres regiones.",
+  pReg: "Elis estima la actividad de fuego por región y mes: Costa, Andes y Amazonía. El mapa reproduce cada mes desde 2003 hasta octubre de 2026 con la estimación armonizada de cada región.",
+  rgAria: "Mapa de Perú dividido en Costa, Andes y Amazonía, cada una coloreada según sus celdas-día con fuego armonizadas del mes elegido.",
+  rgProv: "Provisional, datos casi en tiempo real",
+  rgPauseL: "Pausar", rgPlayL: "Reproducir", rgMonth: "Mes",
+  rgLow: "Menos", rgHigh: "Más",
+  rgUnitIn: "celdas-día con fuego en Perú",
+  rgNote: "Cada región se colorea según su propio rango de 2003–2026, así que el color compara meses dentro de una región, no una región con otra. Las cifras son celdas-día con fuego con su rango del 90 %.",
+  qs1: "<b>5</b><span>sensores de NASA FIRMS</span>",
+  qs2: "<b>0,1°</b><span>grilla por día (≈11 km)</span>",
+  qs3: "<b>90 %</b><span>rango en cada estimación</span>",
+  qs4: "<b>286</b><span>meses reproducidos, 2003–2026</span>",
+  tEmber: "Un historial de fuego que sí se puede comparar.",
+  lEmber: "Una historia mensual comparable del fuego en Perú, 2000–2026.",
   langBtn: "EN", langAria: "Switch to English"
 };
-const EN_EXTRA = { copied: "Copied", tipRaw: "Raw detections", tipEst: "Harmonized", tipUnit: "fire cell-days", tipRange: "90% range", langBtn: "ES", langAria: "Cambiar a español" };
+const EN_EXTRA = { rgPlayL: "Play", rgUnitIn: "fire cell-days in Peru", copied: "Copied", tipRaw: "Raw detections", tipEst: "Harmonized", tipUnit: "fire cell-days", tipRange: "90% range", langBtn: "ES", langAria: "Cambiar a español" };
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -134,6 +145,7 @@ $$("[data-i18n]").forEach(e => { EN[e.dataset.i18n] = e.innerHTML; });
 $$("[data-i18n-attr]").forEach(e => e.dataset.i18nAttr.split(";").forEach(p => { const [a, k] = p.split(":"); EN[k] = e.getAttribute(a); }));
 
 let lang = "en";
+let regRender = () => {};
 const t = k => (lang === "es" ? ES : EN)[k] ?? EN[k] ?? "";
 const nf = (v, d = 0) => v.toLocaleString(lang === "es" ? "es-ES" : "en-US", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true });
 const fmt = v => lang === "es" && v >= 1000 && v < 10000 ? String(v).replace(/(\d)(\d{3})$/, "$1.$2") : nf(v);
@@ -149,6 +161,7 @@ function setLang(l, save) {
   b.firstElementChild.textContent = t("langBtn");
   b.setAttribute("aria-label", t("langAria"));
   buildTabs();
+  regRender();
   if (save) { try { localStorage.setItem("elis.landing.lang", l); } catch {} }
 }
 
@@ -316,6 +329,177 @@ function navState() {
   on();
 }
 
+/* Ribbons: horizontal marquee bands (NASA Space Apps Challenge / challenge name) */
+function ribbons() {
+  $$("[data-ribbon]").forEach(r => {
+    const unit = r.querySelector(".rb-t > span");
+    if (!unit) return;
+    const n = 10, track = r.querySelector(".rb-t");
+    track.innerHTML = "";
+    for (let i = 0; i < n * 2; i++) {
+      const c = unit.cloneNode(true);
+      if (i >= n) c.setAttribute("aria-hidden", "true");
+      track.append(c);
+    }
+    r.querySelectorAll(".rb-t > span").forEach((c, i) => { if (i > 0) c.setAttribute("aria-hidden", "true"); });
+  });
+}
+
+/* Team cards: soft 3D tilt on hover (fine pointers only) */
+function teamTilt() {
+  if (reduce.matches || !matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+  $$("#team li").forEach(li => {
+    li.addEventListener("pointermove", e => {
+      const r = li.getBoundingClientRect();
+      li.style.setProperty("--ry", ((e.clientX - r.left) / r.width - .5) * 14 + "deg");
+      li.style.setProperty("--rx", -((e.clientY - r.top) / r.height - .5) * 14 + "deg");
+    });
+    li.addEventListener("pointerleave", () => { li.style.setProperty("--rx", "0deg"); li.style.setProperty("--ry", "0deg"); });
+  });
+}
+
+/* Ember circle: decorative glowing disc with orbiting sparks */
+function ember() {
+  const cv = $("#flame");
+  if (!cv) return;
+  const sec = cv.parentElement, cx = cv.getContext("2d");
+  let W = 0, H = 0, tx = 0, ty = 0, mx = 0, my = 0, vis = true, raf = 0, t0 = 0;
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const P = Array.from({ length: 110 }, () => ({ a: rnd() * 6.283, r: rnd(), s: .2 + rnd() * .6, z: 1 + rnd() * 2 }));
+  const size = () => {
+    const d = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * d; cv.height = H * d;
+    cx.setTransform(d, 0, 0, d, 0, 0);
+  };
+  const draw = t => {
+    mx += (tx - mx) * .07; my += (ty - my) * .07;
+    cx.clearRect(0, 0, W, H);
+    const R = Math.min(W, H) * .34, x = W / 2 + mx * 50, y = H / 2 + my * 40, pu = 1 + .03 * Math.sin(t / 500);
+    cx.globalCompositeOperation = "lighter";
+    cx.globalAlpha = .95;
+    let g = cx.createRadialGradient(x, y, R * .1, x, y, R * 2.2 * pu);
+    g.addColorStop(0, "rgba(242,113,31,.35)"); g.addColorStop(1, "rgba(210,50,74,0)");
+    cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+    g = cx.createRadialGradient(x - R * .1, y - R * .1, 0, x, y, R * pu);
+    g.addColorStop(0, "rgba(255,214,150,.9)"); g.addColorStop(.35, "rgba(246,140,50,.85)"); g.addColorStop(.75, "rgba(214,60,40,.7)"); g.addColorStop(1, "rgba(88,184,216,.45)");
+    cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, R * pu, 0, 6.283); cx.fill();
+    for (const p of P) {
+      p.a += reduce.matches ? 0 : .0015 * p.s;
+      const d = R * (1.05 + p.r * 1.2 + .08 * Math.sin(t / 700 + p.a * 5));
+      cx.fillStyle = p.r < .3 ? "rgba(88,184,216,.7)" : "rgba(255,170,70,.75)";
+      cx.beginPath(); cx.arc(x + Math.cos(p.a) * d - mx * 20 * p.z, y + Math.sin(p.a) * d - my * 20 * p.z, p.z, 0, 6.283); cx.fill();
+    }
+    cx.globalAlpha = 1; cx.globalCompositeOperation = "source-over";
+  };
+  const loop = now => {
+    if (!t0) t0 = now;
+    if (vis && !document.hidden) draw(now - t0);
+    raf = requestAnimationFrame(loop);
+  };
+  size();
+  addEventListener("resize", () => { size(); if (reduce.matches) draw(5000); });
+  sec.addEventListener("pointermove", e => { const r = sec.getBoundingClientRect(); tx = (e.clientX - r.left) / r.width - .5; ty = (e.clientY - r.top) / r.height - .5; }, { passive: true });
+  if ("IntersectionObserver" in window) new IntersectionObserver(es => { vis = es[0].isIntersecting; }).observe(sec);
+  if (reduce.matches) draw(5000); else raf = requestAnimationFrame(loop);
+}
+
+/* Regions map: Costa / Andes / Amazonia shaded by the harmonized monthly estimate (data/series/*.json) */
+function regionsMap() {
+  const D = window.ELIS_REGIONS, fig = $("#regMap"), svg = fig && $("svg", fig);
+  if (!D || !svg) return;
+  const IDS = ["costa", "sierra", "amazonia"];
+  const NAME = { costa: "rgCos", sierra: "rgAnd", amazonia: "rgAma" };
+  const NS = "http://www.w3.org/2000/svg";
+  const months = D.series.peru.map(r => r[0] * 12 + r[1] - 1);
+  const by = {};
+  [...IDS, "peru"].forEach(k => { by[k] = new Map(D.series[k].map(r => [r[0] * 12 + r[1] - 1, r])); });
+  const N = months.length;
+  const p95 = {};
+  [...IDS, "peru"].forEach(k => { const v = D.series[k].map(r => r[2]).sort((a, b) => a - b); p95[k] = v[Math.floor(v.length * .95)] || 1; });
+  const STOPS = [[123, 63, 184], [210, 50, 74], [242, 113, 31], [255, 209, 102]];
+  const color = v => {
+    const t = Math.pow(Math.max(0, Math.min(1, v)), .55) * (STOPS.length - 1), i = Math.min(STOPS.length - 2, Math.floor(t)), f = t - i;
+    return "rgb(" + STOPS[i].map((c, j) => Math.round(c + (STOPS[i + 1][j] - c) * f)).join(",") + ")";
+  };
+  svg.setAttribute("viewBox", `0 0 ${D.w} ${D.h}`);
+  const paths = {};
+  IDS.forEach(k => {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", D.paths[k]); p.setAttribute("class", "rg rg-" + k); p.setAttribute("fill-rule", "evenodd");
+    svg.append(p); paths[k] = p;
+  });
+  const out = document.createElementNS(NS, "path");
+  out.setAttribute("d", D.outline); out.setAttribute("class", "rg-out"); svg.append(out);
+  const labels = {};
+  IDS.forEach(k => {
+    const tx = document.createElementNS(NS, "text");
+    tx.setAttribute("x", D.labels[k][0]); tx.setAttribute("y", D.labels[k][1]); tx.setAttribute("aria-hidden", "true");
+    svg.append(tx); labels[k] = tx;
+  });
+  const rows = $("#rgRows");
+  rows.innerHTML = IDS.map(k => `<li data-r="${k}"><i class="sw"></i><b></b><span class="tr"><i></i></span><span class="v"></span><small></small></li>`).join("");
+  const li = {}; IDS.forEach(k => { li[k] = $(`li[data-r="${k}"]`, rows); });
+  const slider = $("#rgRange"), play = $("#rgPlay");
+  slider.max = N - 1;
+  let idx = months.indexOf(2024 * 12 + 8), playing = false, last = 0, acc = 0, user = false;
+  const loc = () => (lang === "es" ? "es-ES" : "en-US");
+  const monthName = m => { const x = new Date(Math.floor(m / 12), m % 12, 1).toLocaleDateString(loc(), { month: "long", year: "numeric" }); return x.charAt(0).toUpperCase() + x.slice(1); };
+  const range = r => `${fmt(r[3])}–${fmt(r[4])}`;
+  function render() {
+    const m = months[idx], pr = by.peru.get(m), y = Math.floor(m / 12), mo = m % 12 + 1;
+    $("#rgDate").textContent = monthName(m);
+    $("#rgProv").hidden = !(y === 2026 && mo >= 8);
+    $("#rgPeru").textContent = fmt(pr[2]);
+    $("#rgPeruU").textContent = `${t("rgUnitIn")} · ${t("tipRange")}: ${range(pr)}`;
+    IDS.forEach(k => {
+      const r = by[k].get(m), c = color(r[2] / p95[k]);
+      paths[k].style.fill = c;
+      labels[k].textContent = t(NAME[k]);
+      const e = li[k];
+      e.style.setProperty("--sw", c); e.style.setProperty("--w", Math.min(100, r[2] / p95[k] * 100).toFixed(1) + "%");
+      $("b", e).textContent = t(NAME[k]); $(".v", e).textContent = fmt(r[2]);
+      $("small", e).textContent = `${t("tipRange")}: ${range(r)}`;
+    });
+    slider.value = idx;
+    slider.setAttribute("aria-valuetext", `${monthName(m)}: ${fmt(pr[2])} ${t("tipUnit")}`);
+  }
+  function setPlaying(on) {
+    playing = on;
+    play.dataset.state = on ? "pause" : "play";
+    const l = t(on ? "rgPauseL" : "rgPlayL");
+    play.setAttribute("aria-label", l); play.title = l;
+  }
+  regRender = () => { render(); setPlaying(playing); };
+  const tick = now => {
+    if (!playing) return;
+    if (last && !document.hidden) { acc += now - last; while (acc >= 140) { acc -= 140; idx = (idx + 1) % N; } render(); }
+    last = now; requestAnimationFrame(tick);
+  };
+  const start = () => { if (playing) return; setPlaying(true); last = 0; acc = 0; requestAnimationFrame(tick); };
+  const stop = () => { setPlaying(false); };
+  play.addEventListener("click", () => { user = true; playing ? stop() : start(); });
+  slider.addEventListener("input", () => { user = true; stop(); idx = +slider.value; render(); });
+  IDS.forEach(k => {
+    const on = () => { svg.dataset.hl = k; paths[k].classList.add("hl"); IDS.forEach(o => li[o].classList.toggle("dim", o !== k)); };
+    const off = () => { delete svg.dataset.hl; paths[k].classList.remove("hl"); IDS.forEach(o => li[o].classList.remove("dim")); };
+    paths[k].addEventListener("pointerenter", on); paths[k].addEventListener("pointerleave", off);
+    li[k].addEventListener("pointerenter", on); li[k].addEventListener("pointerleave", off);
+  });
+  render(); setPlaying(false);
+  if (!reduce.matches && "IntersectionObserver" in window) {
+    new IntersectionObserver(es => {
+      if (es[0].isIntersecting) { if (!user) { idx = 0; start(); } }
+      else if (!user) stop();
+    }, { threshold: .35 }).observe(fig);
+  }
+}
+
+ribbons();
+teamTilt();
+ember();
+regionsMap();
 setLang(initialLang(), false);
 initVideo();
 mark(0);
