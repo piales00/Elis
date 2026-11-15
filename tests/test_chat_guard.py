@@ -1,3 +1,4 @@
+from api.chat_guard import RATE_LIMIT_10M
 from api.chat_guard import (
     ChatUsageLimiter,
     MAX_MESSAGES_PER_REQUEST,
@@ -75,7 +76,7 @@ def test_verify_figures_flags_numbers_when_no_tools_called():
 def test_rate_limiter_per_ip_and_daily_budget(monkeypatch):
     lim = ChatUsageLimiter()
     now = 1000.0
-    for i in range(10):
+    for i in range(RATE_LIMIT_10M):
         assert lim.check_and_record_ip("1.2.3.4", now=now + i) is None
     err_10m = lim.check_and_record_ip("1.2.3.4", now=now + 15)
     assert err_10m is not None and "10 minutes" in err_10m
