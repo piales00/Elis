@@ -12,7 +12,7 @@ Team **Log N + 1** · NASA Space Apps Challenge 2026 · *Harmonization of MODIS 
 [![Python](https://img.shields.io/badge/Python-DuckDB%20%2B%20FastAPI-3776AB?style=for-the-badge&logo=python&logoColor=white)](./scripts)
 [![React](https://img.shields.io/badge/React-Vite%20%2B%20Tailwind-2563EB?style=for-the-badge&logo=react&logoColor=white)](./web)
 
-[![Live app](https://img.shields.io/badge/app-elis--blond.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white)](https://elis-blond.vercel.app/?view=ask&region=peru&y=2012&m=9)
+[![Live app](https://img.shields.io/badge/app-elis--peru.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white)](https://elis-peru.vercel.app/?view=ask&region=peru&y=2012&m=9)
 [![Data](https://img.shields.io/badge/data-NASA%20FIRMS-DC2626?style=flat-square)](#data-sources)
 [![Record](https://img.shields.io/badge/record-2000%E2%80%932026-16A34A?style=flat-square)](#what-elis-does)
 
@@ -54,7 +54,7 @@ Elis never mixes these three. The app, the API and the report label each one.
 
 ## Try it
 
-**Live app:** [elis-blond.vercel.app](https://elis-blond.vercel.app/?view=ask&region=peru&y=2012&m=9)
+**Live app:** [elis-peru.vercel.app](https://elis-peru.vercel.app/?view=ask&region=peru&y=2012&m=9)
 
 The interactive **Ask Elis** scientific copilot (60 s Autopilot, floating Mission HUD, 2027 departmental outlooks, 3D satellite relief navigation) answers questions about the record. It runs when `CHAT_ENABLED=1` and `GEMINI_API_KEY` (or `ANTHROPIC_API_KEY`) are set in `.env`.
 
@@ -69,11 +69,21 @@ The interactive **Ask Elis** scientific copilot (60 s Autopilot, floating Missio
 
 ## Data sources
 
-- **NASA FIRMS:** MODIS Terra and Aqua, VIIRS S-NPP, NOAA-20, NOAA-21
-- **NASA GIBS** (satellite imagery) and **NASA POWER** (precipitation and temperature)
-- **NOAA CPC ONI** and **ENFEN ICEN** (ENSO indices)
-- **MapBiomas Fuego Peru** (burned area, used for validation only)
-- **INEI** (department boundaries)
+- NASA FIRMS: MODIS Terra and Aqua, VIIRS S-NPP, NOAA-20, NOAA-21
+- [NASA GIBS / Worldview](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api): VIIRS S-NPP / NOAA-20 and MODIS Terra / Aqua Corrected Reflectance (true colour and SWIR); VIIRS I5 and MODIS band 31 brightness temperature; VIIRS S-NPP / NOAA-20 Day/Night Band. Daily detections use VIIRS S-NPP 375 m and MODIS Terra / Aqua Thermal Anomalies vector tiles. Credit: NASA GIBS / Worldview and NASA FIRMS.
+- NASA POWER (precipitation and temperature)
+- NOAA CPC ONI and ENFEN ICEN (ENSO indices)
+- MapBiomas Fuego Peru (burned area, used for validation)
+- INEI (department boundaries)
+
+### Map resources, live feed and assistant credits
+
+- [EOX Sentinel-2 cloudless 2020](https://s2maps.eu): satellite basemap for the 3D view, licensed under **CC BY-NC-SA 4.0**. Required attribution: "Sentinel-2 cloudless – https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2020)". The mosaic represents 2020, not the selected fire date.
+- [AWS Terrain Tiles / Mapzen](https://registry.opendata.aws/terrain-tiles/): Terrarium elevation tiles from the public `elevation-tiles-prod` bucket for 3D relief and hillshade. Credit: Mapzen / AWS Terrain Tiles and the underlying elevation providers; source-specific licences and attribution are linked from the AWS registry.
+- [OpenFreeMap](https://openfreemap.org/): vector basemap, using the OpenMapTiles schema and [OpenStreetMap](https://www.openstreetmap.org/copyright) data. © OpenStreetMap contributors, Open Database Licence (ODbL).
+- [Elis public live feed](https://github.com/piales00/elis-live): daily sealed predictions and observed results for the live check. Credit: Log N + 1 / Elis; underlying satellite data retain their providers' terms and attribution.
+- [Google Gemini](https://ai.google.dev/gemini-api/docs/models), model `gemini-3.1-flash-lite`: the language model behind **Ask Elis**, using tools to query Elis datasets with automatic verification of returned figures. Google service terms apply; its output is not an independent scientific data source.
+- Inter and Manrope, delivered through Google Fonts for interface typography.
 
 The raw FIRMS CSV files are not in the repository. Annual MODIS and VIIRS S-NPP files go in `data/raw/`; the 2026 NOAA-20/21, MODIS and S-NPP files go in `data/raw/2026/`. Small aggregates in `data/processed/` are committed. Never commit FIRMS source files, credentials, `.env` or `.venv`.
 
@@ -153,7 +163,9 @@ npm run dev
 VITE_DATA_SOURCE=api VITE_API_BASE=http://localhost:8000 npm run dev
 ```
 
-With `VITE_DATA_SOURCE=api`, the live check reads the daily sealed predictions from the public [elis-live](https://github.com/piales00/elis-live) repository first, then the API, then the static snapshot. If the API does not answer within 7 s, the app keeps working from `web/public/data/`, shows an "Archived data snapshot" badge, and retries the API every 60 s.
+With `VITE_DATA_SOURCE=api`, if the API is down or asleep the app keeps working from the static snapshot in `web/public/data/`, shows an "Archived data snapshot" badge, and retries the API every few seconds. The live check reads the daily sealed predictions from the public [elis-live](https://github.com/piales00/elis-live) repository first (`VITE_LIVE_FEED_URL` overrides its base URL), then the API, then the snapshot.
+
+The optional "Ask Elis" assistant is off unless `CHAT_ENABLED=1` is set for the API. Configure `CHAT_PROVIDER=gemini` and `GEMINI_API_KEY` to use Google Gemini (`gemini-3.1-flash-lite` by default). `CHAT_MODEL` overrides the model. The API also supports `CHAT_PROVIDER=anthropic` with `ANTHROPIC_API_KEY`.
 
 ## Repository structure
 
