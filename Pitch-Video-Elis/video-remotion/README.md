@@ -4,7 +4,7 @@ React + Remotion project that composes the ELIS pitch video for NASA Space Apps 
 
 Every frame is a pure function of a single clock (`t = frame / fps`), the `View(t)` principle of the `html-demo` approach. There is no stateful animation, so any frame can be scrubbed to, frozen, or re-rendered identically.
 
-> **Status: preliminary visual version (v2).** No narration yet; subtitle timings are provisional. See `NOTAS-PRODUCCION.md`.
+> **Status: final narration integrated (v3, pending team review in Studio).** Subtitles are timed word by word from the recording. See `NOTAS-PRODUCCION.md`.
 
 ## Output
 
@@ -25,7 +25,7 @@ The rendered MP4 is not stored in this repository (regenerate it with `npm run r
 | Remotion (`remotion`, `@remotion/cli`) | 4.0.543 | Composition, Studio preview, MP4 render |
 | React / React DOM | 19.3.1 | Scenes and overlays |
 | TypeScript | 5.9.3 | Typing (`npm run typecheck`) |
-| Python 3 + OpenCV + NumPy | n/a | Only for `tools/normalize.py` and `tools/ask_strip.py` (already run; outputs are committed) |
+| Python 3 + OpenCV + NumPy | n/a | Only for `tools/normalize.py` (already run; outputs are committed) |
 | Inter font | 4 weights, OTF | Bundled in `public/fonts/` so rendering does not need the internet |
 
 Developed with Node.js 22 and npm 10 on Linux.
@@ -41,17 +41,18 @@ video-remotion/
 │   ├── ElisPitch.tsx         layers, cameras, pointer, audio
 │   ├── timeline.ts           MASTER TIMELINE (T) and subtitles (CAPTIONS)
 │   ├── components/           primitives.tsx, Overlays.tsx, Subtitles.tsx
-│   └── lib/                  motion.ts (easing, camera, pointer), assets.ts, shots-meta.json, ask-strip.json
+│   └── lib/                  motion.ts (easing, camera, pointer), assets.ts, shots-meta.json
 ├── public/
 │   ├── fonts/                Inter + OFL.txt
 │   ├── media/                logo-elis.png, clip01.mp4, clip02.mp4 (1080p / 30 fps conversions of the opening clips)
-│   └── shots/                7 normalized screenshots, ask-strip.png, meta.json, ask-strip.json
+│   ├── audio/                narration.wav + words-103.json (git-ignored, see ../ASSETS-AND-LICENSES.md)
+│   ├── team/                 4 team photos (from web/public/landing/team)
+│   └── shots/                6 normalized screenshots, meta.json
 ├── tools/
 │   ├── prepare-clips.mjs     converts ../assets/videos/*.mp4 into public/media/clip01|02.mp4
 │   ├── check-assets.mjs      preflight: lists any missing file the composition needs
 │   ├── render-v2.mjs         reproducible render (check + render + audio trim + verify)
-│   ├── normalize.py          screenshots -> 1920×1080
-│   └── ask_strip.py          joins the two Ask Elis answer screenshots into one scroll strip
+│   └── normalize.py          screenshots -> 1920×1080
 └── NOTAS-PRODUCCION.md, PROCESO_DESARROLLO.md
 ```
 
@@ -115,8 +116,8 @@ Defaults are in `src/Root.tsx`:
 
 | Prop | Default | Purpose |
 |---|---|---|
-| `cinematicVolume` | `0.35` | Volume of the clips' own audio; `0` mutes it |
-| `voiceSrc` | `null` | Path under `public/` of the narration, e.g. `audio/narration.m4a` |
+| `cinematicVolume` | `0.15` | Volume of the clips' own audio; `0` mutes it |
+| `voiceSrc` | `'audio/narration.wav'` | Path under `public/` of the narration (starts at frame 5, `VOICE_START_FRAME`) |
 | `voiceVolume` | `1` | Narration volume |
 | `showSubtitles` | `true` | English subtitles |
 | `showReconstructionTag` | `true` | "Cinematic reconstruction" label over the recreated footage |
@@ -125,7 +126,7 @@ All animation and subtitle times are in `src/timeline.ts`.
 
 ## Open items for the final version
 
-See `NOTAS-PRODUCCION.md`: add the real narration and re-time the subtitles, confirm the "Bayesian" wording with the narrator, and review the open items in `../ASSETS-AND-LICENSES.md`.
+See `NOTAS-PRODUCCION.md`: review the preview in Studio, render the final MP4, and review the open items in `../ASSETS-AND-LICENSES.md`.
 
 ## Documentation
 

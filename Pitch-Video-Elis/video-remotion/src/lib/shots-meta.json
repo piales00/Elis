@@ -1,23 +1,16 @@
 {
- "ask-elis-01-inicial": {
-  "w": 1897,
-  "h": 1057,
-  "s": 1.021759697256386,
-  "ox": 9,
+ "ask-elis-v2-inicial": {
+  "w": 1920,
+  "h": 1080,
+  "s": 1.0,
+  "ox": 0,
   "oy": 0
  },
- "ask-elis-02-respuesta-superior": {
-  "w": 1897,
-  "h": 1051,
-  "s": 1.027592768791627,
-  "ox": 14,
-  "oy": 0
- },
- "ask-elis-03-respuesta-inferior": {
-  "w": 1900,
-  "h": 1060,
-  "s": 1.0188679245283019,
-  "ox": 8,
+ "ask-elis-v2-respuesta": {
+  "w": 1920,
+  "h": 1080,
+  "s": 1.0,
+  "ox": 0,
   "oy": 0
  },
  "compare": {

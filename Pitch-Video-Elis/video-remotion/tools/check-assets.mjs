@@ -15,7 +15,8 @@ const required = [
   'public/media/clip01.mp4',
   'public/media/clip02.mp4',
   'public/media/logo-elis.png',
-  'public/shots/ask-strip.png',
+  'public/audio/narration.wav',
+  ...['piero', 'jossep', 'samuel', 'valentino'].map((n) => `public/team/${n}.jpg`),
   ...shots,
   ...['Regular', 'Medium', 'SemiBold', 'Bold'].map((w) => `public/fonts/Inter-${w}.otf`),
 ];
@@ -34,6 +35,6 @@ if (missing.some((p) => p.startsWith('public/media/clip'))) {
   );
 }
 if (missing.some((p) => p.startsWith('public/shots/'))) {
-  console.error('\nNormalized screenshots can be regenerated with tools/normalize.py and tools/ask_strip.py (see README).');
+  console.error('\nNormalized screenshots can be regenerated with tools/normalize.py (see README).');
 }
 process.exit(1);

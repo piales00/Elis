@@ -4,8 +4,8 @@ import { ElisPitch, ElisProps } from './ElisPitch';
 import { DURATION_FRAMES, FPS } from './timeline';
 
 const defaults: ElisProps = {
-  cinematicVolume: 0.35, // set 0 to mute, ~0.12–0.2 once the voice is in
-  voiceSrc: null, // e.g. 'audio/narration.m4a' when the recording arrives
+  cinematicVolume: 0.15, // clips' own sound, kept under the voice (0 = mute)
+  voiceSrc: 'audio/narration.wav', // final narration (103 % take), starts at VOICE_START
   voiceVolume: 1,
   showSubtitles: true,
   showReconstructionTag: true,

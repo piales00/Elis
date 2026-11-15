@@ -21,8 +21,9 @@ Both clips are original AI-generated material produced for this project. They we
 | Original clip 2, `02-transicion-elis.mp4` | `assets/videos/` | 4.96 s, 1920×1080, 24 fps, with audio. Unmodified original. Only the first 2.30 s appear in the video. |
 | Converted clips `clip01.mp4`, `clip02.mp4` | `video-remotion/public/media/` | 1080p / 30 fps versions the render loads. Derived from the originals; can be regenerated with `npm run prepare:clips`. |
 | ELIS logo | `assets/imagenes/logo-elis.png`, `video-remotion/public/media/logo-elis.png` | Team asset. |
-| 7 app screenshots | `assets/imagenes/screenshots/` | Captured from the ELIS app. Show the Sentinel-2 cloudless 2020 basemap (see item B). |
-| Normalized screenshots (1920×1080) | `video-remotion/public/shots/` | Derived from the screenshots by `tools/normalize.py` and `tools/ask_strip.py`. Pixel-identical when regenerated. |
+| 6 app screenshots | `assets/imagenes/screenshots/` | Captured from the ELIS app (the two `ask-elis-v2-*` from https://elis-peru.vercel.app on 2026-11-15). Show the Sentinel-2 cloudless 2020 basemap (see item B). |
+| Normalized screenshots (1920×1080) | `video-remotion/public/shots/` | Derived from the screenshots by `tools/normalize.py`. Pixel-identical when regenerated. |
+| Team photos | `video-remotion/public/team/` | Team members' own photos, copied from `web/public/landing/team/`. |
 | Inter font (4 weights) | `video-remotion/public/fonts/` | SIL Open Font License 1.1, license text in `OFL.txt`. |
 | Source code, scripts, config | `video-remotion/` | Repository license to be decided by the owners. |
 
@@ -30,7 +31,7 @@ Both clips are original AI-generated material produced for this project. They we
 
 | Asset | Reason |
 |---|---|
-| Narration recording | Not recorded yet. `video-remotion/public/audio/` is git-ignored until the team approves publishing it. |
+| Narration recording | Recorded by the team (`public/audio/narration.wav`, 103 % take, and its word timings). `video-remotion/public/audio/` stays git-ignored until the team approves publishing it. |
 | Rendered video (`elis-preview-v2.mp4`) | Regenerate locally with `npm run render:v2`. |
 | Internal production brief and voice script | Internal documents. |
 | Development contact sheets | Review aids only; not needed to render. |
@@ -51,4 +52,4 @@ Both clips are original AI-generated material produced for this project. They we
 
 ## 5. Narration
 
-The approved narration text is preserved unmodified in the subtitles (`video-remotion/src/timeline.ts`). The recording will be added later; do not speed up the audio without the narrator's approval.
+The approved narration text is preserved unmodified in the subtitles (`video-remotion/src/timeline.ts`). The final recording (103 % speed take, prepared by the team) is wired in `src/Root.tsx`; subtitle timings come from its word-level transcription, with the transcription's word errors corrected to the spoken script.

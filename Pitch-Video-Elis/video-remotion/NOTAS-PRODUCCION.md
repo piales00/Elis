@@ -1,6 +1,14 @@
-# ELIS 30-second video: production notes (preliminary visual version v2)
+# ELIS 30-second video: production notes (v3, final narration)
 
-Status: **preliminary.** The narrator's real recording is not included yet, and subtitle timings are provisional. This is not the final delivery.
+Status: **final narration integrated, pending team review in Remotion Studio.** The final MP4 has not been rendered yet.
+
+## Narration and sync (v3)
+
+- `public/audio/narration.wav` (29.5 s, 48 kHz, 103 % take, already cleaned and normalized) starts at frame 5 (≈0.17 s, `VOICE_START_FRAME` in `src/timeline.ts`). `cinematicVolume` is 0.15, so the clips' sound stays under the voice.
+- Subtitles: 14 short cues built from `public/audio/words-103.json` (word-level timings). The text is the exact spoken script; transcription errors were corrected by hand ("firing" → "Fire near", "arrow" → "error", "brilliant" → "Peruvian", "doesn't work" → "can work", etc.). The word being spoken is lightly highlighted.
+- Key cues (video seconds): "explodes" 11.55 → 334 %; "under four percent" 13.2 → 3.8 %; "measurement" 16.5 → estimated-total ring; "capture-recapture" 17.2 → chips "Capture–recapture (Chapman) · Simultaneous overpasses · 90% range"; "NASA FIRMS data" 20.6 → "✓ verified against NASA FIRMS"; "forecast / landed / within six percent" 23.35 / 23.65 / 24.0 → Forecast 24,392 → Observed 22,955 → within ~6%; "We're Peruvian students" 25.3 → team card (Team Log N + 1 · Peru); "If it works here" 27.3 → outro; URL fully visible from 28.4 to the fade at 29.6.
+- Scene changes fall in the pauses: Compare at 10.15–10.5 (after "Elis."), schematic at 14.4, Ask Elis at 18.8 (after "statistics."), Outlook at 21.5 (after "data."), team at 25.15.
+- Ask Elis now uses two new authentic captures of https://elis-peru.vercel.app (2026-11-15, English, dark): the example questions and the stored answer to "Why do the raw counts jump in 2012?". The whole answer fits on one screen, so the old scroll strip (`ask-strip`, `tools/ask_strip.py`) and the three old captures were removed.
 
 ## How it is built
 
@@ -12,8 +20,8 @@ Status: **preliminary.** The narrator's real recording is not included yet, and 
 
 - `public/media/clip01.mp4`: `01-incendio.mp4` scaled from 1280×720 to 1920×1080 and converted from 24 to 30 fps (frame duplication, no interpolation). Included in the repository.
 - `public/media/clip02.mp4`: `02-transicion-elis.mp4` converted from 24 to 30 fps. Only its first 2.30 s are used. Included in the repository.
-- `public/shots/*.png`: the 7 screenshots, scaled and center-cropped to 1920×1080 (`tools/normalize.py`).
-- `public/shots/ask-strip.png`: a strip of the Ask Elis answer panel. It joins `ask-elis-02` and `ask-elis-03` over their shared region: match score 0.997, mean difference 2.5/255 (`tools/ask_strip.py`). No content is invented.
+- `public/shots/*.png`: the 6 screenshots, scaled and center-cropped to 1920×1080 (`tools/normalize.py`).
+- `public/team/*.jpg`: the 4 team photos from `web/public/landing/team/`.
 
 ## Hand-off from clip 02 to the real Explore view
 
@@ -26,17 +34,15 @@ Status: **preliminary.** The narrator's real recording is not included yet, and 
 
 ## Items awaiting confirmation
 
-1. **"Bayesian"**: the main documented method (`docs/methods/01-harmonization.md`) is the Chapman estimator (capture-recapture) with bootstrap. Bayesian analysis appears in `docs/resultados-bayes.md` as a complementary analysis. The narration text is unchanged; the on-screen labels say "Capture–recapture · Simultaneous overpasses · 90% range" and do not present the method as Bayesian. **Confirm with the narrator.**
+1. ~~"Bayesian"~~: closed. The final narration says "capture-recapture statistics"; the labels say "Capture–recapture (Chapman)".
 2. **"within six percent"**: the difference between 24,392 and 22,955 is 5.9% measured against the forecast and 6.3% measured against the observation. On screen: "within ~6%", with the context Peru, 2026 season, out of sample (`docs/methods/05-seasonal-forecast.md`).
 3. **Substitution**: the brief called for Thermal, True color and Burn scars views, but no authentic screenshots of those views exist. They were replaced by Compare and a scientific schematic labeled "Schematic · not data".
-4. **Team**: no photo or confirmed roles, so no team card is shown.
+4. ~~Team~~: closed. Team card with the 4 real photos and roles.
 5. **Santa María "VIIRS 3 · MODIS 1"**: not found in the repository. The real rows from the screenshot are used (MODIS 1,215 · VIIRS 5,912, Peru, August 2026, raw, not comparable).
-6. **Ask Elis answer**: it includes figures outside the verified table (1,787.7; 41.7%; 4.1×; ~7%). It is the app's real output and is shown without emphasis.
+6. ~~Ask Elis answer~~: closed. The new capture shows the stored verified answer (10,375 → 92,807 raw detections, 8.9×; September 2011/2012 fire cell-days with 90 % ranges).
 
-## For the final version
+## Pending
 
-- Copy the narration to `public/audio/` and pass `voiceSrc` (default props in `src/Root.tsx`).
-- Lower `cinematicVolume` (now 0.35) to about 0.12 to 0.2, or set it to 0 to mute the clips.
-- Rebuild `CAPTIONS` in `src/timeline.ts` with the real word-level timings of the narration.
-- **Do not speed up the audio without the team's approval.**
+- Team review of the preview in Studio (`npm run dev`), then render the final MP4 (`npm run render:v2`).
+- `public/audio/` is git-ignored: copy `narration.wav` there on any machine that renders, or approve publishing it.
 - Review the open items in `../ASSETS-AND-LICENSES.md`.

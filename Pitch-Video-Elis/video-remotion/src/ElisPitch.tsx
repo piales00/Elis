@@ -1,10 +1,10 @@
 import React from 'react';
-import { AbsoluteFill, Audio, Img, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig, continueRender, delayRender } from 'remotion';
-import { T } from './timeline';
-import { ASK_STRIP, COLORS, N, R, scaleOf, shot } from './lib/assets';
+import { AbsoluteFill, Audio, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig, continueRender, delayRender } from 'remotion';
+import { T, VOICE_START_FRAME } from './timeline';
+import { COLORS, N, R, shot } from './lib/assets';
 import { Cam, IDENT, camAt, clamp, ease, glide, press, toScreen, vis } from './lib/motion';
 import { Cursor, Dim, Highlight, Shot } from './components/primitives';
-import { ErrorFigure, FadeBlack, ForecastCard, OpeningLabels, Outro, Schematic, VerifiedBadge } from './components/Overlays';
+import { ErrorFigure, FadeBlack, ForecastCard, OpeningLabels, Outro, Schematic, TeamCard, VerifiedBadge } from './components/Overlays';
 import { Subtitles } from './components/Subtitles';
 
 // ---- fonts (bundled Inter, so the render never depends on the network) ----
@@ -22,7 +22,7 @@ if (typeof document !== 'undefined') {
 export type ElisProps = {
   /** Level of the original clips' own sound (0 = muted). Kept low so the voice leads. */
   cinematicVolume: number;
-  /** Path under public/, e.g. "audio/narration.m4a". null until the recording exists. */
+  /** Narration file under public/ (e.g. "audio/narration.wav"); null = no voice. */
   voiceSrc: string | null;
   voiceVolume: number;
   showSubtitles: boolean;
@@ -48,43 +48,37 @@ const camCompare = (t: number): Cam =>
     { from: T.camReset[0], to: T.camReset[1], cam: IDENT },
   ]);
 
-const [hx, hy] = N('ask-elis-03-respuesta-inferior', 300, 190);
-const [px, py] = N('ask-elis-03-respuesta-inferior', 290, 520);
+const [hx, hy] = N('ask-elis-v2-respuesta', 300, 300);
 const camAnswer = (t: number): Cam =>
   camAt(t, IDENT, [
-    { from: T.camHeader[0], to: T.camHeader[1], cam: { cx: hx, cy: hy, z: 1.5 } },
-    { from: T.camPanel[0], to: T.camPanel[1], cam: { cx: px, cy: py, z: 1.25 } },
+    { from: T.camHeader[0], to: T.camHeader[1], cam: { cx: hx, cy: hy, z: 1.4 } },
     { from: T.camAskReset[0], to: T.camAskReset[1], cam: IDENT },
   ]);
 
 const camOutlook = (t: number): Cam =>
   camAt(t, IDENT, [{ from: T.camOutlook[0], to: T.camOutlook[1], cam: { cx: 889, cy: 545, z: 1.08 } }]);
 
-// ---- Ask Elis answer strip geometry (image coords of the ask-03 stage) ----
-const AS = scaleOf('ask-elis-03-respuesta-inferior');
-const [stripLeft, stripTop] = N('ask-elis-03-respuesta-inferior', ASK_STRIP.x0, ASK_STRIP.top);
-const stripW = ASK_STRIP.w * AS;
-const viewH = ASK_STRIP.h * AS;
-const scrollMax = ASK_STRIP.d * AS;
-// "✓ Verified figures · fire cell-days" chip in ask-02 (x shifted +2 px in the strip), right end
-const [chipX, chipY] = N('ask-elis-03-respuesta-inferior', 424, 187);
+// ---- Ask Elis answer (one authentic screenshot): the answer card streams in below the question ----
+const ANS = R('ask-elis-v2-respuesta', 92, 195, 500, 966);
+// "✓ Verified figures · fire cell-days" chip, right end
+const [chipX, chipY] = N('ask-elis-v2-respuesta', 298, 220);
 
 // ---- pointer ----
 const [cmpBtnX, cmpBtnY] = N('explore-ampliado', 34, 150);
 const [askBtnX, askBtnY] = N('compare', 33, 382);
-const [qX, qY] = N('ask-elis-01-inicial', 293, 350);
-const [outBtnX, outBtnY] = N('ask-elis-03-respuesta-inferior', 34, 325);
+const [qX, qY] = N('ask-elis-v2-inicial', 230, 677);
+const [outBtnX, outBtnY] = N('ask-elis-v2-respuesta', 37, 328);
 const WAYS = [
   { at: 0, x: 1450, y: 760 },
   { at: T.compareClick - 0.03, x: cmpBtnX, y: cmpBtnY, dur: 0.55 },
-  { at: 10.15, x: 980, y: 640, dur: 0.6 },
+  { at: 10.75, x: 980, y: 640, dur: 0.6 },
   { at: T.askClick - 0.05, x: askBtnX, y: askBtnY, dur: 0.5 },
   { at: T.qArrive, x: qX + 40, y: qY + 2, dur: 0.6 },
-  { at: 19.35, x: 760, y: 760, dur: 0.55 },
+  { at: 20.0, x: 760, y: 760, dur: 0.55 },
   { at: T.outlookClick - 0.06, x: outBtnX, y: outBtnY, dur: 0.5 },
 ];
 const cursorOpacity = (t: number) =>
-  Math.max(vis(t, 8.85, 10.3, 0.2, 0.35), vis(t, 16.65, 19.35, 0.2, 0.35), vis(t, 20.85, 22.05, 0.2, 0.3));
+  Math.max(vis(t, 9.45, 10.9, 0.2, 0.35), vis(t, 18.15, 20.1, 0.2, 0.35), vis(t, 20.95, 22.0, 0.2, 0.3));
 const cursorPress = (t: number) =>
   Math.max(press(t, T.compareClick), press(t, T.askClick), press(t, T.qClick), press(t, T.outlookClick));
 
@@ -108,10 +102,8 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
   const outlookOn = t >= T.toOutlook[0] && t < T.toOutro[1];
 
   const ansCam = camAnswer(t);
-  const scroll = ease(t, T.scroll[0], T.scroll[1]) * scrollMax;
-  // question bubble (top ≈ 95 px of the panel) is visible at once; the answer then streams in below it
-const revealY = 95 * AS + 60 + ease(t, T.reveal[0], T.reveal[1]) * (viewH - 95 * AS);
-  const [badgeX, badgeY] = toScreen(ansCam, chipX + 14, chipY - scroll);
+  const revealTop = ANS.top + ease(t, T.reveal[0], T.reveal[1]) * (ANS.height + 80);
+  const [badgeX, badgeY] = toScreen(ansCam, chipX + 14, chipY);
 
   const [cx, cy] = glide(t, WAYS);
   const clipVol = (f: number, fadeTo?: [number, number]) => {
@@ -150,16 +142,13 @@ const revealY = 95 * AS + 60 + ease(t, T.reveal[0], T.reveal[1]) * (viewH - 95 *
 
       {/* ---------- Scene 3: Ask Elis ---------- */}
       {ask1On && (
-        <Shot src={shot('ask-elis-01-inicial')} cam={IDENT} opacity={ask1O}>
-          <Highlight box={R('ask-elis-01-inicial', 105, 326, 481, 374)} opacity={vis(t, T.qHover[0], T.qHover[1], 0.2, 0.2)} color={COLORS.forecast} pad={2} fill="rgba(183,148,246,0.10)" />
+        <Shot src={shot('ask-elis-v2-inicial')} cam={IDENT} opacity={ask1O}>
+          <Highlight box={R('ask-elis-v2-inicial', 107, 660, 484, 694)} opacity={vis(t, T.qHover[0], T.qHover[1], 0.2, 0.2)} color={COLORS.forecast} pad={2} fill="rgba(183,148,246,0.10)" />
         </Shot>
       )}
       {answerOn && (
-        <Shot src={shot('ask-elis-03-respuesta-inferior')} cam={ansCam} opacity={answerO}>
-          <div style={{ position: 'absolute', left: stripLeft, top: stripTop, width: stripW, height: viewH, overflow: 'hidden', background: COLORS.panel }}>
-            <Img src={staticFile('shots/ask-strip.png')} style={{ position: 'absolute', left: 0, top: -scroll, width: stripW, height: (ASK_STRIP.h + ASK_STRIP.d) * AS }} />
-            <div style={{ position: 'absolute', left: 0, right: 0, top: revealY - 60, bottom: 0, background: `linear-gradient(180deg, rgba(15,27,22,0) 0px, ${COLORS.panel} 60px)` }} />
-          </div>
+        <Shot src={shot('ask-elis-v2-respuesta')} cam={ansCam} opacity={answerO}>
+          <div style={{ position: 'absolute', left: ANS.left, width: ANS.width, top: revealTop - 80, height: Math.max(0, ANS.top + ANS.height - revealTop + 80), background: `linear-gradient(180deg, rgba(15,27,22,0) 0px, ${COLORS.panel} 80px)` }} />
         </Shot>
       )}
 
@@ -177,11 +166,16 @@ const revealY = 95 * AS + 60 + ease(t, T.reveal[0], T.reveal[1]) * (viewH - 95 *
       <VerifiedBadge t={t} x={badgeX} y={badgeY - 30} />
       <ForecastCard t={t} />
       <Cursor x={cx} y={cy} opacity={cursorOpacity(t)} pressed={cursorPress(t)} />
+      <TeamCard t={t} />
       <Outro t={t} />
       {showSubtitles && <Subtitles t={t} />}
       <FadeBlack t={t} />
 
-      {voiceSrc && <Audio src={staticFile(voiceSrc)} volume={voiceVolume} />}
+      {voiceSrc && (
+        <Sequence from={VOICE_START_FRAME} layout="none">
+          <Audio src={staticFile(voiceSrc)} volume={voiceVolume} />
+        </Sequence>
+      )}
     </AbsoluteFill>
   );
 };

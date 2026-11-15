@@ -1,5 +1,4 @@
 import meta from './shots-meta.json';
-import strip from './ask-strip.json';
 
 export type ShotName = keyof typeof meta;
 
@@ -20,11 +19,6 @@ export const R = (name: ShotName, x0: number, y0: number, x1: number, y1: number
 };
 
 export const scaleOf = (name: ShotName) => meta[name].s;
-
-/** Ask Elis answer strip (tools/ask_strip.py): ask-02 content on top, ask-03 below, matched on their overlap. */
-export const ASK_STRIP = strip as {
-  x0: number; top: number; bot: number; w: number; h: number; d: number; src: ShotName;
-};
 
 export const COLORS = {
   bg: '#07100d',

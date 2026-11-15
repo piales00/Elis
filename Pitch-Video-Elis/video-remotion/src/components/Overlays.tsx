@@ -72,7 +72,7 @@ export const Schematic: React.FC<{ t: number }> = ({ t }) => {
   const c1 = ease(t, s0 + 0.2, s0 + 0.75, easeOut);
   const c2 = ease(t, s0 + 0.45, s0 + 1.0, easeOut);
   const ov = ease(t, s0 + 0.9, s0 + 1.4);
-  const chips = ease(t, s0 + 1.2, s0 + 1.7, easeOut);
+  const chips = ease(t, T.schemChips, T.schemChips + 0.5, easeOut);
   const miss = ease(t, T.missedRing, T.missedRing + 0.6, easeOut);
   const cx = 960, cy = 470, r = 190, gap = 120;
   const dash = 2 * Math.PI * 380;
@@ -97,7 +97,7 @@ export const Schematic: React.FC<{ t: number }> = ({ t }) => {
         Estimated total — including fire both missed
       </div>
       <div style={{ position: 'absolute', left: 0, right: 0, top: cy + 360, display: 'flex', justifyContent: 'center', gap: 16, opacity: chips, transform: `translateY(${12 * (1 - chips)}px)` }}>
-        {['Capture–recapture', 'Simultaneous overpasses', '90% range'].map((c) => (
+        {['Capture–recapture (Chapman)', 'Simultaneous overpasses', '90% range'].map((c) => (
           <div key={c} style={{ padding: '10px 20px', borderRadius: 999, border: `1px solid ${COLORS.harmonized}88`, background: `${COLORS.harmonized}1a`, color: COLORS.ink, fontSize: 24, fontWeight: 600 }}>
             {c}
           </div>
@@ -118,7 +118,7 @@ export const VerifiedBadge: React.FC<{ t: number; x: number; y: number }> = ({ t
   return (
     <div style={{ position: 'absolute', left: x, top: y, opacity: o, transform: `translateX(${16 * (1 - k)}px)` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', borderRadius: 999, background: 'rgba(8,30,20,0.92)', border: `2px solid ${COLORS.green}`, color: COLORS.green, fontSize: 28, fontWeight: 700, boxShadow: `0 0 30px ${COLORS.green}44` }}>
-        ✓ verified against data
+        ✓ verified against NASA FIRMS
       </div>
     </div>
   );
@@ -149,6 +149,41 @@ export const ForecastCard: React.FC<{ t: number }> = ({ t }) => {
         Fire cell-days · model fitted on 2003–2025 · forecast issued 1 month ahead · 2026 observations provisional (NRT)
       </div>
     </Glass>
+  );
+};
+
+// ---------- Scene 5: team ----------
+const TEAM = [
+  { photo: 'team/piero.jpg', name: 'Piero Pérez', role: 'Methods & statistics' },
+  { photo: 'team/jossep.jpg', name: 'Jossep Hurtado', role: 'Data & API' },
+  { photo: 'team/samuel.jpg', name: 'Samuel Ortega', role: 'Web & design' },
+  { photo: 'team/valentino.jpg', name: 'Valentino Llamocca', role: 'AI assistant' },
+];
+
+export const TeamCard: React.FC<{ t: number }> = ({ t }) => {
+  const [a, b] = T.team;
+  const bg = vis(t, a, b, 0.35, 0.3);
+  if (bg <= 0) return null;
+  const title = ease(t, a + 0.1, a + 0.6, easeOut);
+  return (
+    <div style={{ position: 'absolute', inset: 0, opacity: bg, background: 'radial-gradient(ellipse at 50% 40%, #10251d 0%, #07100d 65%, #040907 100%)' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 150, textAlign: 'center', opacity: title, transform: `translateY(${12 * (1 - title)}px)` }}>
+        <div style={{ ...small, fontSize: 22, color: COLORS.harmonized }}>NASA Space Apps 2026</div>
+        <div style={{ marginTop: 10, fontSize: 66, fontWeight: 800, color: '#fff', letterSpacing: -1.5 }}>Team Log N + 1 · Peru</div>
+      </div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 390, display: 'flex', justifyContent: 'center', gap: 70 }}>
+        {TEAM.map((m, i) => {
+          const k = ease(t, a + 0.3 + i * 0.12, a + 0.8 + i * 0.12, easeOut);
+          return (
+            <div key={m.name} style={{ width: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: k, transform: `translateY(${18 * (1 - k)}px)` }}>
+              <Img src={staticFile(m.photo)} style={{ width: 210, height: 210, borderRadius: 105, objectFit: 'cover', border: `3px solid ${COLORS.harmonized}66`, boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
+              <div style={{ marginTop: 26, fontSize: 34, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{m.name}</div>
+              <div style={{ marginTop: 6, fontSize: 25, fontWeight: 500, color: COLORS.muted, whiteSpace: 'nowrap' }}>{m.role}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 

@@ -1,9 +1,13 @@
 // MASTER TIMELINE (seconds). Every animation reads these constants; retime here only.
-// Narration blocks follow the production brief (internal document, not published). Final cue times must be
-// re-derived from the real narration recording (word-level) — until then they are PRELIMINARY.
+// Cue times are derived from the final narration (public/audio/narration.wav, 103 % take) and its
+// word-level timings (public/audio/words-103.json), shifted by VOICE_START.
 
 export const FPS = 30;
 export const DURATION_FRAMES = 900; // 30.0 s hard limit → last frame 29.967 s
+
+/** The narration file starts at this frame (≈0.17 s). */
+export const VOICE_START_FRAME = 5;
+export const VOICE_START = VOICE_START_FRAME / FPS;
 
 export const T = {
   // Scene 1 — cinematic opening (original footage, unmodified source files)
@@ -11,71 +15,84 @@ export const T = {
   clip2: [4.0, 6.3], // plays 0.00–2.30 s of clip 02; its AI-generated UI starts ≈2.25 s
   handoff: [5.75, 6.13], // clip 02 dissolves into the authentic Explore screenshot
   reconTag: [0.2, 6.15], // "Cinematic reconstruction" label
-  placeTitle: [0.6, 3.8],
+  placeTitle: [0.6, 3.8], // "…Machu Picchu stops the trains"
 
-  // Explore (authentic)
-  estab: [6.0, 7.1], // camera eases 1.45× → 1.0× while the real UI resolves
-  rowsIn: [7.15, 7.8],
-  rowsHL: [7.55, 8.55],
-  pullBack: [8.35, 9.0],
-  toAmpl: [8.72, 9.02],
+  // Explore (authentic) — "…but they don't agree" (6.71–7.55)
+  estab: [6.0, 6.8],
+  rowsIn: [6.7, 7.3],
+  rowsHL: [6.8, 8.0],
+  pullBack: [7.9, 8.5],
+  toAmpl: [8.3, 8.6], // "For the NASA Harmonization challenge, we built Elis"
 
   // Scene 2 — Compare + method
-  compareClick: 9.45,
-  toCompare: [9.58, 9.95],
-  camTop: [10.0, 10.6],
-  jumpHL: [10.4, 11.95],
-  n334: [10.65, 12.4],
-  camBottom: [11.9, 12.5],
-  n38: [12.2, 13.05],
-  schematic: [13.05, 16.5],
-  missedRing: 15.2, // "…the fire both satellites miss"
-  camReset: [13.2, 13.6],
+  compareClick: 10.05,
+  toCompare: [10.15, 10.5], // pause after "Elis." (10.30)
+  camTop: [10.55, 11.15],
+  jumpHL: [10.85, 12.2],
+  n334: [11.4, 12.85], // "explodes" (11.55)
+  camBottom: [12.3, 12.9],
+  n38: [12.6, 14.45], // "under four percent" (13.22–14.32)
+  schematic: [14.4, 18.85], // "It turns the satellites' disagreement into a measurement…"
+  missedRing: 16.35, // "measurement" (16.50)
+  schemChips: 17.1, // "with capture-recapture statistics" (17.20–18.58)
+  camReset: [14.45, 14.85],
 
-  // Scene 3 — Ask Elis (approved interaction)
-  askClick: 17.2,
-  toAsk: [17.3, 17.6],
-  qArrive: 18.25,
-  qHover: [18.05, 18.75],
-  qClick: 18.55,
-  toAnswer: [18.7, 18.95],
-  reveal: [18.72, 19.45],
-  camHeader: [18.9, 19.5],
-  verified: [19.6, 20.4],
-  camPanel: [20.05, 20.45],
-  scroll: [20.25, 21.2],
+  // Scene 3 — Ask Elis — "Every number is checked against NASA FIRMS data" (19.10–21.39)
+  askClick: 18.7,
+  toAsk: [18.8, 19.1],
+  qArrive: 19.3,
+  qHover: [19.15, 19.7],
+  qClick: 19.55,
+  toAnswer: [19.65, 19.9],
+  reveal: [19.67, 20.4],
+  camHeader: [19.9, 20.45],
+  verified: [20.5, 21.6], // "NASA FIRMS data" (20.58–21.39)
   camAskReset: [21.05, 21.4],
-  outlookClick: 21.48,
-  toOutlook: [21.6, 21.95],
+  outlookClick: 21.42,
+  toOutlook: [21.5, 21.8], // pause after "data." (21.39–21.74)
 
-  // Scene 4 — Outlook + Peru 2026 validation
-  camOutlook: [22.0, 22.6],
-  card: [22.25, 25.3],
-  fForecast: 22.55,
-  fObserved: 23.4,
-  fWithin: 24.2,
+  // Scene 4 — Outlook + Peru 2026 validation — "On a season it never saw…"
+  camOutlook: [21.85, 22.45],
+  card: [22.1, 25.25],
+  fForecast: 23.35, // "forecast"
+  fObserved: 23.65, // "landed"
+  fWithin: 24.0, // "within six percent" (24.01)
 
-  // Scene 5 — outro
-  toOutro: [25.3, 25.9],
-  logo: 25.7,
-  phrase: 26.5,
-  url: 27.1,
-  attrib: 27.3,
-  fadeBlack: [29.45, 29.967],
+  // Scene 5 — team ("We're Peruvian students trying to help", 25.28–27.02) and outro
+  team: [25.15, 27.4],
+  toOutro: [27.05, 27.5], // "If it works here, it can work anywhere" (27.32–29.28)
+  logo: 27.2,
+  phrase: 27.6,
+  url: 27.8,
+  attrib: 28.0,
+  fadeBlack: [29.6, 29.967],
 } as const;
 
-/** PRELIMINARY subtitles — exact approved narration text (internal voice script, closing A).
- *  Times are placeholders aligned to the brief's block table; replace from the real voice track. */
-export const CAPTIONS: { from: number; to: number; text: string }[] = [
-  { from: 0.25, to: 3.9, text: 'August 2026. Fire near Machu Picchu stops the trains.' },
-  { from: 4.0, to: 6.6, text: 'NASA has watched Peru burn for twenty-six years,' },
-  { from: 6.6, to: 8.95, text: "but its two satellites don't agree." },
-  { from: 9.0, to: 10.95, text: 'Stack them naively, and the error explodes.' },
-  { from: 10.95, to: 13.0, text: 'Elis harmonizes them, under four percent.' },
-  { from: 13.05, to: 15.1, text: 'A Bayesian capture-recapture model' },
-  { from: 15.1, to: 17.3, text: 'estimates the fire both satellites miss.' },
-  { from: 17.4, to: 21.3, text: 'Ask Elis anything, every number checked.' },
-  { from: 21.45, to: 25.25, text: 'On a season it never saw, its forecast landed within six percent.' },
-  { from: 25.45, to: 27.6, text: "We're Peruvian students trying to help." },
-  { from: 27.6, to: 29.7, text: 'If it works here, it can work anywhere.' },
+type Word = { w: string; s: number; e: number };
+export type Caption = { from: number; to: number; words: Word[] };
+
+/** Narration words [text, start, end] in seconds of narration.wav. Text is the exact spoken script;
+ *  timings come from words-103.json (automatic transcription, word errors corrected by hand). */
+const CUE_WORDS: [string, number, number][][] = [
+  [["August", 0.17, 0.35], ["2026.", 0.35, 1.262]],
+  [["Fire", 1.612, 1.661], ["near", 1.661, 1.709], ["Machu", 1.709, 2.214], ["Picchu", 2.214, 2.505], ["stops", 2.505, 2.757], ["the", 2.757, 2.951], ["trains.", 2.951, 3.262]],
+  [["For", 3.612, 3.767], ["years,", 3.767, 4.039], ["MODIS", 4.272, 4.466], ["and", 4.466, 4.621], ["VIIRS", 4.621, 4.835], ["satellites", 4.835, 5.243], ["have", 5.243, 5.534], ["watched", 5.534, 5.825], ["Peru", 5.825, 6.136], ["burn,", 6.136, 6.291]],
+  [["but", 6.544, 6.68], ["they", 6.68, 6.893], ["don't", 6.893, 7.049], ["agree.", 7.049, 7.379]],
+  [["For", 7.748, 7.864], ["the", 7.864, 8.019], ["NASA", 8.019, 8.214], ["Harmonization", 8.214, 8.777], ["challenge,", 8.777, 9.146], ["we", 9.534, 9.553], ["built", 9.553, 9.786], ["Elis.", 9.786, 10.136]],
+  [["Mixed", 10.466, 10.505], ["naively,", 10.505, 10.893], ["the", 11.068, 11.204], ["error", 11.204, 11.379], ["explodes.", 11.379, 11.845]],
+  [["Elis", 12.311, 12.524], ["brings", 12.524, 12.816], ["it", 12.816, 13.049], ["under", 13.049, 13.437], ["four", 13.437, 13.676], ["percent.", 13.676, 14.155]],
+  [["It", 14.47, 14.563], ["turns", 14.563, 14.777], ["the", 14.777, 14.99], ["satellites'", 14.99, 15.32], ["disagreement", 15.495, 15.864], ["into", 15.864, 16.272], ["a", 16.272, 16.33], ["measurement,", 16.33, 16.738]],
+  [["with", 17.029, 17.204], ["capture-recapture", 17.204, 18.0], ["statistics.", 18.0, 18.408]],
+  [["Every", 18.932, 19.126], ["number", 19.126, 19.379], ["is", 19.379, 19.592], ["checked", 19.592, 19.786], ["against", 19.786, 20.408], ["NASA", 20.408, 20.641], ["FIRMS", 20.641, 20.913], ["data.", 20.913, 21.223]],
+  [["On", 21.573, 21.689], ["a", 21.689, 21.806], ["season", 21.806, 21.961], ["it", 21.961, 22.175], ["never", 22.175, 22.388], ["saw,", 22.388, 22.699]],
+  [["its", 23.01, 23.184], ["forecast", 23.184, 23.456], ["landed", 23.456, 23.845], ["within", 23.845, 24.097], ["six", 24.097, 24.372], ["percent.", 24.372, 25.107]],
+  [["We're", 25.107, 25.534], ["Peruvian", 25.534, 25.786], ["students", 25.786, 26.155], ["trying", 26.155, 26.485], ["to", 26.485, 26.641], ["help.", 26.641, 26.854]],
+  [["If", 27.146, 27.282], ["it", 27.282, 27.379], ["works", 27.379, 27.592], ["here,", 27.592, 27.903], ["it", 28.233, 28.291], ["can", 28.291, 28.466], ["work", 28.466, 28.641], ["anywhere.", 28.641, 29.107]],
 ];
+
+export const CAPTIONS: Caption[] = CUE_WORDS.map((cue, i) => {
+  const words = cue.map(([w, s, e]) => ({ w, s: s + VOICE_START, e: e + VOICE_START }));
+  const next = CUE_WORDS[i + 1];
+  const nextFrom = next ? next[0][1] + VOICE_START - 0.05 : Infinity;
+  return { from: words[0].s - 0.08, to: Math.min(nextFrom, words[words.length - 1].e + 0.4), words };
+});
