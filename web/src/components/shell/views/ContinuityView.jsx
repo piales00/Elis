@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../../i18n/I18nProvider.jsx";
 import { getContinuity, NoDataError } from "../../../data/client.js";
 import LineChart, { Legend } from "../LineChart.jsx";
+import { EVIDENCE_DOCS } from "../../../content/evidence.js";
+import Icon from "../icons.jsx";
 
 const DEFAULT_SHUTDOWN = "2023-01";
 
@@ -37,7 +39,7 @@ function Stat({ value, label, tone }) {
   );
 }
 
-export default function ContinuityView({ region }) {
+export default function ContinuityView({ region, period, onSelectPeriod }) {
   const { t, formatNumber } = useI18n();
   const [on, setOn] = useState(true);
   const [shutdown, setShutdown] = useState(DEFAULT_SHUTDOWN);
@@ -57,6 +59,8 @@ export default function ContinuityView({ region }) {
   const cut = on ? data?.scenario?.shutdown ?? shutdown : null;
   const endYear = data?.scenario?.modis_science_end_year ?? 2027;
   const [minMonth, maxMonth] = data?.period ?? ["2012-01", "2026-11"];
+  const cursor = period ? `${period.year}-${String(period.month).padStart(2, "0")}` : null;
+  const select = onSelectPeriod ? (d) => onSelectPeriod({ year: Number(d.month.slice(0, 4)), month: Number(d.month.slice(5, 7)) }) : undefined;
 
   const modisSeries = [
     { id: "aqua", label: t("cont.aqua"), tip: t("cont.tip.aqua"), color: "var(--c-modis)", width: 2, value: (d) => (!cut || d.month < cut ? d.aqua_observed : null) },
@@ -134,12 +138,14 @@ export default function ContinuityView({ region }) {
           {t("cont.chart1")}
         </h3>
         <p className="m-0 text-xs text-muted">{t("cont.chart1.sub")}</p>
-        <Legend series={modisSeries} />
+        <Legend series={[...modisSeries, ...(cursor && cursor >= minMonth ? [{ id: "cursor", label: t("cont.cursor"), color: "var(--accent)", width: 1.5 }] : [])]} />
         {rows.length ? (
           <LineChart
             data={rows}
             series={modisSeries}
             marker={cut ? { month: cut, label: t("cont.switch", { month: monthLabel(t, cut) }) } : null}
+            cursor={cursor}
+            onSelect={select}
             height={210}
             format={(v) => compact(v)}
             ariaLabel={t("cont.chart1.aria", { region: t(`region.${rid}`) })}
@@ -205,6 +211,8 @@ export default function ContinuityView({ region }) {
             data={rows}
             series={harmSeries}
             marker={cut ? { month: cut, label: t("cont.switchShort") } : null}
+            cursor={cursor}
+            onSelect={select}
             height={150}
             format={(v) => compact(v)}
             ariaLabel={t("cont.chart2.aria", { region: t(`region.${rid}`) })}
@@ -217,6 +225,11 @@ export default function ContinuityView({ region }) {
       </section>
 
       <p className="m-0 rounded-xl border border-line px-4 py-3 text-sm font-semibold">{t("cont.message", { year: endYear })}</p>
+      <a href={EVIDENCE_DOCS.continuity} target="_blank" rel="noopener" className="fc-source">
+        <Icon name="method" size={14} />
+        {t("cont.source")}
+        <Icon name="external" size={12} />
+      </a>
     </div>
   );
 }

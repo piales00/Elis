@@ -1,8 +1,8 @@
 import { useI18n } from "../../../i18n/I18nProvider.jsx";
 import HowWeCalculated from "../../HowWeCalculated.jsx";
-import { DOC_ONLY, EVIDENCE_DOCS } from "../../../content/evidence.js";
+import { DOC_ONLY, EVIDENCE_DOCS, REPORT_PDF } from "../../../content/evidence.js";
 import { skillSummary } from "../../../lib/forecast.js";
-import { Preferences } from "../Rail.jsx";
+import { ElisMark, Preferences } from "../Rail.jsx";
 import Icon from "../icons.jsx";
 import Attributions from "../Attributions.jsx";
 
@@ -127,10 +127,26 @@ export default function MethodView({ methodology, forecast, theme, onTheme, onOp
           <p className="m-0 font-head text-[clamp(1.5rem,1.2rem+0.9vw,2rem)] font-extrabold leading-tight tracking-[-0.02em] text-balance">{t("how.headline")}</p>
           <p className="m-0 text-[15px] leading-relaxed text-muted">{t("how.lede")}</p>
         </div>
-        <p className="m-0 inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs">
-          <span className="font-semibold">{t("how.unitLabel")}</span>
-          <span className="text-muted">{t("unit.short")}</span>
-        </p>
+        <div className="grid justify-items-start gap-3 @3xl:justify-items-end">
+          <p className="m-0 inline-flex items-center gap-2 text-sm font-semibold">
+            <ElisMark size={26} />
+            {t("how.brand")}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 @3xl:justify-end">
+            <a href={REPORT_PDF} download className="fc-btn fc-btn-primary">
+              <Icon name="download" size={16} />
+              {t("how.report")}
+            </a>
+            <a href={EVIDENCE_DOCS.index} target="_blank" rel="noopener" className="fc-btn">
+              {t("how.notes")}
+              <Icon name="external" size={14} />
+            </a>
+          </div>
+          <p className="m-0 inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs">
+            <span className="font-semibold">{t("how.unitLabel")}</span>
+            <span className="text-muted">{t("unit.short")}</span>
+          </p>
+        </div>
       </header>
 
       <Flow />

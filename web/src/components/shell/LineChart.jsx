@@ -65,7 +65,7 @@ export function Legend({ series }) {
   );
 }
 
-export default function LineChart({ data, series, marker, height = 200, format, xLabel, ariaLabel, describe }) {
+export default function LineChart({ data, series, marker, cursor, onSelect, height = 200, format, xLabel, ariaLabel, describe }) {
   const [ref, width] = useElementWidth();
   const [hover, setHover] = useState(null);
   const n = data.length;
@@ -87,6 +87,7 @@ export default function LineChart({ data, series, marker, height = 200, format, 
   const ticks = [0, 0.5, 1].map((f) => f * yMax);
   const years = data.map((d, i) => [d.month, i]).filter(([m]) => m.endsWith("-01") && Number(m.slice(0, 4)) % 2 === 0);
   const markerIdx = marker ? data.findIndex((d) => d.month === marker.month) : -1;
+  const cursorIdx = cursor ? data.findIndex((d) => d.month === cursor) : -1;
   const xs = data.map((_, i) => x(i));
 
   const move = (clientX, rect) => {
@@ -100,6 +101,10 @@ export default function LineChart({ data, series, marker, height = 200, format, 
       const step = e.shiftKey ? 12 : 1;
       setHover((h) => Math.max(0, Math.min(n - 1, (h ?? n - 1) + (e.key === "ArrowRight" ? step : -step))));
     } else if (e.key === "Escape") setHover(null);
+    else if ((e.key === "Enter" || e.key === " ") && onSelect && hover !== null) {
+      e.preventDefault();
+      onSelect(data[hover]);
+    }
   };
   const hd = hover !== null ? data[hover] : null;
   const tipLeft = hover !== null ? Math.min(Math.max(x(hover) + 10, 0), w - 210) : 0;
@@ -113,9 +118,10 @@ export default function LineChart({ data, series, marker, height = 200, format, 
         role="img"
         aria-label={ariaLabel}
         tabIndex={0}
-        className="fc-chart block max-w-full touch-pan-y"
+        className={`fc-chart block max-w-full touch-pan-y ${onSelect ? "cursor-pointer" : ""}`}
         onPointerMove={(e) => move(e.clientX, e.currentTarget.getBoundingClientRect())}
         onPointerLeave={() => setHover(null)}
+        onClick={() => onSelect && hover !== null && onSelect(data[hover])}
         onKeyDown={onKey}
         onBlur={() => setHover(null)}
       >
@@ -154,6 +160,7 @@ export default function LineChart({ data, series, marker, height = 200, format, 
             </text>
           </g>
         )}
+        {cursorIdx >= 0 && <line x1={x(cursorIdx)} x2={x(cursorIdx)} y1={MT} y2={MT + innerH} stroke="var(--accent)" strokeWidth="1.5" />}
         {series.map((s) => (
           <path
             key={s.id}

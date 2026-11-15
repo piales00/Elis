@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { prefersReducedMotion } from "../../lib/hooks.js";
 import Icon from "./icons.jsx";
+import { ElisMark } from "./Rail.jsx";
 
 const DAY = { year: 2024, month: 9, day: 10 };
 
@@ -72,6 +73,12 @@ export default function TourCard({ step, auto, onStep, onClose, onDone = onClose
           <Icon name="close" size={16} />
         </button>
       </div>
+      {step === 0 && (
+        <p className="m-0 mt-2 flex items-center gap-2 text-sm font-semibold">
+          <ElisMark size={24} />
+          {t("tour.welcome")}
+        </p>
+      )}
       <h2 id="tour-title" className="m-0 mt-1 font-head text-[17px] font-extrabold leading-snug text-balance">
         {t(`tour.${current.id}.title`)}
       </h2>

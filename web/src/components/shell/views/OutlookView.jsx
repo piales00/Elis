@@ -5,6 +5,8 @@ import { chanceHigh, CLASSES, findUnit, seasonLabel, skillSummary } from "../../
 import { OUTLOOK_MAP_COLORS } from "../useOutlookLayer.js";
 import { OUTLOOK_STEPS } from "../../../lib/forecast.js";
 import { OutOfSample, SeasonHistory, SkillByLead } from "./OutlookEvidence.jsx";
+import { EVIDENCE_DOCS } from "../../../content/evidence.js";
+import Icon from "../icons.jsx";
 
 const CLASS_FILL = ["var(--p-2)", "var(--p-3)", "var(--p-4)", "var(--p-5)"];
 
@@ -332,6 +334,11 @@ export default function OutlookView({ forecast, unitId, onSelectUnit, nextRows, 
       </section>
 
       <p className="m-0 text-xs leading-relaxed text-muted">{t("outlook.footer", { origin: data.origin, partial: data.excluded_partial_month })}</p>
+      <a href={EVIDENCE_DOCS.forecast} target="_blank" rel="noopener" className="fc-source">
+        <Icon name="method" size={14} />
+        {t("outlook.source")}
+        <Icon name="external" size={12} />
+      </a>
     </div>
   );
 }

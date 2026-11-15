@@ -1,13 +1,16 @@
-export const DOCS = "https://github.com/piales00/firechronos-peru/blob/main/docs";
+export const METHODS = "https://github.com/piales00/firechronos-peru/blob/main/docs/methods";
+export const REPORT_PDF = "/firechronos-technical-report.pdf";
 
 export const EVIDENCE_DOCS = {
-  capture: `${DOCS}/plan-t2.md`,
-  emulator: `${DOCS}/traspaso-2026-11-14.md`,
-  bayes: `${DOCS}/resultados-bayes.md`,
-  underestimation: `${DOCS}/resultados-subestimacion.md`,
-  forecast: `${DOCS}/contrato-datos.md`,
-  validation: `${DOCS}/traspaso-2026-11-14.md`,
-  limits: `${DOCS}/contrato-datos.md`,
+  index: `${METHODS}/README.md`,
+  capture: `${METHODS}/01-harmonization.md`,
+  emulator: `${METHODS}/02-modis-emulator.md`,
+  bayes: `${METHODS}/03-bayesian-three-satellites.md`,
+  underestimation: `${METHODS}/04-underestimation.md`,
+  forecast: `${METHODS}/05-seasonal-forecast.md`,
+  validation: `${METHODS}/06-validation.md`,
+  continuity: `${METHODS}/07-continuity-and-live.md`,
+  limits: `${METHODS}/README.md`,
 };
 
 export const DOC_ONLY = {

@@ -363,7 +363,7 @@ function Citation({ text }) {
   const { t } = useI18n();
   const base = useId().replace(/:/g, "");
   const [fmt, setFmt] = useState("text");
-  const bib = `@misc{firechronos2026,\n  author = {{Log N + 1}},\n  title = {FireChronos Peru: a harmonized MODIS--VIIRS fire activity record for Peru, 2000--2026 (fire cell-days)},\n  year = {2026},\n  note = {NASA Space Apps Challenge 2026},\n  url = {${REPO}}\n}`;
+  const bib = `@misc{elis2026,\n  author = {{Log N + 1}},\n  title = {Elis: a harmonized MODIS--VIIRS fire record for Peru, 2000--2026},\n  year = {2026},\n  note = {NASA Space Apps Challenge 2026},\n  url = {${REPO}}\n}`;
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-3">
@@ -402,6 +402,7 @@ export default function ApiCard({ regionIds, note }) {
     { label: t("api.download.forecast"), href: `${root}/forecast`, name: "forecast.json", format: "JSON" },
     { label: t("api.download.methodology"), href: `${root}/methodology`, name: "methodology.json", format: "JSON" },
     { label: t("api.download.regions"), href: `${root}/regions`, name: "regions.geojson", format: "GeoJSON" },
+    { label: t("api.download.report"), href: "/firechronos-technical-report.pdf", name: "firechronos-technical-report.pdf", format: "PDF" },
   ];
   const sizes = useSizes([...seriesFiles, ...otherFiles]);
   const citation = t("api.citation.text", { url: REPO });

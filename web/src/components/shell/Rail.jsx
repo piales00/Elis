@@ -16,6 +16,10 @@ export function Logo({ size = 28 }) {
   );
 }
 
+export function ElisMark({ size = 32, className = "" }) {
+  return <img src="/elis-mark.png" alt="Elis" width={size} height={size} className={`fc-elis ${className}`} decoding="async" />;
+}
+
 export function Preferences({ theme, onTheme, vertical = false }) {
   const { t, locale, setLocale, languageName } = useI18n();
   return (
@@ -53,7 +57,7 @@ export default function Rail({ view, panelOpen, onSelect, onTour, theme, onTheme
   return (
     <nav aria-label={t("rail.label")} className="fc-rail">
       <div className="hidden flex-col items-center gap-1 pb-2 pt-3 lg:flex" title={t("app.title")}>
-        <Logo />
+        <ElisMark size={34} />
       </div>
       <ul className="fc-rail-list">
         {VIEWS.map((v, i) => {
