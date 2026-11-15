@@ -1,4 +1,4 @@
-# FireChronos Peru · Methods and results
+# Elis · Methods and results
 
 Team **Log N + 1** · NASA Space Apps 2026 · Challenge *Harmonization of MODIS and VIIRS Hot Spots*
 

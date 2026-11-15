@@ -1,6 +1,6 @@
 # 07 · After MODIS: continuity and sealed daily predictions
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 ## Purpose
 

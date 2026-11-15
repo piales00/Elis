@@ -1,6 +1,6 @@
 # 02 · The MODIS emulator ("artificial MODIS")
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 ## Purpose
 

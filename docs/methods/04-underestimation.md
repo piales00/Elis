@@ -1,6 +1,6 @@
 # 04 · How much does the headline number undercount?
 
-FireChronos Peru · Team Log N + 1 · NASA Space Apps 2026
+Elis · Team Log N + 1 · NASA Space Apps 2026
 
 ## Purpose
 
