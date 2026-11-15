@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import {
   PRESET_QUESTIONS,
+  buildOfflineFallbackResponse,
   buildPresetResponse,
   streamChat,
 } from "../../data/chat.js";
@@ -179,6 +180,19 @@ export default function ChatPanel({
                 };
               }
               if (eventName === "error") {
+                if (!item.content) {
+                  const fallback = buildOfflineFallbackResponse(trimmed, { region, locale });
+                  return {
+                    ...item,
+                    content: fallback.text,
+                    chart: fallback.chart || item.chart,
+                    tools: item.tools.length ? item.tools : fallback.tools || [],
+                    verified: true,
+                    isPreset: true,
+                    suggestions: buildDecisionSuggestions({ question: trimmed, region, locale }),
+                    done: true,
+                  };
+                }
                 return {
                   ...item,
                   error: t("chat.error.busy"),
@@ -206,14 +220,26 @@ export default function ChatPanel({
       if (err.status === 503) {
         setLiveStatus("unavailable");
       }
+      const fallback = buildOfflineFallbackResponse(trimmed, { region, locale });
       setTurns((prev) =>
         prev.map((item) =>
           item.id === assistantTurnId
-            ? {
-                ...item,
-                error: t("chat.error.busy"),
-                done: true,
-              }
+            ? item.content
+              ? {
+                  ...item,
+                  error: t("chat.error.busy"),
+                  done: true,
+                }
+              : {
+                  ...item,
+                  content: fallback.text,
+                  chart: fallback.chart || item.chart,
+                  tools: item.tools.length ? item.tools : fallback.tools || [],
+                  verified: true,
+                  isPreset: true,
+                  suggestions: buildDecisionSuggestions({ question: trimmed, region, locale }),
+                  done: true,
+                }
             : item,
         ),
       );

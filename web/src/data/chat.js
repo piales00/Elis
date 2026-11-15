@@ -36,6 +36,14 @@ export const PRESET_QUESTIONS = [
 ];
 
 export function buildPresetResponse(presetId, { locale = "en" }) {
+  if (presetId === "continuity" && saved.continuity) {
+    return {
+      text: saved.continuity[locale === "es" ? "es" : "en"],
+      tools: [{ name: "get_methodology", label: "Checking MODIS-equivalent emulator continuity" }],
+      verified: true,
+      chart: saved.continuity.chart,
+    };
+  }
   const preset = saved.presets[presetId] || saved.presets.compare_naive;
   return {
     text: preset[locale === "es" ? "es" : "en"],
@@ -43,6 +51,27 @@ export function buildPresetResponse(presetId, { locale = "en" }) {
     verified: true,
     chart: preset.chart,
   };
+}
+
+export function buildOfflineFallbackResponse(questionText = "", { region = "peru", locale = "en" } = {}) {
+  const q = String(questionText || "").toLowerCase();
+  let presetId = "compare_naive";
+  if (/what (?:is elis|does (?:this app|elis) do|do you do)|purpose of (?:this app|elis)|qu[eé] (?:es elis|hace (?:elis|esta app))|para qu[eé] sirve/i.test(q)) {
+    presetId = "about_elis";
+  } else if (/(continuity|continuidad|emulador|emulator|decommission|apagado|2027.*modis|modis.*2027)/i.test(q)) {
+    presetId = "continuity";
+  } else if (/(2012|jump|salto|9x|9×|8\.9|modis.*viirs|viirs.*modis|sensor|compara.*sensor)/i.test(q)) {
+    presetId = "jump_2012";
+  } else if (/(pronostico|pronóstico|2027|forecast|outlook|cusco|cuzco|machu picchu|alerta temprana|next season|pr[oó]xima temporada)/i.test(q)) {
+    presetId = "forecast_next";
+  } else if (/(2000|2001|2002|pre-2003|antes de 2003|terra|confianza|confidence)/i.test(q)) {
+    presetId = "conf_pre2003";
+  } else if (/(amazon|amazonia|amazonía|madre de dios|ucayali|loreto|san mart[ií]n|2010|2005|2020|peor|worst|r[eé]cord|peak)/i.test(q) || region === "amazonia") {
+    presetId = "worst_amazon";
+  } else if (/(2026|normal|actual|este a[ñn]o|this year|provisional)/i.test(q)) {
+    presetId = "normal_2026";
+  }
+  return buildPresetResponse(presetId, { region, locale });
 }
 
 export async function streamChat({ messages, region, locale, onEvent, signal }) {
