@@ -56,6 +56,10 @@ export const ELIS_MISSIONS = [
     mode3d: true,
     takeawayEn: "The true historical record for Amazon burning was August 2010 during severe drought, exceeding 2005 and 2024.",
     takeawayEs: "El récord histórico en la Amazonía ocurrió en agosto de 2010 por sequía extrema, superando a 2005 y 2024.",
+    decisionChips: [
+      { labelEn: "Compare chart", labelEs: "Comparar gráfico", action: "chart" },
+      { labelEn: "Zoom into 3D front", labelEs: "Acercar al frente 3D", action: "3d_close" },
+    ],
   }),
   mission("disagreement", 3, "Continuity after MODIS", "Continuidad tras MODIS", saved.continuity, {
     region: "sierra",
@@ -65,6 +69,10 @@ export const ELIS_MISSIONS = [
     mode3d: true,
     takeawayEn: "When MODIS Terra/Aqua end service in 2026, FireChronos's emulator keeps the 26-year time series consistent via VIIRS.",
     takeawayEs: "Cuando MODIS cese en 2026, el emulador de FireChronos mantendrá la serie histórica de 26 años intacta usando VIIRS.",
+    decisionChips: [
+      { labelEn: "Cusco 3D Relief", labelEs: "Relieve 3D de Cusco", action: "3d_close" },
+      { labelEn: "Continuity chart", labelEs: "Gráfico de emulador", action: "chart" },
+    ],
   }),
   mission("earlywarning", 4, "Seasonal outlook", "Pronóstico de temporada", saved.presets.forecast_next, {
     year: 2026,
@@ -99,9 +107,14 @@ export default function ElisSpotlight({
   const { locale, t } = useI18n();
   const isEs = locale === "es";
   const [showChart, setShowChart] = useState(false);
+  const [zoomed3d, setZoomed3d] = useState(false);
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
     return idx >= 0 ? idx : 0;
+  }, [activeMissionId]);
+
+  useEffect(() => {
+    setZoomed3d(false);
   }, [activeMissionId]);
 
   const mission = ELIS_MISSIONS[missionIndex];
@@ -393,17 +406,40 @@ export default function ElisSpotlight({
                 type="button"
                 onClick={() => {
                   if (autopilot) onToggleAutopilot?.();
+                  const nextZoomed = !zoomed3d;
+                  setZoomed3d(nextZoomed);
+                  const baseKey = mission.cameraKey || customTurn?.chart?.region || mission.region || "peru";
+                  const targetKey = nextZoomed ? `${baseKey}_close` : baseKey;
                   onSyncView?.({
                     region: customTurn?.chart?.region || mission.region,
-                    cameraKey: mission.cameraKey || customTurn?.chart?.region || mission.region,
+                    cameraKey: targetKey,
                     year: customTurn?.chart?.highlight_year || mission.year,
                     month: customTurn?.chart?.highlight_month || mission.month,
                     mode3d: true,
                   });
                 }}
-                className="rounded-lg border border-forecast bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
+                className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold shadow-sm transition cursor-pointer ${
+                  zoomed3d
+                    ? "border-est bg-est text-bg hover:opacity-90"
+                    : "border-forecast bg-forecast text-bg hover:opacity-90"
+                }`}
+                title={
+                  zoomed3d
+                    ? isEs
+                      ? "Volver a la vista general en 3D"
+                      : "Return to 3D overview"
+                    : isEs
+                      ? "Aproximarse en 3D al frente de fuego"
+                      : "Zoom in 3D to active fire front"
+                }
               >
-                🛰️ 3D
+                {zoomed3d
+                  ? isEs
+                    ? "🔭 3D General"
+                    : "🔭 3D Overview"
+                  : isEs
+                    ? "🔍 3D Acercar"
+                    : "🔍 3D Zoom in"}
               </button>
               <button
                 type="button"
@@ -445,10 +481,14 @@ export default function ElisSpotlight({
                     if (chip.action === "chart") setShowChart(true);
                     else if (chip.action === "outlook") onOpenOutlook();
                     else if (chip.action === "chat") onOpenChatDrawer?.();
-                    else if (chip.action === "3d") {
+                    else if (chip.action === "3d" || chip.action === "3d_close") {
+                      const isClose = chip.action === "3d_close";
+                      const baseKey = mission.cameraKey || mission.region || "peru";
+                      const targetKey = isClose ? `${baseKey}_close` : baseKey;
+                      setZoomed3d(isClose);
                       onSyncView?.({
                         region: mission.region,
-                        cameraKey: mission.cameraKey,
+                        cameraKey: targetKey,
                         year: mission.year,
                         month: mission.month,
                         mode3d: true,
