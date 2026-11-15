@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import { getLive, NoDataError } from "../../data/client.js";
 import { CopyButton } from "./ApiCard.jsx";
@@ -260,6 +260,30 @@ export function LiveBadge({ state, onState }) {
   const { t } = useI18n();
   const timer = useRef(0);
   const open = Boolean(state);
+  const popRef = useRef(null);
+  useLayoutEffect(() => {
+    const pop = popRef.current;
+    if (!open || !pop) return;
+    const fit = () => {
+      const stage = pop.closest(".fc-stage");
+      if (!stage || window.innerWidth < 1024) {
+        pop.style.removeProperty("--live-shift");
+        pop.style.removeProperty("--live-max");
+        pop.style.removeProperty("--live-h");
+        return;
+      }
+      const box = stage.getBoundingClientRect();
+      pop.style.setProperty("--live-max", `${box.width - 24}px`);
+      pop.style.setProperty("--live-shift", "0px");
+      const r = pop.getBoundingClientRect();
+      const shift = Math.min(0, box.right - 12 - r.right);
+      pop.style.setProperty("--live-shift", `${Math.max(shift, box.left + 12 - r.left)}px`);
+      pop.style.setProperty("--live-h", `${Math.max(160, box.bottom - 12 - r.top)}px`);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [open]);
   const clear = () => clearTimeout(timer.current);
   useEffect(() => clear, []);
   const enter = (e) => {
@@ -301,7 +325,7 @@ export function LiveBadge({ state, onState }) {
         <span className="hidden sm:inline">{t("live.badge")}</span>
       </button>
       {open && (
-        <section id="fc-live" role="dialog" aria-labelledby="live-title" className="fc-float fc-pop fc-live-pop">
+        <section id="fc-live" role="dialog" aria-labelledby="live-title" ref={popRef} className="fc-float fc-pop fc-live-pop">
           <span className="fc-live-arrow" aria-hidden="true" />
           <div className="fc-live-scroll">
             <LiveCheck onClose={() => onState(null)} />

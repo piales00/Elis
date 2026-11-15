@@ -246,7 +246,7 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       map.getCanvas().style.cursor = "";
     });
     map.on("click", (e) => {
-      let cell = map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] });
+      let cell = map.getLayer("cells-fill") ? map.queryRenderedFeatures(e.point, { layers: ["cells-fill"] }) : [];
       if (terrainRef.current && !cell.length) {
         const distance = (f) => Math.hypot((f.properties.lon - e.lngLat.lng) * Math.cos(e.lngLat.lat * Math.PI / 180), f.properties.lat - e.lngLat.lat);
         const nearest = cellFeaturesRef.current.reduce((best, f) => f.properties.v > 0 && (!best || distance(f) < distance(best)) ? f : best, null);
