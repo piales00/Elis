@@ -139,3 +139,21 @@ FORECAST_SEASON_ORIGIN = 7
 FORECAST_OOS_YEAR = 2026
 FORECAST_DEMO_TRAIN_YEARS = (2003, 2011)
 FORECAST_DEMO_TEST_YEARS = (2013, 2025)
+ENSO_DIR = EXTERNAL_DIR / "enso"
+ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+ICEN_URL = "http://met.igp.gob.pe/datos/ICEN.txt"
+FORECAST_SEASON_LEADS = (1, 4, 7, 10)
+FORECAST_ENSO_INDICES = ("oni", "icen")
+FORECAST_ENSO_LAG = 1
+FORECAST_DROUGHT_WINDOWS = (3, 6, 12)
+FORECAST_DROUGHT_LAG = 1
+FORECAST_VARIANT_GROUPS = {
+    "fire_only": (),
+    "fire_enso": ("enso",),
+    "fire_drought": ("drought",),
+    "fire_enso_drought": ("enso", "drought"),
+}
+FORECAST_DEFAULT_VARIANT = "fire_only"
+FORECAST_MIN_RPSS = 0.05
+FORECAST_MIN_MAE_SKILL = 0.0
+FORECAST_DEPARTMENT_MIN_SEASON = 100

@@ -442,11 +442,11 @@ def tool_get_series(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         "qualifier": "at least (minimum active fire cell-days at satellite overpass)",
         "rows": agg_rows,
     }
-    if not replicates_used:
+    if not replicates_used or any(r.get("est_low") is None for r in agg_rows):
         response["range_note"] = (
-            "Annual and seasonal 90% uncertainty ranges require aligned bootstrap replicates "
-            "(series_replicates.parquet is not present in data/processed/); monthly interval endpoints "
-            "are never summed across months, so only point estimates ('estimated') are reported here."
+            "Annual and seasonal 90% uncertainty ranges require aligned bootstrap replicates; "
+            "where they are not available the range is left empty, because monthly interval endpoints "
+            "are never summed across months. Only the point estimate ('estimated') is reported for those periods."
         )
     if from_year <= 2026 <= to_year:
         forecast_rows = [
