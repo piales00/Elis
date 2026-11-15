@@ -4,7 +4,7 @@ import { useMapCells } from "./hooks/useMapCells.js";
 import { useCellView } from "./hooks/useCellView.js";
 import { useForecast } from "./hooks/useForecast.js";
 import { useImageryView } from "./components/imagery/useImageryView.js";
-import { DEFAULT_PERIOD, FIRST_YEAR, LAST_YEAR } from "./config.js";
+import { DEFAULT_PERIOD, FIRST_YEAR, LAST_YEAR, LOCALES } from "./config.js";
 import { fromIndex, monthIndex, periodState, stepPeriod } from "./lib/period.js";
 import { periodStatus } from "./lib/status.js";
 import { chanceHigh, findUnit } from "./lib/forecast.js";
@@ -75,7 +75,7 @@ function typing(target) {
 const initial = readUrl();
 
 export default function App() {
-  const { t, formatNumber } = useI18n();
+  const { t, formatNumber, locale, setLocale, languageName } = useI18n();
   const toolbarRef = useRef(null);
   useEffect(() => {
     const toolbar = toolbarRef.current;
@@ -623,6 +623,23 @@ export default function App() {
               <Icon name="fit" size={17} />
             </button>
             <LiveBadge state={liveOpen} onState={setLiveOpen} />
+            <div role="group" aria-label={t("lang.label")} className="fc-float flex h-10 items-center rounded-xl p-0.5 text-xs font-bold">
+              {LOCALES.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  aria-pressed={locale === code}
+                  aria-label={languageName(code)}
+                  title={languageName(code)}
+                  onClick={() => setLocale(code)}
+                  className={`rounded-lg px-2 py-1 text-xs font-bold uppercase transition cursor-pointer ${
+                    locale === code ? "bg-fg text-bg" : "text-muted hover:text-fg"
+                  }`}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
             </div>
             <div className="flex max-w-full flex-wrap items-center gap-2" data-elis-controls data-tour="hud">
             <button
@@ -638,10 +655,10 @@ export default function App() {
               className={`fc-float fc-press flex h-10 items-center gap-2 rounded-xl px-3 text-xs font-extrabold transition cursor-pointer ${
                 spotlightOpen ? "!border-forecast bg-forecast/15 text-forecast" : "text-fg hover:!border-forecast"
               }`}
-              title="Open Elis Mission Control HUD"
+              title={t("hud.open")}
             >
               <ElisMark size={18} />
-              <span>Elis HUD</span>
+              <span>{t("hud.title")}</span>
             </button>
             <button
               type="button"
@@ -652,15 +669,15 @@ export default function App() {
                   applyElisMission(ELIS_MISSIONS[0], true);
                 }
               }}
-              className={`fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold cursor-pointer ${
+              className={`fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold cursor-pointer transition ${
                 spotlightOpen && autopilot
                   ? "!border-forecast !bg-forecast !text-bg shadow-lg"
-                  : "!border-forecast/50 text-forecast hover:!border-forecast"
+                  : "border-forecast/60 bg-forecast/10 text-forecast hover:!border-forecast hover:bg-forecast/20"
               }`}
               title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
             >
-              <span>{spotlightOpen && autopilot ? "⏸" : "▶"}</span>
-              <span>{t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}</span>
+              <span>{spotlightOpen && autopilot ? "⏸" : "⚡"}</span>
+              <span>{t("hud.quickTour")}</span>
             </button>
             {!tour && (
               <button type="button" aria-label={t("tour.start")} className="fc-float fc-press flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold lg:hidden" onClick={() => startTour(false)}>

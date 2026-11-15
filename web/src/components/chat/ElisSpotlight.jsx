@@ -15,6 +15,10 @@ const mission = (id, index, titleEn, titleEs, preset, options = {}) => ({
   chipEs: titleEs,
   titleEn,
   titleEs,
+  takeawayEn: options.takeawayEn || titleEn,
+  takeawayEs: options.takeawayEs || titleEs,
+  detailsEn: preset.en,
+  detailsEs: preset.es,
   summaryEn: preset.en,
   summaryEs: preset.es,
   kpiPillEn: "MODIS–VIIRS · fire cell-days",
@@ -39,13 +43,38 @@ const mission = (id, index, titleEn, titleEs, preset, options = {}) => ({
 });
 
 export const ELIS_MISSIONS = [
-  mission("artifact", 1, "The 2012 sensor jump", "El salto de sensores de 2012", saved.presets.jump_2012, { metric: "raw" }),
-  mission("amazon3d", 2, "Amazon record in 3D", "Registro amazónico en 3D", saved.presets.worst_amazon, { region: "amazonia", cameraKey: "madre_de_dios", year: 2010, month: 8, mode3d: true }),
-  mission("disagreement", 3, "Continuity after MODIS", "Continuidad tras MODIS", saved.continuity, { region: "sierra", cameraKey: "cusco", year: 2024, month: 8, mode3d: true }),
-  mission("earlywarning", 4, "Seasonal outlook", "Pronóstico de temporada", saved.presets.forecast_next, { year: 2026, decisionChips: [
-    { labelEn: "Forecast map", labelEs: "Mapa de pronóstico", action: "outlook" },
-    { labelEn: "Ask about uncertainty", labelEs: "Consultar incertidumbre", action: "chat" },
-  ] }),
+  mission("artifact", 1, "The 2012 sensor jump", "El salto de sensores de 2012", saved.presets.jump_2012, {
+    metric: "raw",
+    takeawayEn: "The 9× surge in 2012 fire detections is a sensor artifact from VIIRS 375m entering orbit, not an explosion in Peruvian burning.",
+    takeawayEs: "El salto de 9× en 2012 es un artificio por la entrada del sensor VIIRS (375 m), no una multiplicación del fuego real en Perú.",
+  }),
+  mission("amazon3d", 2, "Amazon record in 3D", "Registro amazónico en 3D", saved.presets.worst_amazon, {
+    region: "amazonia",
+    cameraKey: "madre_de_dios",
+    year: 2010,
+    month: 8,
+    mode3d: true,
+    takeawayEn: "The true historical record for Amazon burning was August 2010 during severe drought, exceeding 2005 and 2024.",
+    takeawayEs: "El récord histórico en la Amazonía ocurrió en agosto de 2010 por sequía extrema, superando a 2005 y 2024.",
+  }),
+  mission("disagreement", 3, "Continuity after MODIS", "Continuidad tras MODIS", saved.continuity, {
+    region: "sierra",
+    cameraKey: "cusco",
+    year: 2024,
+    month: 8,
+    mode3d: true,
+    takeawayEn: "When MODIS Terra/Aqua end service in 2026, FireChronos's emulator keeps the 26-year time series consistent via VIIRS.",
+    takeawayEs: "Cuando MODIS cese en 2026, el emulador de FireChronos mantendrá la serie histórica de 26 años intacta usando VIIRS.",
+  }),
+  mission("earlywarning", 4, "Seasonal outlook", "Pronóstico de temporada", saved.presets.forecast_next, {
+    year: 2026,
+    takeawayEn: "Seasonal activity for early 2027 is projected near historical medians, keeping forecasts strictly separate from observations.",
+    takeawayEs: "Para la temporada 2027 se proyecta actividad cercana a medianas históricas, separando pronósticos de lo observado.",
+    decisionChips: [
+      { labelEn: "Forecast map", labelEs: "Mapa de pronóstico", action: "outlook" },
+      { labelEn: "Ask about uncertainty", labelEs: "Consultar incertidumbre", action: "chat" },
+    ],
+  }),
 ];
 
 const AUTOPILOT_MS = AUTOPILOT_SECONDS * 1000 / ELIS_MISSIONS.length;
@@ -305,8 +334,36 @@ export default function ElisSpotlight({
                   ? mission.titleEs
                   : mission.titleEn}
             </h3>
-            <div className="mt-1">
-              <FormattedMessage content={customTurn ? customTurn.content : isEs ? mission.summaryEs : mission.summaryEn} compact />
+
+            {!customTurn && (
+              <div className="mt-2 rounded-xl border border-forecast/40 bg-forecast/10 p-3 text-xs">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+                  <span>💡</span>
+                  <span>{t("hud.takeaway")}</span>
+                </div>
+                <p className="m-0 mt-1 text-[13px] font-bold leading-snug text-fg">
+                  {isEs ? mission.takeawayEs : mission.takeawayEn}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-2">
+              {customTurn ? (
+                <FormattedMessage content={customTurn.content} compact />
+              ) : (
+                <details className="group rounded-xl border border-line bg-bg/50 p-2.5 text-xs">
+                  <summary className="flex cursor-pointer items-center justify-between font-semibold text-muted hover:text-fg select-none">
+                    <span className="flex items-center gap-1.5">
+                      <span>🔬</span>
+                      <span>{t("hud.forJury")}</span>
+                    </span>
+                    <span className="text-[10px] transition-transform group-open:rotate-180">▾</span>
+                  </summary>
+                  <div className="mt-2 text-xs leading-relaxed text-fg border-t border-line/60 pt-2">
+                    <FormattedMessage content={isEs ? mission.detailsEs : mission.detailsEn} compact />
+                  </div>
+                </details>
+              )}
             </div>
           </div>
 
@@ -334,33 +391,41 @@ export default function ElisSpotlight({
             <div className="flex shrink-0 items-center gap-1.5">
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  if (autopilot) onToggleAutopilot?.();
                   onSyncView?.({
                     region: customTurn?.chart?.region || mission.region,
                     cameraKey: mission.cameraKey || customTurn?.chart?.region || mission.region,
                     year: customTurn?.chart?.highlight_year || mission.year,
                     month: customTurn?.chart?.highlight_month || mission.month,
                     mode3d: true,
-                  })
-                }
+                  });
+                }}
                 className="rounded-lg border border-forecast bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
               >
                 🛰️ 3D
               </button>
               <button
                 type="button"
-                onClick={onOpenOutlook}
+                onClick={() => {
+                  if (autopilot) onToggleAutopilot?.();
+                  onOpenOutlook?.();
+                }}
                 className="rounded-lg border border-line bg-bg px-2 py-1 text-[11px] font-semibold text-fg hover:border-est cursor-pointer"
               >
                 {isEs ? "Pronóstico 2027 →" : "2027 Map →"}
               </button>
-              {customTurn && onOpenChatDrawer && (
+              {onOpenChatDrawer && (
                 <button
                   type="button"
-                  onClick={onOpenChatDrawer}
-                  className="rounded-lg border border-est/50 bg-est/15 px-2 py-1 text-[11px] font-bold text-est hover:border-est cursor-pointer"
+                  onClick={() => {
+                    if (autopilot) onToggleAutopilot?.();
+                    onOpenChatDrawer();
+                  }}
+                  className="rounded-lg border border-est/50 bg-est/15 px-2.5 py-1 text-[11px] font-bold text-est hover:border-est cursor-pointer"
+                  title={isEs ? "Abrir chat para escribir mi propia pregunta" : "Open chat to type custom question"}
                 >
-                  💬 {isEs ? "Chat" : "Ask"}
+                  💬 {isEs ? "Escribir consulta" : "Custom ask"}
                 </button>
               )}
             </div>
