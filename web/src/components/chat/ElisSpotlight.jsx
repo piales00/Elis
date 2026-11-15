@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider.jsx";
 import ChatChart from "./ChatChart.jsx";
+import FormattedMessage, { detectAlertBadge } from "./FormattedMessage.jsx";
 import { ElisMark } from "../shell/Rail.jsx";
 import Icon from "../shell/icons.jsx";
 
@@ -555,9 +556,13 @@ export default function ElisSpotlight({
                   ? mission.titleEs
                   : mission.titleEn}
             </h3>
-            <p className="m-0 mt-1 text-xs leading-relaxed text-muted whitespace-pre-line">
+            <div className="mt-1">
+              <FormattedMessage content={customTurn ? customTurn.content : isEs ? mission.summaryEs : mission.summaryEn} compact />
+            </div>
+            {false && (
+              <p>
               {customTurn ? customTurn.content : isEs ? mission.summaryEs : mission.summaryEn}
-            </p>
+            </p>)}
           </div>
 
           {!customTurn && (
@@ -620,6 +625,18 @@ export default function ElisSpotlight({
                 className="rounded-lg border border-line bg-bg px-2 py-1 text-[11px] font-semibold text-fg hover:border-est cursor-pointer"
               >
                 {isEs ? "Pronóstico 2027 →" : "2027 Map →"}
+              </button>
+              {customTurn && onOpenChatDrawer && (
+                <button
+                  type="button"
+                  onClick={onOpenChatDrawer}
+                  className="rounded-lg border border-est/50 bg-est/15 px-2 py-1 text-[11px] font-bold text-est hover:border-est cursor-pointer"
+                >
+                  💬 {isEs ? "Chat" : "Ask"}
+                </button>
+              )}
+              {false && <button />}
+              <button type="button" className="hidden">
               </button>
             </div>
           </div>

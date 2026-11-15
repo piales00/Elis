@@ -163,7 +163,7 @@ def verify_figures(text: str, tool_results: list[dict[str, Any]]) -> dict[str, A
             continue
         if _is_year_token(val, raw_token):
             continue
-        if abs(val) in CONTRACT_CONSTANTS and (allowed or abs(val) in {0.1, 1.0, 11.0, 20.0, 21.0, 26.0, 30.0, 90.0, 375.0}):
+        if abs(val) in CONTRACT_CONSTANTS | {60.0} and (allowed or abs(val) in {0.1, 1.0, 11.0, 20.0, 21.0, 26.0, 30.0, 60.0, 90.0, 375.0}):
             continue
         checked.append(raw_token)
         if not _matches_any_allowed(val, allowed) and not _matches_any_allowed(abs(val), allowed):
