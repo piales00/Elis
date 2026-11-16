@@ -394,7 +394,9 @@ export default function ChatPanel({
                 {onLaunchMission && (
                   <button
                     type="button"
-                    onClick={() => onLaunchMission("artifact", true)}
+                    onClick={() => {
+                      onLaunchMission("artifact", true);
+                    }}
                     className="group relative mt-3.5 flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border border-forecast/60 bg-gradient-to-r from-forecast/25 via-forecast/15 to-surface/90 p-3 text-left shadow-md transition-all hover:border-forecast hover:from-forecast/35 hover:shadow-forecast/20 hover:scale-[1.01] active:scale-[0.99]"
                   >
                     <div className="flex items-center gap-3">

@@ -17,6 +17,7 @@ import MapLegend from "./components/MapLegend.jsx";
 import ImageryLegend from "./components/imagery/ImageryLegend.jsx";
 import ChatPanel from "./components/chat/ChatPanel.jsx";
 import ElisSpotlight, { ELIS_MISSIONS, AUTOPILOT_SECONDS } from "./components/chat/ElisSpotlight.jsx";
+import { speakElisText, cancelElisSpeech } from "./utils/speech.js";
 import { ElisMark } from "./components/shell/Rail.jsx";
 import Rail, { VIEWS } from "./components/shell/Rail.jsx";
 import TimeRibbon from "./components/shell/TimeRibbon.jsx";
@@ -688,8 +689,13 @@ export default function App() {
               type="button"
               onClick={() => {
                 if (spotlightOpen && autopilot) {
+                  cancelElisSpeech();
                   setAutopilot(false);
                 } else {
+                  const text = locale === "es" ? ELIS_MISSIONS[0].takeawayEs : ELIS_MISSIONS[0].takeawayEn;
+                  if (text) {
+                    speakElisText(text, locale === "es");
+                  }
                   applyElisMission(ELIS_MISSIONS[0], true);
                 }
               }}
@@ -700,7 +706,7 @@ export default function App() {
               }`}
               title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
             >
-              <span>{spotlightOpen && autopilot ? "⏸" : "▶"}</span>
+              <span>{spotlightOpen && autopilot ? "⏸" : "⚡"}</span>
               <span>{t("hud.quickTour")}</span>
             </button>
             {!tour && (
