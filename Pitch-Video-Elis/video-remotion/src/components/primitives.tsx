@@ -47,13 +47,16 @@ export const Highlight: React.FC<{
     />
   );
 
-/** Flat dim over a region (image coordinates). */
-export const Dim: React.FC<{ box: { left: number; top: number; width: number; height: number }; opacity: number }> = ({
+/** Dim (and optionally blur) a region (image coordinates). */
+export const Dim: React.FC<{ box: { left: number; top: number; width: number; height: number }; opacity: number; blur?: number; radius?: number; strength?: number }> = ({
   box,
   opacity,
+  blur = 0,
+  radius = 12,
+  strength = 0.72,
 }) =>
   opacity <= 0.001 ? null : (
-    <div style={{ position: 'absolute', ...box, borderRadius: 12, background: 'rgba(7,16,13,0.72)', opacity }} />
+    <div style={{ position: 'absolute', ...box, borderRadius: radius, background: `rgba(7,16,13,${strength * opacity})`, backdropFilter: blur ? `blur(${blur * opacity}px)` : undefined }} />
   );
 
 /** Scripted pointer (screen coordinates). Arrow scale 1.0 → 0.9 while pressed. */

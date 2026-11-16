@@ -33,6 +33,11 @@ Status: **final narration, music, sound effects and the new closing scene integr
 - **Replacing the music**: save your track as `public/audio/music-custom.mp3` (or `.wav`) and set `musicSrc: 'audio/music-custom.mp3'` in `src/Root.tsx` (or in the Studio props panel). It gets the same ducking. `musicSrc: null` turns music off. Custom music stays git-ignored.
 - **New Outlook capture** (https://elis-peru.vercel.app, 2026-11-15, English, dark, 1920×1080, Peru, Aug 2026): replaces the older Cusco capture; nothing distracting is left behind the Peru 2026 card. The app's own 2027 season card is dimmed as before so it is not confused with the 2026 validation. The capture shows the app's honest label "Climatology (no skill at this lead)" for the 2027 outlook at a 10-month lead; the card on screen is about the 2026 season forecast issued 1 month ahead.
 
+## Changes in v5
+
+- **Schematic scene**: a secondary block on the right, "Also in Elis" (16.6 s), with two small cards that slide in at 16.8 and 17.15 s: "Bayesian three-list check" (violet; `docs/methods/03-bayesian-three-satellites.md`) and "Synthetic MODIS" (green; `docs/methods/02-modis-emulator.md`). Each gets a very quiet pop (`photo1`, `photo2` at 0.05). The Venn and the three chips stay the main subject.
+- **Outlook scene**: the whole left panel of the capture (2027 outlook, "Climatology (no skill at this lead)") is dimmed and blurred from 21.55 to 22.1 s (`Dim` with `blur`), so only the map and the Peru 2026 out-of-sample card stand out.
+
 ## How it is built
 
 - Remotion (React). Every frame is a pure function of time `t`, the `View(t)` principle of the `html-demo` approach. All times are in `src/timeline.ts`.

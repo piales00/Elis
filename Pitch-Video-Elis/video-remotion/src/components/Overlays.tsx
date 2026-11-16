@@ -64,6 +64,11 @@ export const ErrorFigure: React.FC<{ t: number }> = ({ t }) => {
 };
 
 // ---------- Scene 2: capture–recapture schematic (no data) ----------
+const ALSO = [
+  { title: 'Bayesian three-list check', line: 'Aqua · S-NPP · NOAA-20 — robustness: the record is a lower bound', color: COLORS.forecast },
+  { title: 'Synthetic MODIS', line: 'VIIRS-based emulator keeps the MODIS-scale record going after 2027', color: COLORS.viirs },
+];
+
 export const Schematic: React.FC<{ t: number }> = ({ t }) => {
   const [s0, s1] = T.schematic;
   const o = vis(t, s0, s1, 0.35, 0.4);
@@ -101,6 +106,20 @@ export const Schematic: React.FC<{ t: number }> = ({ t }) => {
             {c}
           </div>
         ))}
+      </div>
+      <div style={{ position: 'absolute', left: 1548, top: 318, width: 316 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(159,179,170,0.8)', opacity: ease(t, T.schemAlso, T.schemAlso + 0.4, easeOut) }}>
+          Also in Elis
+        </div>
+        {ALSO.map((c, i) => {
+          const k = ease(t, T.schemAlso + 0.2 + i * 0.35, T.schemAlso + 0.65 + i * 0.35, easeOut);
+          return (
+            <div key={c.title} style={{ marginTop: 14, padding: '14px 16px 15px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.10)', borderLeft: `2px solid ${c.color}`, background: 'rgba(8,18,15,0.6)', opacity: 0.88 * k, transform: `translateX(${14 * (1 - k)}px)` }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: c.color }}>{c.title}</div>
+              <div style={{ marginTop: 5, fontSize: 16, fontWeight: 500, lineHeight: 1.4, color: COLORS.muted }}>{c.line}</div>
+            </div>
+          );
+        })}
       </div>
       <div style={{ position: 'absolute', right: 56, top: 40, fontSize: 17, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
         Schematic · not data

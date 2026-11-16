@@ -167,7 +167,7 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
       {/* ---------- Scene 4: Outlook ---------- */}
       {outlookOn && (
         <Shot src={shot('outlook')} cam={camOutlook(t)} opacity={outlookO}>
-          <Dim box={R('outlook', 96, 265, 555, 498)} opacity={ease(t, T.camOutlook[0], T.camOutlook[1])} />
+          <Dim box={R('outlook', 76, 0, 576, 1080)} opacity={ease(t, T.toOutlook[0] + 0.05, T.toOutlook[1] + 0.3)} blur={7} radius={0} strength={0.62} />
         </Shot>
       )}
 

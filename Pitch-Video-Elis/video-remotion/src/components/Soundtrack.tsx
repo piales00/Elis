@@ -12,6 +12,8 @@ export const SFX: [string, number, number][] = [
   ['impact', T.n334[0], 0.22],
   ['tick', T.n38[0] + 0.08, 0.16],
   ['whoosh', T.schematic[0] - 0.2, 0.13],
+  ['photo1', T.schemAlso + 0.2, 0.05],
+  ['photo2', T.schemAlso + 0.55, 0.05],
   ['click', T.askClick, 0.16],
   ['whoosh', T.toAsk[0] - 0.2, 0.13],
   ['click', T.qClick, 0.16],

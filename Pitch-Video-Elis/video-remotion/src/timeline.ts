@@ -35,6 +35,7 @@ export const T = {
   n38: [12.6, 14.45], // "under four percent" (13.22–14.32)
   schematic: [14.4, 18.85], // "It turns the satellites' disagreement into a measurement…"
   missedRing: 16.35, // "measurement" (16.50)
+  schemAlso: 16.6, // side block "Also in Elis": header, then one card at +0.2 and +0.55 (after "measurement")
   schemChips: 17.1, // "with capture-recapture statistics" (17.20–18.58)
   camReset: [14.45, 14.85],
 
