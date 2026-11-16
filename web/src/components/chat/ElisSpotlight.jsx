@@ -4,7 +4,6 @@ import { useI18n } from "../../i18n/I18nProvider.jsx";
 import ChatChart from "./ChatChart.jsx";
 import FormattedMessage from "./FormattedMessage.jsx";
 import { ElisMark } from "../shell/Rail.jsx";
-import { speakElisText, cancelElisSpeech } from "../../utils/speech.js";
 
 export const AUTOPILOT_SECONDS = 40;
 
@@ -86,7 +85,42 @@ export const ELIS_MISSIONS = [
   }),
 ];
 
-const AUTOPILOT_MS = (AUTOPILOT_SECONDS * 1000) / ELIS_MISSIONS.length;
+const AUTOPILOT_MS = AUTOPILOT_SECONDS * 1000 / ELIS_MISSIONS.length;
+
+const HIGH_QUALITY_VOICE_KEYWORDS = [
+  "natural",
+  "neural",
+  "online",
+  "premium",
+  "siri",
+  "google",
+  "sabina",
+  "alvaro",
+  "jorge",
+  "monica",
+  "guy",
+  "jenny",
+  "samantha",
+  "luciana",
+  "diego",
+];
+
+function pickBestVoice(voices, langPrefix) {
+  if (!voices || voices.length === 0) return null;
+  const prefix = langPrefix.toLowerCase();
+  const matches = voices.filter((v) => {
+    const l = (v.lang || "").toLowerCase().replace("_", "-");
+    return l.startsWith(prefix);
+  });
+  if (matches.length === 0) return null;
+
+  const natural = matches.find((v) => {
+    const name = (v.name || "").toLowerCase();
+    return HIGH_QUALITY_VOICE_KEYWORDS.some((kw) => name.includes(kw));
+  });
+
+  return natural || matches[0];
+}
 
 export default function ElisSpotlight({
   open,
@@ -109,16 +143,7 @@ export default function ElisSpotlight({
   const isEs = locale === "es";
   const [showChart, setShowChart] = useState(false);
   const [zoomed3d, setZoomed3d] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const prevAutopilotRef = useRef(autopilot);
 
-  useEffect(() => {
-    if (!prevAutopilotRef.current && autopilot) {
-      setVoiceEnabled(true);
-    }
-    prevAutopilotRef.current = autopilot;
-  }, [autopilot]);
 
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
@@ -172,49 +197,6 @@ export default function ElisSpotlight({
     } : null;
   }, [customTurn, series, mission]);
 
-  // Handle voice speech on mission change or voice toggle
-  useEffect(() => {
-    if (!open || !voiceEnabled || customTurn) {
-      cancelElisSpeech();
-      setIsSpeaking(false);
-      return;
-    }
-    const text = isEs ? mission.takeawayEs : mission.takeawayEn;
-    if (!text) return;
-
-    const stop = speakElisText(
-      text,
-      isEs,
-      () => setIsSpeaking(true),
-      () => setIsSpeaking(false),
-    );
-
-    return () => {
-      stop();
-      setIsSpeaking(false);
-    };
-  }, [open, missionIndex, voiceEnabled, isEs, customTurn]);
-
-  const toggleVoice = () => {
-    setVoiceEnabled((prev) => {
-      const next = !prev;
-      if (!next) {
-        cancelElisSpeech();
-        setIsSpeaking(false);
-      } else {
-        const text = isEs ? mission.takeawayEs : mission.takeawayEn;
-        if (text) {
-          speakElisText(
-            text,
-            isEs,
-            () => setIsSpeaking(true),
-            () => setIsSpeaking(false),
-          );
-        }
-      }
-      return next;
-    });
-  };
 
   if (!open) return null;
 
@@ -233,16 +215,7 @@ export default function ElisSpotlight({
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (!autopilot) {
-                setVoiceEnabled(true);
-                const text = isEs ? mission.takeawayEs : mission.takeawayEn;
-                if (text) speakElisText(text, isEs, () => setIsSpeaking(true), () => setIsSpeaking(false));
-              } else {
-                cancelElisSpeech();
-              }
-              onToggleAutopilot();
-            }}
+            onClick={onToggleAutopilot}
             className={`rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-pointer ${
               autopilot ? "border-forecast bg-forecast text-bg" : "border-line bg-bg text-fg"
             }`}
@@ -252,30 +225,7 @@ export default function ElisSpotlight({
           </button>
           <button
             type="button"
-            onClick={toggleVoice}
-            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-pointer transition ${
-              voiceEnabled
-                ? "border-emerald-500/70 bg-emerald-500/20 text-emerald-400"
-                : "border-line bg-bg text-muted hover:text-fg"
-            }`}
-            title={voiceEnabled ? t("hud.voiceMute") : t("hud.voice")}
-          >
-            {voiceEnabled ? (isSpeaking ? "🔊 〰" : "🔊") : "🔇"}
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleMinimized?.(false)}
-            className="rounded-full border border-line bg-bg px-2 py-0.5 text-[11px] font-bold text-fg hover:border-est cursor-pointer"
-            title={isEs ? "Expandir tarjeta" : "Expand card"}
-          >
-            ▴
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              cancelElisSpeech();
-              onClose();
-            }}
+            onClick={onClose}
             aria-label="Close"
             className="rounded-full px-1.5 py-0.5 text-xs font-bold text-muted hover:text-fg cursor-pointer"
           >
@@ -289,7 +239,9 @@ export default function ElisSpotlight({
   return (
     <div className="fc-elis-spotlight pointer-events-none absolute inset-x-0 z-30 flex justify-end px-3">
       <section
+
         aria-label="Elis Mission Control Spotlight"
+
         className="pointer-events-auto max-h-full w-full max-w-[490px] overflow-y-auto rounded-2xl border border-line-strong bg-surface/90 shadow-2xl backdrop-blur-xl"
       >
         {autopilot && !customTurn && (
@@ -304,7 +256,11 @@ export default function ElisSpotlight({
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2 border-b border-line bg-bg/70 px-3.5 py-2 select-none">
+        <div
+
+
+          className="flex items-center justify-between gap-2 border-b border-line bg-bg/70 px-3.5 py-2 select-none"
+        >
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-forecast/15 p-1 text-forecast">
               <ElisMark size={15} />
@@ -328,16 +284,7 @@ export default function ElisSpotlight({
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              onClick={() => {
-                if (!autopilot) {
-                  setVoiceEnabled(true);
-                  const text = isEs ? mission.takeawayEs : mission.takeawayEn;
-                  if (text) speakElisText(text, isEs, () => setIsSpeaking(true), () => setIsSpeaking(false));
-                } else {
-                  cancelElisSpeech();
-                }
-                onToggleAutopilot();
-              }}
+              onClick={onToggleAutopilot}
               className={`rounded-md border px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
                 autopilot
                   ? "border-forecast bg-forecast text-bg"
@@ -345,18 +292,6 @@ export default function ElisSpotlight({
               }`}
             >
               {autopilot ? "⏸" : "▶"} {t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
-            </button>
-            <button
-              type="button"
-              onClick={toggleVoice}
-              className={`rounded-md border px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
-                voiceEnabled
-                  ? "border-emerald-500/80 bg-emerald-500/20 text-emerald-400 shadow-sm"
-                  : "border-line bg-bg text-muted hover:text-fg hover:border-line-strong"
-              }`}
-              title={voiceEnabled ? t("hud.voiceMute") : t("hud.voice")}
-            >
-              {voiceEnabled ? (isSpeaking ? `🔊 ${isEs ? "Voz activa" : "Voice on"}` : `🔊 ${isEs ? "Voz" : "Voice"}`) : `🔇 ${isEs ? "Voz" : "Voice"}`}
             </button>
             <button
               type="button"
@@ -377,10 +312,7 @@ export default function ElisSpotlight({
             </button>
             <button
               type="button"
-              onClick={() => {
-                cancelElisSpeech();
-                onClose();
-              }}
+              onClick={onClose}
               aria-label="Close Spotlight"
               className="rounded-md border border-line bg-bg px-2 py-0.5 text-[11px] font-bold text-muted hover:text-fg cursor-pointer"
             >
@@ -396,9 +328,7 @@ export default function ElisSpotlight({
               <button
                 key={m.id}
                 type="button"
-                onClick={() => {
-                  onSelectMission(m);
-                }}
+                onClick={() => onSelectMission(m)}
                 className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
                   active
                     ? "border-est bg-est/15 text-est"
@@ -441,12 +371,6 @@ export default function ElisSpotlight({
                     <span>💡</span>
                     <span>{t("hud.takeaway")}</span>
                   </span>
-                  {voiceEnabled && isSpeaking && (
-                    <span className="flex items-center gap-1 rounded bg-forecast/25 px-1.5 py-0.2 text-[9px] font-bold text-forecast">
-                      <span className="inline-block size-1.5 rounded-full bg-forecast animate-ping" />
-                      {isEs ? "Narrando" : "Speaking"}
-                    </span>
-                  )}
                 </div>
                 <p className="m-0 mt-1 text-[13px] font-bold leading-snug text-fg">
                   {isEs ? mission.takeawayEs : mission.takeawayEn}
