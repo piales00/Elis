@@ -361,6 +361,8 @@ export default {
   "hud.details": "Evidencia Científica y Método",
   "hud.takeaway": "Titular Clave",
   "hud.forJury": "Detalle Científico para Jurado",
+  "hud.voice": "Narración por voz",
+  "hud.voiceMute": "Silenciar narración",
   "chat.greeting": "Soy Elis, tu asistente del registro armonizado MODIS–VIIRS de fuego en Perú, 2000–2026. Explora el salto de sensores de 2012, el registro con su rango al 90 %, compara MODIS y VIIRS en una región y mes, consulta el pronóstico separado de lo observado o la continuidad tras MODIS con el emulador.",
   "chat.trigger": "Pregunta a Elis",
   "chat.title": "Pregunta a Elis",

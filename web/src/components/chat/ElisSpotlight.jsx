@@ -108,6 +108,8 @@ export default function ElisSpotlight({
   const isEs = locale === "es";
   const [showChart, setShowChart] = useState(false);
   const [zoomed3d, setZoomed3d] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
     return idx >= 0 ? idx : 0;
@@ -160,6 +162,61 @@ export default function ElisSpotlight({
     } : null;
   }, [customTurn, series, mission]);
 
+  useEffect(() => {
+    if (!open || !voiceEnabled || customTurn) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {}
+      }
+      setIsSpeaking(false);
+      return;
+    }
+    const text = isEs ? mission.takeawayEs : mission.takeawayEn;
+    if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = isEs ? "es-ES" : "en-US";
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices?.() || [];
+      if (voices.length > 0) {
+        const prefix = isEs ? "es" : "en";
+        const voice =
+          voices.find(
+            (v) =>
+              v.lang.toLowerCase().startsWith(prefix) &&
+              (v.name.includes("Google") ||
+                v.name.includes("Natural") ||
+                v.name.includes("Premium") ||
+                v.name.includes("Sabina") ||
+                v.name.includes("Alvaro")),
+          ) || voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
+        if (voice) utterance.voice = voice;
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setIsSpeaking(false);
+    }
+
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {}
+      }
+      setIsSpeaking(false);
+    };
+  }, [open, missionIndex, voiceEnabled, isEs, customTurn]);
+
   if (!open) return null;
 
   if (minimized) {
@@ -198,6 +255,16 @@ export default function ElisSpotlight({
             }`}
           >
             {autopilot ? "⏸" : "▶"} {AUTOPILOT_SECONDS}s
+          </button>
+          <button
+            type="button"
+            onClick={() => setVoiceEnabled((v) => !v)}
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-pointer transition ${
+              voiceEnabled ? "border-emerald-500/70 bg-emerald-500/20 text-emerald-400" : "border-line bg-bg text-muted hover:text-fg"
+            }`}
+            title={voiceEnabled ? t("hud.voiceMute") : t("hud.voice")}
+          >
+            {voiceEnabled ? (isSpeaking ? "🔊 〰" : "🔊") : "🔇"}
           </button>
           <button
             type="button"
@@ -279,6 +346,18 @@ export default function ElisSpotlight({
             </button>
             <button
               type="button"
+              onClick={() => setVoiceEnabled((v) => !v)}
+              className={`rounded-md border px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
+                voiceEnabled
+                  ? "border-emerald-500/80 bg-emerald-500/20 text-emerald-400 shadow-sm"
+                  : "border-line bg-bg text-muted hover:text-fg hover:border-line-strong"
+              }`}
+              title={voiceEnabled ? t("hud.voiceMute") : t("hud.voice")}
+            >
+              {voiceEnabled ? (isSpeaking ? `🔊 ${isEs ? "Voz activa" : "Voice on"}` : `🔊 ${isEs ? "Voz" : "Voice"}`) : `🔇 ${isEs ? "Voz" : "Voice"}`}
+            </button>
+            <button
+              type="button"
               onClick={() => setShowChart((v) => !v)}
               className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
                 showChart ? "border-est bg-est/15 text-est" : "border-line bg-bg text-muted hover:text-fg"
@@ -350,9 +429,17 @@ export default function ElisSpotlight({
 
             {!customTurn && (
               <div className="mt-2 rounded-xl border border-forecast/40 bg-forecast/10 p-3 text-xs">
-                <div className="flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
-                  <span>💡</span>
-                  <span>{t("hud.takeaway")}</span>
+                <div className="flex items-center justify-between gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
+                  <span className="flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>{t("hud.takeaway")}</span>
+                  </span>
+                  {voiceEnabled && isSpeaking && (
+                    <span className="flex items-center gap-1 rounded bg-forecast/25 px-1.5 py-0.2 text-[9px] font-bold text-forecast">
+                      <span className="inline-block size-1.5 rounded-full bg-forecast animate-ping" />
+                      {isEs ? "Narrando" : "Speaking"}
+                    </span>
+                  )}
                 </div>
                 <p className="m-0 mt-1 text-[13px] font-bold leading-snug text-fg">
                   {isEs ? mission.takeawayEs : mission.takeawayEn}
