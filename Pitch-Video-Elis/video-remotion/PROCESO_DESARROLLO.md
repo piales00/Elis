@@ -162,9 +162,9 @@ Schematic details:
 
 | Time | What happens | Code |
 |---|---|---|
-| 21.6 to 21.95 s | cross-fade to `outlook.jpg` | `T.toOutlook` |
+| 21.6 to 21.95 s | cross-fade to `outlook.png` | `T.toOutlook` |
 | 22.0 to 22.6 s | framing `{889, 545, 1.08}`, showing the *Model* box and the *"15 of 20 active departments"* line | `camOutlook` |
-| 22.0 to 22.6 s | the Cusco 2027 card (1,788) is **dimmed** so it is not confused with the validation | `Dim`, `R('outlook', 92, 243, 551, 476)` |
+| 22.0 to 22.6 s | the app's 2027 season card (27,301, Peru) is **dimmed** so it is not confused with the validation | `Dim`, `R('outlook', 96, 265, 555, 498)` |
 | 22.25 to 25.3 s | card "Peru · 2026 fire season · Out of sample — the model never saw 2026" | `ForecastCard` |
 | 22.55 / 23.4 / 24.2 s | "Forecast 24,392", "Observed 22,955" and **"within ~6%"** enter | `T.fForecast/fObserved/fWithin` |
 

@@ -1,3 +1,4 @@
+import { spring } from 'remotion';
 // Every frame is a pure function of one clock, t (seconds). No state, no timers.
 // Same idea as html-demo's View({ t }), applied to a 1920 × 1080 video stage.
 
@@ -86,3 +87,7 @@ export const glide = (t: number, ways: Way[]): [number, number] => {
 /** 0 → 1 → 0 press curve for a click at `at` lasting `len`. */
 export const press = (t: number, at: number, len = 0.17) =>
   t < at || t > at + len ? 0 : Math.sin(((t - at) / len) * Math.PI);
+
+/** Spring 0 → 1 starting at `at` (seconds). damping 200 = no overshoot; lower = a soft overshoot. */
+export const spr = (t: number, at: number, damping = 200, stiffness = 100) =>
+  t <= at ? 0 : spring({ frame: (t - at) * 30, fps: 30, config: { damping, stiffness, mass: 1 } });

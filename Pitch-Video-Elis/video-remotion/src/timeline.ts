@@ -12,7 +12,8 @@ export const VOICE_START = VOICE_START_FRAME / FPS;
 export const T = {
   // Scene 1 — cinematic opening (original footage, unmodified source files)
   clip1: [0, 4.0],
-  clip2: [4.0, 6.3], // plays 0.00–2.30 s of clip 02; its AI-generated UI starts ≈2.25 s
+  clip2: [3.4, 6.3], // plays at CLIP2_RATE, so it only reaches ≈2.2 s of clip 02; its AI-generated UI starts ≈2.25 s
+  clipCross: [3.4, 4.0], // cross-dissolve clip 01 → clip 02 with a continuous push-in, in the pause after "trains."
   handoff: [5.75, 6.13], // clip 02 dissolves into the authentic Explore screenshot
   reconTag: [0.2, 6.15], // "Cinematic reconstruction" label
   placeTitle: [0.6, 3.8], // "…Machu Picchu stops the trains"
@@ -58,15 +59,21 @@ export const T = {
   fObserved: 23.65, // "landed"
   fWithin: 24.0, // "within six percent" (24.01)
 
-  // Scene 5 — team ("We're Peruvian students trying to help", 25.28–27.02) and outro
-  team: [25.15, 27.4],
-  toOutro: [27.05, 27.5], // "If it works here, it can work anywhere" (27.32–29.28)
-  logo: 27.2,
-  phrase: 27.6,
-  url: 27.8,
-  attrib: 28.0,
+  // Scene 5 — one closing scene: logo with the team around it ("We're Peruvian students trying to help",
+  // 25.28–27.02), then tagline, URL and credits ("If it works here, it can work anywhere", 27.32–29.28)
+  finale: 25.15,
+  fLogo: 25.3,
+  fPhotos: 25.62, // first photo; the others follow every F_PHOTO_STEP
+  fLabel: 26.3,
+  fLift: [27.1, 27.7],
+  phrase: 27.45,
+  url: 27.65,
+  attrib: 27.85, // everything settled by ≈28.35 → still until the fade
   fadeBlack: [29.6, 29.967],
 } as const;
+
+export const CLIP2_RATE = 0.8;
+export const F_PHOTO_STEP = 0.14;
 
 type Word = { w: string; s: number; e: number };
 export type Caption = { from: number; to: number; words: Word[] };
@@ -95,4 +102,16 @@ export const CAPTIONS: Caption[] = CUE_WORDS.map((cue, i) => {
   const next = CUE_WORDS[i + 1];
   const nextFrom = next ? next[0][1] + VOICE_START - 0.05 : Infinity;
   return { from: words[0].s - 0.08, to: Math.min(nextFrom, words[words.length - 1].e + 0.4), words };
+});
+
+const VOICE_WORDS = CAPTIONS.flatMap((c) => c.words);
+const voiceGap = (t: number) => Math.min(...VOICE_WORDS.map((w) => (t < w.s ? w.s - t : t > w.e ? t - w.e : 0)));
+
+/** Music ducking, one gain per frame: low under the voice, a little higher in pauses, full in the close. */
+export const MUSIC_DUCK: number[] = Array.from({ length: DURATION_FRAMES }, (_, f) => {
+  const t = f / FPS;
+  const open = Math.min(1, Math.max(0, (voiceGap(t) - 0.08) / 0.4));
+  const close = Math.min(1, Math.max(0, (t - 29.2) / 0.3));
+  const end = Math.min(1, Math.max(0, (DURATION_FRAMES / FPS - t) / 0.4));
+  return (0.4 + 0.3 * open + 0.3 * close) * end;
 });

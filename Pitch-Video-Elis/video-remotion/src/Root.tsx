@@ -9,6 +9,12 @@ const defaults: ElisProps = {
   voiceVolume: 1,
   showSubtitles: true,
   showReconstructionTag: true,
+  // Music bed. Synthesized by tools/make_audio.py. To use your own track instead, save it as
+  // public/audio/music-custom.mp3 (or .wav) and change this line to 'audio/music-custom.mp3'.
+  // It gets the same ducking under the voice. null = no music.
+  musicSrc: 'audio/sfx/music.wav',
+  musicVolume: 0.52,
+  sfxVolume: 0.7,
 };
 
 export const RemotionRoot: React.FC = () => (

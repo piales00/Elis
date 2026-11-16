@@ -1,5 +1,4 @@
 import React from 'react';
-import { Img, staticFile } from 'remotion';
 import { T } from '../timeline';
 import { COLORS } from '../lib/assets';
 import { clamp, ease, easeOut, mix, vis } from '../lib/motion';
@@ -149,72 +148,6 @@ export const ForecastCard: React.FC<{ t: number }> = ({ t }) => {
         Fire cell-days · model fitted on 2003–2025 · forecast issued 1 month ahead · 2026 observations provisional (NRT)
       </div>
     </Glass>
-  );
-};
-
-// ---------- Scene 5: team ----------
-const TEAM = [
-  { photo: 'team/piero.jpg', name: 'Piero Pérez', role: 'Methods & statistics' },
-  { photo: 'team/jossep.jpg', name: 'Jossep Hurtado', role: 'Data & API' },
-  { photo: 'team/samuel.jpg', name: 'Samuel Ortega', role: 'Web & design' },
-  { photo: 'team/valentino.jpg', name: 'Valentino Llamocca', role: 'AI assistant' },
-];
-
-export const TeamCard: React.FC<{ t: number }> = ({ t }) => {
-  const [a, b] = T.team;
-  const bg = vis(t, a, b, 0.35, 0.3);
-  if (bg <= 0) return null;
-  const title = ease(t, a + 0.1, a + 0.6, easeOut);
-  return (
-    <div style={{ position: 'absolute', inset: 0, opacity: bg, background: 'radial-gradient(ellipse at 50% 40%, #10251d 0%, #07100d 65%, #040907 100%)' }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 150, textAlign: 'center', opacity: title, transform: `translateY(${12 * (1 - title)}px)` }}>
-        <div style={{ ...small, fontSize: 22, color: COLORS.harmonized }}>NASA Space Apps 2026</div>
-        <div style={{ marginTop: 10, fontSize: 66, fontWeight: 800, color: '#fff', letterSpacing: -1.5 }}>Team Log N + 1 · Peru</div>
-      </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 390, display: 'flex', justifyContent: 'center', gap: 70 }}>
-        {TEAM.map((m, i) => {
-          const k = ease(t, a + 0.3 + i * 0.12, a + 0.8 + i * 0.12, easeOut);
-          return (
-            <div key={m.name} style={{ width: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: k, transform: `translateY(${18 * (1 - k)}px)` }}>
-              <Img src={staticFile(m.photo)} style={{ width: 210, height: 210, borderRadius: 105, objectFit: 'cover', border: `3px solid ${COLORS.harmonized}66`, boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
-              <div style={{ marginTop: 26, fontSize: 34, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{m.name}</div>
-              <div style={{ marginTop: 6, fontSize: 25, fontWeight: 500, color: COLORS.muted, whiteSpace: 'nowrap' }}>{m.role}</div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ---------- Scene 5: outro ----------
-export const Outro: React.FC<{ t: number }> = ({ t }) => {
-  const bg = ease(t, T.toOutro[0], T.toOutro[1]);
-  if (bg <= 0) return null;
-  const lk = ease(t, T.logo, T.logo + 0.9, easeOut);
-  const pk = ease(t, T.phrase, T.phrase + 0.6, easeOut);
-  const uk = ease(t, T.url, T.url + 0.6, easeOut);
-  const ak = ease(t, T.attrib, T.attrib + 0.6);
-  return (
-    <div style={{ position: 'absolute', inset: 0, opacity: bg, background: 'radial-gradient(ellipse at 50% 38%, #10251d 0%, #07100d 62%, #040907 100%)' }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 120, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Img src={staticFile('media/logo-elis.png')} style={{ width: 330, height: 330, opacity: lk, transform: `scale(${0.94 + 0.06 * lk})` }} />
-        <div style={{ marginTop: 6, fontSize: 92, fontWeight: 800, letterSpacing: -2, color: '#fff', opacity: lk }}>Elis</div>
-        <div style={{ marginTop: 6, fontSize: 36, fontWeight: 500, color: '#d6e6de', opacity: pk, transform: `translateY(${10 * (1 - pk)}px)` }}>
-          From Peru. For a more resilient world.
-        </div>
-        <div style={{ marginTop: 22, padding: '10px 26px', borderRadius: 999, border: `1px solid ${COLORS.harmonized}77`, color: COLORS.harmonized, fontSize: 34, fontWeight: 600, opacity: uk }}>
-          elis-peru.vercel.app
-        </div>
-        <div style={{ marginTop: 34, fontSize: 20, color: 'rgba(214,230,222,0.74)', lineHeight: 1.55, textAlign: 'center', opacity: ak }}>
-          Satellite imagery: NASA GIBS / Worldview — VIIRS (NOAA-20) Corrected Reflectance and Thermal Anomalies.
-          <br />
-          Fire data: NASA FIRMS (MODIS &amp; VIIRS). 3D basemap: Sentinel-2 cloudless – s2maps.eu by EOX IT Services GmbH
-          <br />
-          (Contains modified Copernicus Sentinel data 2020). Opening sequence: cinematic reconstruction.
-        </div>
-      </div>
-    </div>
   );
 };
 

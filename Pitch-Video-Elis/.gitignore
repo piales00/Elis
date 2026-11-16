@@ -7,8 +7,10 @@ video-remotion/out/.render-raw.mp4
 *.mov
 *.webm
 
-# narration recording: add only when the team approves publishing it
-video-remotion/public/audio/
+# narration recording and custom music: add only when the team approves publishing them
+# (the synthesized music and sound effects in public/audio/sfx/ are tracked)
+video-remotion/public/audio/*
+!video-remotion/public/audio/sfx/
 
 # caches and temporary files
 .remotion/

@@ -1,10 +1,12 @@
 import React from 'react';
-import { AbsoluteFill, Audio, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig, continueRender, delayRender } from 'remotion';
-import { T, VOICE_START_FRAME } from './timeline';
+import { AbsoluteFill, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig, continueRender, delayRender } from 'remotion';
+import { CLIP2_RATE, T } from './timeline';
 import { COLORS, N, R, shot } from './lib/assets';
-import { Cam, IDENT, camAt, clamp, ease, glide, press, toScreen, vis } from './lib/motion';
+import { Cam, IDENT, camAt, clamp, ease, easeOut, glide, press, toScreen, vis } from './lib/motion';
 import { Cursor, Dim, Highlight, Shot } from './components/primitives';
-import { ErrorFigure, FadeBlack, ForecastCard, OpeningLabels, Outro, Schematic, TeamCard, VerifiedBadge } from './components/Overlays';
+import { ErrorFigure, FadeBlack, ForecastCard, OpeningLabels, Schematic, VerifiedBadge } from './components/Overlays';
+import { Finale } from './components/Finale';
+import { Soundtrack } from './components/Soundtrack';
 import { Subtitles } from './components/Subtitles';
 
 // ---- fonts (bundled Inter, so the render never depends on the network) ----
@@ -27,6 +29,12 @@ export type ElisProps = {
   voiceVolume: number;
   showSubtitles: boolean;
   showReconstructionTag: boolean;
+  /** Music bed under public/. Default: the synthesized "audio/sfx/music.wav". To use your own track, drop it at
+   *  public/audio/music-custom.mp3 (or .wav) and set this to "audio/music-custom.mp3". null = no music. */
+  musicSrc: string | null;
+  musicVolume: number;
+  /** Master level of the synthesized sound effects (0 = off). */
+  sfxVolume: number;
 };
 
 // ---- cameras (stage coordinates of each normalized screenshot) ----
@@ -82,7 +90,7 @@ const cursorOpacity = (t: number) =>
 const cursorPress = (t: number) =>
   Math.max(press(t, T.compareClick), press(t, T.askClick), press(t, T.qClick), press(t, T.outlookClick));
 
-export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voiceVolume, showSubtitles, showReconstructionTag }) => {
+export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voiceVolume, showSubtitles, showReconstructionTag, musicSrc, musicVolume, sfxVolume }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
@@ -99,16 +107,20 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
   const answerO = ease(t, T.toAnswer[0], T.toAnswer[1]);
   const answerOn = t >= T.toAnswer[0] && t < T.toOutlook[1];
   const outlookO = ease(t, T.toOutlook[0], T.toOutlook[1]);
-  const outlookOn = t >= T.toOutlook[0] && t < T.toOutro[1];
+  const outlookOn = t >= T.toOutlook[0] && t < T.finale + 0.4;
 
   const ansCam = camAnswer(t);
   const revealTop = ANS.top + ease(t, T.reveal[0], T.reveal[1]) * (ANS.height + 80);
   const [badgeX, badgeY] = toScreen(ansCam, chipX + 14, chipY);
 
   const [cx, cy] = glide(t, WAYS);
-  const clipVol = (f: number, fadeTo?: [number, number]) => {
-    const tt = f / fps;
-    return clamp(cinematicVolume * (fadeTo ? 1 - ease(tt + 4.0, fadeTo[0], fadeTo[1]) : 1), 0, 1);
+  const cross = ease(t, T.clipCross[0], T.clipCross[1]);
+  const clip1Scale = 1 + 0.07 * Math.pow(clamp((t - 2.6) / (T.clipCross[1] - 2.6)), 2);
+  const clip2Scale = 1 + 0.06 * (1 - ease(t, T.clip2[0], 5.3, easeOut)) + 0.045 * ease(t, 5.3, 6.13);
+  const clip1Vol = (f: number) => clamp(cinematicVolume * (1 - ease(f / fps, T.clipCross[0], T.clipCross[1])), 0, 1);
+  const clip2Vol = (f: number) => {
+    const tt = f / fps + T.clip2[0];
+    return clamp(cinematicVolume * ease(tt, T.clipCross[0], T.clipCross[1]) * (1 - ease(tt, 5.85, 6.3)), 0, 1);
   };
 
   return (
@@ -123,13 +135,13 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
 
       {/* ---------- Scene 1: original cinematic footage ---------- */}
       <Sequence from={0} durationInFrames={Math.round(T.clip1[1] * fps)} layout="none">
-        <AbsoluteFill>
-          <OffthreadVideo src={staticFile('media/clip01.mp4')} volume={(f) => clipVol(f)} />
+        <AbsoluteFill style={{ transform: `scale(${clip1Scale})` }}>
+          <OffthreadVideo src={staticFile('media/clip01.mp4')} volume={clip1Vol} />
         </AbsoluteFill>
       </Sequence>
       <Sequence from={Math.round(T.clip2[0] * fps)} durationInFrames={Math.round((T.clip2[1] - T.clip2[0]) * fps)} layout="none">
-        <AbsoluteFill style={{ opacity: clip2Fade, transform: `scale(${1 + 0.045 * ease(t, 5.3, 6.13)})` }}>
-          <OffthreadVideo src={staticFile('media/clip02.mp4')} volume={(f) => clipVol(f, [5.85, 6.3])} />
+        <AbsoluteFill style={{ opacity: Math.min(cross, clip2Fade), transform: `scale(${clip2Scale})` }}>
+          <OffthreadVideo src={staticFile('media/clip02.mp4')} playbackRate={CLIP2_RATE} volume={clip2Vol} />
         </AbsoluteFill>
       </Sequence>
 
@@ -155,7 +167,7 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
       {/* ---------- Scene 4: Outlook ---------- */}
       {outlookOn && (
         <Shot src={shot('outlook')} cam={camOutlook(t)} opacity={outlookO}>
-          <Dim box={R('outlook', 92, 243, 551, 476)} opacity={ease(t, T.camOutlook[0], T.camOutlook[1])} />
+          <Dim box={R('outlook', 96, 265, 555, 498)} opacity={ease(t, T.camOutlook[0], T.camOutlook[1])} />
         </Shot>
       )}
 
@@ -166,16 +178,11 @@ export const ElisPitch: React.FC<ElisProps> = ({ cinematicVolume, voiceSrc, voic
       <VerifiedBadge t={t} x={badgeX} y={badgeY - 30} />
       <ForecastCard t={t} />
       <Cursor x={cx} y={cy} opacity={cursorOpacity(t)} pressed={cursorPress(t)} />
-      <TeamCard t={t} />
-      <Outro t={t} />
+      <Finale t={t} />
       {showSubtitles && <Subtitles t={t} />}
       <FadeBlack t={t} />
 
-      {voiceSrc && (
-        <Sequence from={VOICE_START_FRAME} layout="none">
-          <Audio src={staticFile(voiceSrc)} volume={voiceVolume} />
-        </Sequence>
-      )}
+      <Soundtrack voiceSrc={voiceSrc} voiceVolume={voiceVolume} musicSrc={musicSrc} musicVolume={musicVolume} sfxVolume={sfxVolume} />
     </AbsoluteFill>
   );
 };

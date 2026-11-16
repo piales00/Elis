@@ -26,12 +26,13 @@ Both clips are original AI-generated material produced for this project. They we
 | Team photos | `video-remotion/public/team/` | Team members' own photos, copied from `web/public/landing/team/`. |
 | Inter font (4 weights) | `video-remotion/public/fonts/` | SIL Open Font License 1.1, license text in `OFL.txt`. |
 | Source code, scripts, config | `video-remotion/` | Repository license to be decided by the owners. |
+| Music bed and sound effects | `video-remotion/public/audio/sfx/*.wav` | Own sounds, synthesized from scratch by `video-remotion/tools/make_audio.py` (sine waves and filtered noise generated with numpy). No samples, loops or third-party recordings. Same terms as the source code. |
 
 ## 3. Not included
 
 | Asset | Reason |
 |---|---|
-| Narration recording | Recorded by the team (`public/audio/narration.wav`, 103 % take, and its word timings). `video-remotion/public/audio/` stays git-ignored until the team approves publishing it. |
+| Narration recording | Recorded by the team (`public/audio/narration.wav`, 103 % take, and its word timings). It stays git-ignored until the team approves publishing it (only `video-remotion/public/audio/sfx/` is tracked). An optional replacement track at `public/audio/music-custom.*` is also git-ignored; whoever adds one must check its license. |
 | Rendered video (`elis-preview-v2.mp4`) | Regenerate locally with `npm run render:v2`. |
 | Internal production brief and voice script | Internal documents. |
 | Development contact sheets | Review aids only; not needed to render. |
