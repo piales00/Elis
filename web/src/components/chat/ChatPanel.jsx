@@ -391,7 +391,51 @@ export default function ChatPanel({
                     : "Exploring 26 years of comparable fire history in Peru, reconciling multi-sensor discrepancies:"}
                 </p>
 
-                <div className="mt-3 grid gap-2">
+                {onLaunchMission && (
+                  <button
+                    type="button"
+                    onClick={() => onLaunchMission("artifact", true)}
+                    className="group relative mt-3.5 flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border border-forecast/60 bg-gradient-to-r from-forecast/25 via-forecast/15 to-surface/90 p-3 text-left shadow-md transition-all hover:border-forecast hover:from-forecast/35 hover:shadow-forecast/20 hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative grid size-10 place-items-center rounded-lg border border-forecast/60 bg-forecast text-bg shadow-sm transition-transform group-hover:scale-105">
+                        <span className="text-sm font-black">▶</span>
+                        <span className="absolute -top-1 -right-1 flex size-3">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex size-3 rounded-full border border-bg bg-emerald-400" />
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-head text-xs font-black uppercase tracking-wider text-fg group-hover:text-forecast transition-colors">
+                            {locale === "es" ? "⚡ Iniciar Tour Autopiloto (40s)" : "⚡ Launch 40s Autopilot Tour"}
+                          </span>
+                          <span className="rounded-full bg-forecast/20 border border-forecast/40 px-1.5 py-0.2 font-mono text-[9px] font-extrabold uppercase text-forecast">
+                            VIP
+                          </span>
+                        </div>
+                        <p className="m-0 mt-0.5 text-[11px] font-medium text-muted leading-tight">
+                          {locale === "es"
+                            ? "4 misiones guiadas por el mapa · Vuelo 3D · Rangos de incertidumbre"
+                            : "4 curated map missions · 3D flyovers · Uncertainty ranges"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="hidden sm:inline-flex rounded-md border border-forecast/50 bg-forecast/20 px-2 py-1 font-mono text-[11px] font-black text-forecast transition-transform group-hover:translate-x-0.5">
+                      {locale === "es" ? "Comenzar →" : "Start →"}
+                    </span>
+                  </button>
+                )}
+
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="h-px flex-1 bg-line/60" />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted">
+                    {locale === "es" ? "O consulta un pilar específico" : "Or drill down into a pillar"}
+                  </span>
+                  <div className="h-px flex-1 bg-line/60" />
+                </div>
+
+                <div className="mt-2.5 grid gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -490,20 +534,10 @@ export default function ChatPanel({
             )}
             {turns.length === 0 && (
               <div className="rounded-xl border border-line bg-surface/70 p-3">
-                <div className="mb-2.5 flex items-center justify-between">
+                <div className="mb-2">
                   <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-muted">
                     {locale === "es" ? "OTRAS CONSULTAS FRECUENTES" : "EXPLORE SPECIFIC TOPICS"}
                   </span>
-                  {onLaunchMission && (
-                    <button
-                      type="button"
-                      onClick={() => onLaunchMission("artifact", true)}
-                      className="flex items-center gap-1 rounded-md border border-forecast/40 bg-forecast/10 px-2 py-0.5 font-mono text-[10px] font-bold text-forecast transition hover:bg-forecast hover:text-bg cursor-pointer"
-                      title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
-                    >
-                      ▶ {locale === "es" ? "Autopiloto 40s" : "40s Autopilot"}
-                    </button>
-                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <button
