@@ -11,6 +11,7 @@ import ChatChart from "./ChatChart.jsx";
 import FormattedMessage, { detectAlertBadge } from "./FormattedMessage.jsx";
 import { buildDecisionSuggestions } from "../../data/chat.js";
 import Icon from "../shell/icons.jsx";
+import { ElisMark } from "../shell/Rail.jsx";
 import { useDataMode } from "../../hooks/useDataMode.js";
 
 const MAX_HISTORY_MESSAGES = 12;
@@ -71,6 +72,8 @@ export default function ChatPanel({
       unverified: [],
       verified: built.verified,
       isPreset: true,
+      presetId: preset.id,
+      targetRegion,
       suggestions: buildDecisionSuggestions({ question: questionText, region: targetRegion, locale }),
       done: true,
     };
@@ -80,6 +83,7 @@ export default function ChatPanel({
         id: `u-${Date.now()}`,
         role: "user",
         content: questionText,
+        presetKey: preset.key,
       },
       assistantTurn,
     ]);
@@ -92,6 +96,37 @@ export default function ChatPanel({
       });
     }
   };
+
+  useEffect(() => {
+    setTurns((prev) =>
+      prev.map((turn) => {
+        if (turn.presetId) {
+          const rebuilt = buildPresetResponse(turn.presetId, {
+            region: turn.targetRegion || region || "peru",
+            series,
+            methodology,
+            locale,
+          });
+          return {
+            ...turn,
+            content: rebuilt.text,
+            suggestions: buildDecisionSuggestions({
+              question: turn.presetId,
+              region: turn.targetRegion || region || "peru",
+              locale,
+            }),
+          };
+        }
+        if (turn.role === "user" && turn.presetKey) {
+          return {
+            ...turn,
+            content: t(turn.presetKey),
+          };
+        }
+        return turn;
+      }),
+    );
+  }, [locale]);
 
   const buildApiMessages = (nextUserQuestion) => {
     const history = turns
@@ -237,6 +272,8 @@ export default function ChatPanel({
                   tools: item.tools.length ? item.tools : fallback.tools || [],
                   verified: true,
                   isPreset: true,
+                  presetId: fallback.presetId,
+                  targetRegion: region,
                   suggestions: buildDecisionSuggestions({ question: trimmed, region, locale }),
                   done: true,
                 }
@@ -323,7 +360,134 @@ export default function ChatPanel({
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {turns.length === 0 && <p className="rounded-xl border border-line bg-surface p-3 text-sm leading-relaxed">{t("chat.greeting")}</p>}
+            {turns.length === 0 && (
+              <div className="relative overflow-hidden rounded-2xl border border-forecast/35 bg-gradient-to-b from-surface via-surface/95 to-bg/90 p-4 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="relative grid size-11 place-items-center rounded-xl border border-forecast/40 bg-forecast/15 shadow-inner">
+                    <ElisMark size={24} />
+                    <span className="absolute -bottom-0.5 -right-0.5 flex size-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex size-2.5 rounded-full border-2 border-bg bg-emerald-500" />
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="m-0 font-head text-sm font-extrabold tracking-tight text-fg">
+                        {locale === "es" ? "Elis · Asistente Científico" : "Elis · Science Assistant"}
+                      </h3>
+                      <span className="rounded-full border border-forecast/30 bg-forecast/10 px-2 py-0.5 font-mono text-[9px] font-extrabold uppercase tracking-wider text-forecast">
+                        NASA Space Apps
+                      </span>
+                    </div>
+                    <p className="m-0 mt-0.5 text-[11px] font-medium text-muted">
+                      {locale === "es" ? "Armonización Satelital MODIS–VIIRS (2000–2026)" : "MODIS–VIIRS Satellite Harmonization (2000–2026)"}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="m-0 mt-3 text-xs leading-relaxed text-fg/90">
+                  {locale === "es"
+                    ? "Exploro 26 años de historia comparable del fuego en el Perú resolviendo la discrepancia entre satélites:"
+                    : "Exploring 26 years of comparable fire history in Peru, reconciling multi-sensor discrepancies:"}
+                </p>
+
+                <div className="mt-3 grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = PRESET_QUESTIONS.find((item) => item.id === "compare_naive");
+                      if (p) handlePresetClick(p);
+                    }}
+                    className="group flex w-full cursor-pointer items-start justify-between gap-2.5 rounded-xl border border-line bg-bg/70 p-2.5 text-left transition-all hover:border-forecast/60 hover:bg-surface/90 hover:shadow-sm active:scale-[0.99]"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">🛰️</span>
+                      <div className="leading-snug">
+                        <div className="flex items-center gap-1.5">
+                          <strong className="text-xs font-bold text-fg group-hover:text-forecast transition-colors">
+                            {locale === "es" ? "Estimador de Chapman" : "Chapman Estimator"}
+                          </strong>
+                          <span className="rounded bg-line/60 px-1 py-0.2 font-mono text-[9px] text-muted">90% CI</span>
+                        </div>
+                        <span className="text-[11px] text-muted">
+                          {locale === "es"
+                            ? "Celdas-día con fuego comparables con rangos de incertidumbre al 90 %."
+                            : "Harmonized fire cell-days with strict 90% confidence intervals."}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-forecast font-bold">
+                      →
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = PRESET_QUESTIONS.find((item) => item.id === "jump_2012");
+                      if (p) handlePresetClick(p);
+                    }}
+                    className="group flex w-full cursor-pointer items-start justify-between gap-2.5 rounded-xl border border-line bg-bg/70 p-2.5 text-left transition-all hover:border-forecast/60 hover:bg-surface/90 hover:shadow-sm active:scale-[0.99]"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">🚨</span>
+                      <div className="leading-snug">
+                        <div className="flex items-center gap-1.5">
+                          <strong className="text-xs font-bold text-fg group-hover:text-forecast transition-colors">
+                            {locale === "es" ? "Artificio de 2012 resuelto" : "2012 Artifact Resolved"}
+                          </strong>
+                          <span className="rounded bg-line/60 px-1 py-0.2 font-mono text-[9px] text-muted">9× Jump</span>
+                        </div>
+                        <span className="text-[11px] text-muted">
+                          {locale === "es"
+                            ? "El salto de 9× fue por la entrada de VIIRS (375 m), no una multiplicación del fuego real."
+                            : "The 9× count surge was a sensor transition (VIIRS 375 m), not an explosion in burning."}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-forecast font-bold">
+                      →
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = PRESET_QUESTIONS.find((item) => item.id === "forecast_next");
+                      if (p) handlePresetClick(p);
+                    }}
+                    className="group flex w-full cursor-pointer items-start justify-between gap-2.5 rounded-xl border border-line bg-bg/70 p-2.5 text-left transition-all hover:border-forecast/60 hover:bg-surface/90 hover:shadow-sm active:scale-[0.99]"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none">🛡️</span>
+                      <div className="leading-snug">
+                        <div className="flex items-center gap-1.5">
+                          <strong className="text-xs font-bold text-fg group-hover:text-forecast transition-colors">
+                            {locale === "es" ? "Pronóstico y Continuidad" : "Outlook & Continuity"}
+                          </strong>
+                          <span className="rounded bg-line/60 px-1 py-0.2 font-mono text-[9px] text-muted">2027+</span>
+                        </div>
+                        <span className="text-[11px] text-muted">
+                          {locale === "es"
+                            ? "Pronóstico 2027 separado de lo observado y emulador para cuando MODIS se apague en 2026."
+                            : "2027 outlook kept separate from observations + emulator for post-MODIS continuity."}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-forecast font-bold">
+                      →
+                    </span>
+                  </button>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between border-t border-line/60 pt-2 text-[10px] text-muted">
+                  <span>
+                    {locale === "es" ? "💡 Toca una tarjeta o escribe cualquier pregunta abajo" : "💡 Tap any card or ask any question below"}
+                  </span>
+                  <span className="font-mono text-forecast">● LIVE READY</span>
+                </div>
+              </div>
+            )}
             {onLaunchMission && (
               <div className="rounded-xl border border-forecast/40 bg-forecast/10 p-3.5">
                 <div className="mb-2 flex items-center justify-between gap-2">

@@ -28,10 +28,15 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
   const terrainRef = useRef(false);
   const flatCameraRef = useRef(null);
   const cellFeaturesRef = useRef([]);
+  const pending3dRef = useRef(false);
 
   const changeTerrain = (enabled, move = true) => {
     const map = mapRef.current;
-    if (!map?.getLayer("country-fill")) return;
+    if (!map) return;
+    if (!map.getLayer("country-fill")) {
+      if (enabled) pending3dRef.current = true;
+      return;
+    }
     if (enabled && !terrainRef.current) flatCameraRef.current = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), padding: map.getPadding(), pitch: 0 };
     setRelief(map, enabled);
     map.setLayoutProperty("terrain-fire", "visibility", enabled ? "visible" : "none");
@@ -184,6 +189,10 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
       fit(0);
       setReady(true);
       live.current.onReady?.(map);
+      if (pending3dRef.current) {
+        pending3dRef.current = false;
+        changeTerrain(true, false);
+      }
     });
 
     map.on("resetview", resetView);
@@ -354,15 +363,25 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
         {t("map.reset")}
       </button>}
       <div data-tour="terrain" className="fc-map-tools absolute right-3 z-[6] flex flex-col items-end gap-2" style={{ top: fill ? "var(--fc-tools-top, 144px)" : "96px" }}>
-        <button type="button" disabled={!ready} aria-pressed={terrain} aria-label={t("map.terrain")} title={t("map.terrain")} onClick={() => changeTerrain(!terrainRef.current)} className={`fc-float fc-press grid size-11 place-items-center rounded-xl text-sm font-bold ${terrain ? "!border-est !text-est" : ""}`}>
-          3D
+        <button
+          type="button"
+          disabled={!ready}
+          aria-pressed={terrain}
+          aria-label={t("map.terrain")}
+          title={ready ? t("map.terrain") : t("map.loadingTiles")}
+          onClick={() => changeTerrain(!terrainRef.current)}
+          className={`fc-float fc-press grid size-11 place-items-center rounded-xl text-sm font-bold transition ${
+            !ready ? "opacity-60 cursor-wait" : ""
+          } ${terrain ? "!border-est !text-est" : ""}`}
+        >
+          {ready ? "3D" : <span className="size-3.5 animate-spin rounded-full border-2 border-muted border-t-est" />}
         </button>
         <button
           type="button"
           disabled={!ready}
           aria-label={t("map.drop")}
           aria-describedby="explore-drop-help"
-          title={t("map.drop")}
+          title={ready ? t("map.drop") : t("map.loadingTiles")}
           className="fc-float grid size-11 touch-none select-none place-items-center rounded-xl text-est cursor-grab active:cursor-grabbing"
           onPointerDown={(e) => {
             if (!e.isPrimary || e.button !== 0) return;
@@ -376,7 +395,9 @@ export default function MapView({ regions, cells, metric, breaks, region, onRegi
           onPointerCancel={() => { dragRef.current = null; setDrag(null); }}
           onLostPointerCapture={() => { dragRef.current = null; setDrag(null); }}
           onKeyDown={(e) => { if (e.key === "Escape") { dragRef.current = null; setDrag(null); } }}
-          onClick={(e) => { if (e.detail === 0) flyHere(mapRef.current.getCenter()); }}
+          onClick={() => {
+            if (mapRef.current) flyHere(mapRef.current.getCenter());
+          }}
         >
           <svg aria-hidden="true" viewBox="0 0 32 40" width="24" height="30" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M16 37S4 23 4 15a12 12 0 0 1 24 0c0 8-12 22-12 22Z" fill="var(--surface)" />

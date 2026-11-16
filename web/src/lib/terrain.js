@@ -3,15 +3,21 @@ import { CELL_COLORS } from "./mapStyle.js";
 export const EXPLORE_CAMERA = { center: [-72.5, -13.2], zoom: 9.5, pitch: 65, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
 export const REGION_3D_CAMERAS = {
   peru: { center: [-72.5, -13.2], zoom: 9.2, pitch: 65, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  amazonia: { center: [-74.5, -8.4], zoom: 9.2, pitch: 65, bearing: -15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  amazonia: { center: [-74.5, -8.4], zoom: 10.2, pitch: 66, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  amazonia_close: { center: [-74.53, -8.38], zoom: 11.5, pitch: 70, bearing: -26, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   sierra: { center: [-72.545, -13.163], zoom: 10.6, pitch: 68, bearing: -28, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  sierra_close: { center: [-72.545, -13.163], zoom: 12.0, pitch: 72, bearing: -34, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   costa: { center: [-79.8, -6.8], zoom: 9.3, pitch: 62, bearing: 15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   cusco: { center: [-72.545, -13.163], zoom: 11.2, pitch: 68, bearing: -30, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  madre_de_dios: { center: [-69.3, -12.6], zoom: 9.5, pitch: 65, bearing: -12, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  ucayali: { center: [-74.53, -8.38], zoom: 9.5, pitch: 65, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  cusco_close: { center: [-72.545, -13.163], zoom: 12.4, pitch: 72, bearing: -36, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  madre_de_dios: { center: [-69.25, -12.45], zoom: 10.5, pitch: 66, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  madre_de_dios_close: { center: [-69.20, -12.40], zoom: 11.7, pitch: 70, bearing: -28, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  ucayali: { center: [-74.53, -8.38], zoom: 10.2, pitch: 66, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  ucayali_close: { center: [-74.53, -8.38], zoom: 11.6, pitch: 70, bearing: -28, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   puno: { center: [-70.02, -15.84], zoom: 9.6, pitch: 64, bearing: -20, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   junin: { center: [-75.2, -11.5], zoom: 9.6, pitch: 65, bearing: -22, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-  san_martin: { center: [-76.7, -6.5], zoom: 9.5, pitch: 64, bearing: -15, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  san_martin: { center: [-76.7, -6.5], zoom: 10.2, pitch: 66, bearing: -18, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+  san_martin_close: { center: [-76.6, -6.6], zoom: 11.5, pitch: 70, bearing: -26, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
   loreto: { center: [-73.25, -3.75], zoom: 9.2, pitch: 62, bearing: -10, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
 };
 export const SATELLITE_ATTRIBUTION = "Sentinel-2 cloudless – https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2020)";
@@ -59,6 +65,9 @@ export function setRelief(map, enabled) {
         maxzoom: 14,
         attribution: "Mapzen / AWS Terrain Tiles",
       });
+    }
+    if (!map.getLayer("explore-hillshade")) {
+      const beforeLayer = map.getLayer("country-fill") ? "country-fill" : undefined;
       map.addLayer({
         id: "explore-hillshade",
         type: "hillshade",
@@ -69,8 +78,11 @@ export function setRelief(map, enabled) {
           "hillshade-highlight-color": "#779b88",
           "hillshade-accent-color": "#314d40",
         },
-      }, "country-fill");
+      }, beforeLayer);
+    } else {
+      map.setLayoutProperty("explore-hillshade", "visibility", "visible");
     }
+
     if (!map.getSource("explore-satellite")) {
       map.addSource("explore-satellite", {
         type: "raster",
@@ -79,21 +91,30 @@ export function setRelief(map, enabled) {
         maxzoom: 18,
         attribution: SATELLITE_ATTRIBUTION,
       });
+    }
+    if (!map.getLayer("explore-satellite")) {
       map.addLayer({
         id: "explore-satellite",
         type: "raster",
         source: "explore-satellite",
         paint: { "raster-saturation": -0.3, "raster-brightness-max": 0.82, "raster-fade-duration": 0 },
       }, "explore-hillshade");
+    } else {
+      map.setLayoutProperty("explore-satellite", "visibility", "visible");
     }
+
     map.setTerrain({ source: "explore-terrain", exaggeration: 1.5 });
-    if (typeof map.setSky === "function") map.setSky({ "sky-color": "#122b32", "horizon-color": "#718a87", "fog-color": "#233e39", "fog-ground-blend": 0.25 });
+    if (typeof map.setSky === "function") {
+      map.setSky({ "sky-color": "#122b32", "horizon-color": "#718a87", "fog-color": "#233e39", "fog-ground-blend": 0.25 });
+    }
   } else {
     map.setTerrain(null);
     if (typeof map.setSky === "function") map.setSky(undefined);
-    if (map.getLayer("explore-satellite")) map.removeLayer("explore-satellite");
-    if (map.getSource("explore-satellite")) map.removeSource("explore-satellite");
-    if (map.getLayer("explore-hillshade")) map.removeLayer("explore-hillshade");
-    if (map.getSource("explore-terrain")) map.removeSource("explore-terrain");
+    if (map.getLayer("explore-satellite")) {
+      map.setLayoutProperty("explore-satellite", "visibility", "none");
+    }
+    if (map.getLayer("explore-hillshade")) {
+      map.setLayoutProperty("explore-hillshade", "visibility", "none");
+    }
   }
 }

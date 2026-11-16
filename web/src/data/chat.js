@@ -42,6 +42,7 @@ export function buildPresetResponse(presetId, { locale = "en" }) {
       tools: [{ name: "get_methodology", label: "Checking MODIS-equivalent emulator continuity" }],
       verified: true,
       chart: saved.continuity.chart,
+      presetId,
     };
   }
   const preset = saved.presets[presetId] || saved.presets.compare_naive;
@@ -50,6 +51,7 @@ export function buildPresetResponse(presetId, { locale = "en" }) {
     tools: [],
     verified: true,
     chart: preset.chart,
+    presetId,
   };
 }
 
