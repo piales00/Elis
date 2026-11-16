@@ -599,7 +599,7 @@ export default {
   "outlook.history.legendHind": "Retropronóstico dejando un año fuera (rango 90 %)",
   "outlook.history.legendForecast": "Rango y mediana pronosticados {year}",
   "outlook.history.legendThresholds": "Umbrales de clase (2003–2025)",
-  "outlook.skill.lead": "{n} meses antes",
+  "outlook.skill.lead": "{n} m antes",
   "outlook.skill.rpss": "RPSS (probabilidades de clase)",
   "outlook.skill.mae": "Habilidad en MAE (mediana)",
   "outlook.skill.threshold": "RPSS mínimo para publicar (0,05)",

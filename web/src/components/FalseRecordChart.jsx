@@ -335,7 +335,7 @@ export default function FalseRecordChart({ series, region, period, onSelectPerio
         [t("series.estimated"), num(active.estimated)],
         [t("series.range"), `${num(active.est_low)} – ${num(active.est_high)}`],
       ];
-  const tipLeft = Math.min(Math.max(x(active.idx) + 14, 0), Math.max(width - 232, 0));
+  const tipLeft = Math.min(Math.max(x(active.idx) + 14, 0), Math.max(width - 280, 0));
   const dim = (name) => focus !== null && focus !== name;
 
   return (
@@ -390,14 +390,14 @@ export default function FalseRecordChart({ series, region, period, onSelectPerio
             <div
               role="status"
               aria-live="polite"
-              className={`card-soft pointer-events-none absolute top-24 z-10 w-[216px] p-2.5 text-sm shadow-lg ${hover ? "opacity-100" : "sr-only"}`}
+              className={`pointer-events-none absolute top-24 z-20 w-[264px] rounded-xl border border-line-strong bg-surface p-3 text-sm shadow-xl ${hover ? "opacity-100" : "sr-only"}`}
               style={{ left: tipLeft }}
             >
               <p className="m-0 font-semibold">{label(active)}</p>
               <p className="m-0 mb-1 text-xs text-muted">
                 {t(active.is_forecast ? "status.forecast" : "status.observed")} · {t(`source.${active.source}`)}
               </p>
-              <dl className="m-0 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 tabular-nums">
+              <dl className="m-0 grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 text-[13px] leading-snug tabular-nums">
                 {lines.map(([k, v]) => (
                   <div key={k} className="contents">
                     <dt className="text-muted">{k}</dt>

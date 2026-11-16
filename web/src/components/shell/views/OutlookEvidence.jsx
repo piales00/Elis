@@ -141,7 +141,7 @@ export function SkillByLead({ unit }) {
   const vals = rows.flatMap((r) => [r.rpss, r.mae_skill]);
   const max = Math.max(0.4, ...vals);
   const min = Math.min(-0.1, ...vals);
-  const W = 100;
+  const W = 74;
   const pos = (v) => ((v - min) / (max - min)) * W;
   const zero = pos(0);
   const metrics = [
