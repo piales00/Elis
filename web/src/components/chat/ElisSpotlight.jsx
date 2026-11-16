@@ -143,15 +143,8 @@ export default function ElisSpotlight({
   const isEs = locale === "es";
   const [showChart, setShowChart] = useState(false);
   const [zoomed3d, setZoomed3d] = useState(false);
-  const prevAutopilotRef = useRef(autopilot);
 
 
-  useEffect(() => {
-    if (!prevAutopilotRef.current && autopilot) {
-      setVoiceEnabled(true);
-    }
-    prevAutopilotRef.current = autopilot;
-  }, [autopilot]);
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
     return idx >= 0 ? idx : 0;
