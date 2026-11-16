@@ -1,71 +1,134 @@
 <div align="center">
 
-<img src="web/public/elis-logo.png" alt="Elis logo" width="160">
+<img src="web/public/elis-logo.png" alt="Elis logo" width="140">
 
 # Elis
 
-**A harmonized MODIS–VIIRS fire record for Peru, 2000–2026, with its uncertainty stated.**
+### One comparable fire record for Peru, 2000–2026
+
+**Two NASA satellite eras, MODIS and VIIRS, turned into a single record you can compare year to year, always with its 90 % range.**
 
 Team **Log N + 1** · NASA Space Apps Challenge 2026 · *Harmonization of MODIS and VIIRS Hot Spots*
 
-[![NASA Space Apps 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026-0B3D91?style=for-the-badge&logo=nasa&logoColor=white)](https://www.spaceappschallenge.org/)
-[![Python](https://img.shields.io/badge/Python-DuckDB%20%2B%20FastAPI-3776AB?style=for-the-badge&logo=python&logoColor=white)](./scripts)
-[![React](https://img.shields.io/badge/React-Vite%20%2B%20Tailwind-2563EB?style=for-the-badge&logo=react&logoColor=white)](./web)
+[![Watch the 30 s demo](https://img.shields.io/badge/▶%20Watch-30%20s%20demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=Fkg9rDq_U2Y)
+[![Open the app](https://img.shields.io/badge/Open-the%20app-EB5201?style=for-the-badge&logo=vercel&logoColor=white)](https://elis-peru.vercel.app)
+[![Project page](https://img.shields.io/badge/Project-page-16A34A?style=for-the-badge)](https://elis-peru.vercel.app/landing/)
+[![Paper](https://img.shields.io/badge/Technical-paper%20(PDF)-0B3D91?style=for-the-badge)](https://elis-peru.vercel.app/firechronos-technical-report.pdf)
 
-[![Live app](https://img.shields.io/badge/app-elis--peru.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white)](https://elis-peru.vercel.app/?view=ask&region=peru&y=2012&m=9)
-[![Data](https://img.shields.io/badge/data-NASA%20FIRMS-DC2626?style=flat-square)](#data-sources)
-[![Record](https://img.shields.io/badge/record-2000%E2%80%932026-16A34A?style=flat-square)](#what-elis-does)
+![NASA FIRMS](https://img.shields.io/badge/data-NASA%20FIRMS-DC2626?style=flat-square)
+![Python](https://img.shields.io/badge/Python-DuckDB%20·%20FastAPI-3776AB?style=flat-square&logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-Vite%20·%20MapLibre-2563EB?style=flat-square&logo=react&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-189%20passing-16A34A?style=flat-square)
+
+<br>
+
+<img src="web/public/landing/shots/explore.webp" alt="Elis app: harmonized fire cell-days over Peru" width="880">
 
 </div>
 
 ---
 
+## At a glance
+
+<div align="center">
+
+| | |
+|:---:|:---:|
+| **334 % → 3.8 %** | **24,392 vs 22,955** |
+| yearly error, naive sum vs Elis<br><sub>held-out years 2021–2024, Peru</sub> | forecast vs observed fire cell-days<br><sub>2026 season, never seen by the model</sub> |
+| **×8.9 → ×1.39** | **15 of 20** |
+| 2011→2012 jump, raw vs harmonized<br><sub>the sensor changed, not the fire</sub> | departments where the outlook<br><sub>beats climatology</sub> |
+| **r = 0.75** | **26 years** |
+| correlation with MapBiomas burned area<br><sub>independent Landsat product</sub> | of comparable monthly record<br><sub>2000–2026, with 90 % ranges</sub> |
+
+</div>
+
 ## The problem
 
 Peru burns every dry season, and satellites are how we know how much. But the satellites changed over time, and the record changed with them.
 
-MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire differently. Raw counts jump in 2012, 2018 and 2023 as satellites join the record (VIIRS S-NPP, NOAA-20, NOAA-21). In Peru the naive sum goes from **10,375 detections in 2011 to 92,807 in 2012**: a false ×8.9 jump. The fire did not change; the instrument did.
+MODIS (1 km pixels, since 2000) and VIIRS (375 m pixels, since 2012) detect fire differently. Raw counts jump in 2012, 2018 and 2023 as satellites join the record (VIIRS S-NPP, NOAA-20, NOAA-21). In Peru the naive sum goes from **10,375 detections in 2011 to 92,807 in 2012**: a false ×8.9 jump.
 
-Anyone who compares fire years across 2012, or builds a trend on the raw sum, is measuring the satellites, not the fires.
+> **The fire did not change. The instrument did.** Anyone who compares fire years across 2012, or fits a trend on the raw sum, is measuring the satellites, not the fires.
 
-## What Elis does
+<div align="center">
+<img src="docs/report/figures/record.svg" alt="Top: raw detections summed across sensors jump in 2012. Bottom: the harmonized record with its 90 % range stays comparable." width="760">
+</div>
 
-Elis builds one comparable record from all five FIRMS sensors and states how uncertain it is.
+## How Elis works
 
-**The unit** is the **fire cell-day**: a 0.1° cell (about 11 km) on a date with at least one detection. It is not a count of fires and not hectares burned.
+Elis turns the satellites' disagreement into a measurement. **The unit** is the **fire cell-day**: a 0.1° cell (about 11 km) on a date with at least one detection. It is not a count of fires and not hectares burned.
 
-| Component | What it does | Key result |
-|---|---|---|
-| **Capture–recapture harmonization** | The Chapman estimator, calibrated only on days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart, estimates total fire including fire neither sensor saw. Aqua-era estimates are corrected for the Aqua-vs-VIIRS gap measured on 2013–2020. | On near-simultaneous passes the sensors agree on 80 % of Aqua cell-days, against 55–58 % at 20–60 minutes. The false ×8.9 jump becomes **×1.39**. |
-| **Validation** | Held-out years 2021–2024: bias-corrected Aqua-only vs VIIRS-only reconstructions. Independent check against MapBiomas burned area. | 3.8 % yearly difference for Peru (Amazon 2.3 %, Andes 7.0 %, Coast 9.0 %) against 334 % for the naive sum. Correlation with MapBiomas 0.75 (0.85–0.98 within each Landsat era). |
-| **MODIS emulator** | Gradient-boosting model (AUC 0.76) that checks the record and quantifies orbit drift. | The drifting Aqua orbit sees 29 % fewer fire cell-days than an on-time Aqua in 2026. |
-| **Honest uncertainty** | A three-satellite model and a simulator show the sensors are positively dependent. | The record is a **lower bound, roughly 10–15 % low**. No correction passed our tests, so none is applied. Every number carries a 90 % range. |
-| **Seasonal outlook** | A forecast built on the record, labelled and kept apart from observations. | Beats climatology in a leave-one-year-out backtest. |
+| | Step | What it does |
+|:---:|---|---|
+| **1** | **Pair the passes** | Keep only days when Aqua MODIS and S-NPP VIIRS pass less than 20 minutes apart, so both look at the same fire. |
+| **2** | **Measure the overlap** | On those passes, 80 % of Aqua fire cell-days are also seen by VIIRS. The overlap tells how much each sensor misses. |
+| **3** | **Estimate the unseen** | Capture–recapture (the Chapman estimator, borrowed from wildlife counts) estimates the fire both sensors missed, with a 90 % bootstrap range. |
+
+**Also in Elis**
+
+| Component | What it adds |
+|---|---|
+| **Bayesian three-list check** | Aqua, S-NPP and NOAA-20 show the sensors are positively dependent: the record is a **lower bound, roughly 10–15 % low**. No correction passed our tests, so none is applied. |
+| **Synthetic MODIS** | A gradient-boosting emulator (AUC 0.76) predicts what Aqua would see from VIIRS. It measures the drifting Aqua orbit (29 % fewer fire cell-days in 2026) and keeps the MODIS-scale record going after MODIS retires in 2027. |
+| **Seasonal outlook** | A forecast built on the record with ENSO and drought predictors, always labelled and kept apart from observations. |
+| **Live sealed predictions** | Every day a prediction is committed to [elis-live](https://github.com/piales00/elis-live) before the satellite data it is scored against exist. |
 
 ### Observations, estimates and forecasts
 
-Elis never mixes these three. The app, the API and the report label each one.
+Elis never mixes these three. The app, the API and the paper label each one.
 
 | Kind | What it is | Range |
 |---|---|---|
-| **Observation** | Detections reported by FIRMS, as received (near-real-time data are provisional). | None |
-| **Estimate** | The harmonized record: capture–recapture, corrected for the Aqua-vs-VIIRS gap. | 90 % range |
-| **Forecast** | The seasonal outlook, including the 2027 departmental outlooks. | Backtested, always labelled |
+| **Observation** | Detections reported by FIRMS, as received (near-real-time data are provisional) | None |
+| **Estimate** | The harmonized record | 90 % range |
+| **Forecast** | The seasonal outlook, including 2027 departmental outlooks | Backtested, always labelled |
 
-## Try it
+## Validation
 
-**Live app:** [elis-peru.vercel.app](https://elis-peru.vercel.app/?view=ask&region=peru&y=2012&m=9)
-
-The interactive **Ask Elis** scientific copilot (60 s Autopilot, floating Mission HUD, 2027 departmental outlooks, 3D satellite relief navigation) answers questions about the record. It runs when `CHAT_ENABLED=1` and `GEMINI_API_KEY` (or `ANTHROPIC_API_KEY`) are set in `.env`.
-
-## Documentation
-
-| File | What it has |
+| Check | Result |
 |---|---|
-| [`docs/contrato-datos.md`](docs/contrato-datos.md) | **Source of truth** for paths, fields, coverage and parameters |
-| [`docs/methods/README.md`](docs/methods/README.md) | Seven technical notes: harmonization, MODIS emulator, three satellites, underestimation, seasonal outlook, validation, continuity after MODIS |
-| [`docs/report/firechronos-technical-report.pdf`](docs/report/firechronos-technical-report.pdf) | Elis: Harmonizing the Fire Record of Peru, 2000–2026 ([HTML source](docs/report/firechronos-technical-report.html)) |
-| [`scripts/config.py`](scripts/config.py) | Pipeline parameters |
+| **Held-out years 2021–2024** (Aqua-only vs VIIRS-only rebuilds) | **3.8 %** yearly difference for Peru (Amazon 2.3 %, Andes 7.0 %, Coast 9.0 %), against 334 % for the naive sum |
+| **Independent burned area** (MapBiomas Fuego, Landsat) | r = 0.75 for Peru, 0.85–0.98 within each Landsat era |
+| **2026 season out of sample** | Forecast 24,392 [18,848–31,568] vs observed 22,955 fire cell-days |
+| **Trend** | +16.8 % per year on raw detections → +0.2 % per year on the harmonized record |
+
+<div align="center">
+<img src="docs/report/figures/heldout-validation.svg" alt="Held-out validation: Aqua-based vs VIIRS-based reconstructions on 2021–2024 lie close to the 1:1 line." width="560">
+</div>
+
+## The app
+
+<table>
+<tr>
+<td width="50%"><img src="web/public/landing/shots/3d.webp" alt="3D relief with fire activity"><br><b>3D view</b> · fire activity over real Sentinel-2 relief</td>
+<td width="50%"><img src="web/public/landing/shots/compare.webp" alt="Raw vs harmonized comparison"><br><b>Compare</b> · raw detections vs the harmonized record</td>
+</tr>
+<tr>
+<td><img src="web/public/landing/shots/thermal.webp" alt="Thermal satellite layer"><br><b>Satellite layers</b> · true colour, thermal, night lights, burn scars</td>
+<td><img src="web/public/landing/shots/continuity.webp" alt="Continuity after MODIS"><br><b>Continuity</b> · switch MODIS off and the record goes on</td>
+</tr>
+<tr>
+<td><img src="web/public/landing/shots/outlook.webp" alt="Seasonal outlook"><br><b>Outlook</b> · seasonal forecast by department</td>
+<td><img src="web/public/landing/shots/ask.webp" alt="Ask Elis assistant"><br><b>Ask Elis</b> · plain-language answers, every number checked against the data</td>
+</tr>
+</table>
+
+**Ask Elis** uses Google Gemini (`gemini-3.1-flash-lite`) with read-only tools over the processed files; every figure it returns is verified against the data. A 40-second autopilot walks through the four key findings.
+
+## Resources
+
+| | |
+|---|---|
+| ▶ **Demo video (30 s)** | [youtube.com/watch?v=Fkg9rDq_U2Y](https://www.youtube.com/watch?v=Fkg9rDq_U2Y) |
+| 🌐 **Project page** | [elis-peru.vercel.app/landing](https://elis-peru.vercel.app/landing/) |
+| 🗺️ **Live app** | [elis-peru.vercel.app](https://elis-peru.vercel.app) |
+| 📄 **Technical paper** | [PDF](https://elis-peru.vercel.app/firechronos-technical-report.pdf) · [HTML source](docs/report/firechronos-technical-report.html) |
+| 📊 **Pitch deck** | [PDF](https://elis-peru.vercel.app/elis-presentation.pdf) |
+| 📚 **Methods notes** | [`docs/methods/`](docs/methods/README.md) |
+| 🔌 **Public API** | [elis-api.onrender.com](https://elis-api.onrender.com/docs) · e.g. `GET /series?region=peru` |
+| 📡 **Daily sealed predictions** | [github.com/piales00/elis-live](https://github.com/piales00/elis-live) |
+| 🧾 **Data contract** | [`docs/contrato-datos.md`](docs/contrato-datos.md) (paths, fields, parameters) |
 
 ## Data sources
 
@@ -193,20 +256,18 @@ We state them on purpose: a record that hides its limits is not more solid, only
 
 ## Team
 
-**Log N + 1**, NASA Space Apps Challenge 2026.
+**Log N + 1** · Peru · NASA Space Apps Challenge 2026
 
-| Member | Role | Area | What they built |
-|---|---|---|---|
-| **Piero Perez** | ![CEO](https://img.shields.io/badge/CEO-1D4ED8?style=flat-square) | Data science | Model training, methodology, harmonization and validation of the record |
-| **Jossep Hurtado** | ![CSO](https://img.shields.io/badge/CSO-15803D?style=flat-square) | Data engineering | FIRMS download and processing, FastAPI endpoints, published files in `data/processed/` |
-| **Samuel Ortega** | ![CDO](https://img.shields.io/badge/CDO-7E22CE?style=flat-square) | Design and frontend | Design of the whole project: interface, maps, charts and user experience |
-| **Valentino LLamocca** | ![CAIO](https://img.shields.io/badge/CAIO-C2410C?style=flat-square) | Conversational AI | Ask Elis chatbot: scientific copilot that answers questions about the record |
-
-<sub>CEO: Chief Executive Officer · CSO: Chief Science Officer · CTO: Chief Technology Officer · CDO: Chief Design Officer · CAIO: Chief AI Officer</sub>
+| | Member | Role | What they built |
+|:---:|---|---|---|
+| <img src="web/public/landing/team/piero.jpg" width="64" alt=""> | **Piero Pérez** | AI & Backend Engineer · Statistical methods | Model training, capture–recapture harmonization, validation and backend integrations |
+| <img src="web/public/landing/team/jossep.jpg" width="64" alt=""> | **Jossep Hurtado** | Data Engineer · Public API | FIRMS download and processing, FastAPI endpoints, published files in `data/processed/` |
+| <img src="web/public/landing/team/samuel.jpg" width="64" alt=""> | **Samuel Ortega** | Frontend Engineer · Design | Interface, maps, charts, user experience and the demo video |
+| <img src="web/public/landing/team/valentino.jpg" width="64" alt=""> | **Valentino Llamocca** | AI Engineer · Conversational assistant | Ask Elis: the data assistant and its mission HUD |
 
 ## AI use
 
-The team used AI coding assistants (Anthropic Claude, OpenAI Codex) to help write code and documentation under the team's direction. All methods, data choices and results were defined, checked and validated by the team.
+The team used AI coding and writing assistants (Anthropic Claude, OpenAI Codex) to help write code, documentation and translations under the team's direction. Ask Elis uses Google Gemini inside the app, with every figure checked against the data. The two opening shots of the demo video are AI-generated cinematic reconstructions, labelled on screen. No AI model produces the published figures: the method runs on our own code and NASA data, and all methods, data choices and results were defined, checked and validated by the team.
 
 <div align="center">
 
