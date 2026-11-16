@@ -700,7 +700,7 @@ export default function App() {
               }`}
               title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
             >
-              <span>{spotlightOpen && autopilot ? "⏸" : "⚡"}</span>
+              <span>{spotlightOpen && autopilot ? "⏸" : "▶"}</span>
               <span>{t("hud.quickTour")}</span>
             </button>
             {!tour && (
