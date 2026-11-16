@@ -408,10 +408,7 @@ export default function ChatPanel({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-head text-xs font-black uppercase tracking-wider text-fg group-hover:text-forecast transition-colors">
-                            {locale === "es" ? "⚡ Iniciar Tour Autopiloto (40s)" : "⚡ Launch 40s Autopilot Tour"}
-                          </span>
-                          <span className="rounded-full bg-forecast/20 border border-forecast/40 px-1.5 py-0.2 font-mono text-[9px] font-extrabold uppercase text-forecast">
-                            VIP
+                            {locale === "es" ? "Iniciar tour autopiloto (40 s)" : "Launch the 40 s autopilot tour"}
                           </span>
                         </div>
                         <p className="m-0 mt-0.5 text-[11px] font-medium text-muted leading-tight">
