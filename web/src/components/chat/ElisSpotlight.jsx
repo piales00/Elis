@@ -87,6 +87,41 @@ export const ELIS_MISSIONS = [
 
 const AUTOPILOT_MS = AUTOPILOT_SECONDS * 1000 / ELIS_MISSIONS.length;
 
+const HIGH_QUALITY_VOICE_KEYWORDS = [
+  "natural",
+  "neural",
+  "online",
+  "premium",
+  "siri",
+  "google",
+  "sabina",
+  "alvaro",
+  "jorge",
+  "monica",
+  "guy",
+  "jenny",
+  "samantha",
+  "luciana",
+  "diego",
+];
+
+function pickBestVoice(voices, langPrefix) {
+  if (!voices || voices.length === 0) return null;
+  const prefix = langPrefix.toLowerCase();
+  const matches = voices.filter((v) => {
+    const l = (v.lang || "").toLowerCase().replace("_", "-");
+    return l.startsWith(prefix);
+  });
+  if (matches.length === 0) return null;
+
+  const natural = matches.find((v) => {
+    const name = (v.name || "").toLowerCase();
+    return HIGH_QUALITY_VOICE_KEYWORDS.some((kw) => name.includes(kw));
+  });
+
+  return natural || matches[0];
+}
+
 export default function ElisSpotlight({
   open,
   minimized = false,
@@ -110,6 +145,43 @@ export default function ElisSpotlight({
   const [zoomed3d, setZoomed3d] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const activeUtteranceRef = useRef(null);
+  const prevAutopilotRef = useRef(autopilot);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const loadVoices = () => {
+      try {
+        const v = window.speechSynthesis.getVoices?.() || [];
+        if (v && v.length > 0) {
+          setAvailableVoices(v);
+        }
+      } catch {}
+    };
+    loadVoices();
+    if (typeof window.speechSynthesis.addEventListener === "function") {
+      window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    } else {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    return () => {
+      try {
+        if (typeof window.speechSynthesis.removeEventListener === "function") {
+          window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+        } else if (window.speechSynthesis.onvoiceschanged === loadVoices) {
+          window.speechSynthesis.onvoiceschanged = null;
+        }
+      } catch {}
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!prevAutopilotRef.current && autopilot) {
+      setVoiceEnabled(true);
+    }
+    prevAutopilotRef.current = autopilot;
+  }, [autopilot]);
   const missionIndex = useMemo(() => {
     const idx = ELIS_MISSIONS.findIndex((m) => m.id === activeMissionId);
     return idx >= 0 ? idx : 0;
@@ -169,45 +241,59 @@ export default function ElisSpotlight({
           window.speechSynthesis.cancel();
         } catch {}
       }
+      activeUtteranceRef.current = null;
       setIsSpeaking(false);
       return;
     }
     const text = isEs ? mission.takeawayEs : mission.takeawayEn;
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
+    let active = true;
+
     try {
       window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
       const utterance = new SpeechSynthesisUtterance(text);
+      activeUtteranceRef.current = utterance;
       utterance.lang = isEs ? "es-ES" : "en-US";
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
 
-      const voices = window.speechSynthesis.getVoices?.() || [];
-      if (voices.length > 0) {
-        const prefix = isEs ? "es" : "en";
-        const voice =
-          voices.find(
-            (v) =>
-              v.lang.toLowerCase().startsWith(prefix) &&
-              (v.name.includes("Google") ||
-                v.name.includes("Natural") ||
-                v.name.includes("Premium") ||
-                v.name.includes("Sabina") ||
-                v.name.includes("Alvaro")),
-          ) || voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
-        if (voice) utterance.voice = voice;
+      const voicesPool =
+        availableVoices.length > 0 ? availableVoices : (window.speechSynthesis.getVoices?.() || []);
+      const voice = pickBestVoice(voicesPool, isEs ? "es" : "en");
+      if (voice) {
+        utterance.voice = voice;
+        if (voice.lang) utterance.lang = voice.lang;
       }
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onstart = () => {
+        if (active) setIsSpeaking(true);
+      };
+      utterance.onend = () => {
+        activeUtteranceRef.current = null;
+        if (active) setIsSpeaking(false);
+      };
+      utterance.onerror = () => {
+        activeUtteranceRef.current = null;
+        if (active) setIsSpeaking(false);
+      };
 
       window.speechSynthesis.speak(utterance);
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
     } catch {
+      activeUtteranceRef.current = null;
       setIsSpeaking(false);
     }
 
     return () => {
+      active = false;
+      activeUtteranceRef.current = null;
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
           window.speechSynthesis.cancel();
@@ -215,7 +301,7 @@ export default function ElisSpotlight({
       }
       setIsSpeaking(false);
     };
-  }, [open, missionIndex, voiceEnabled, isEs, customTurn]);
+  }, [open, missionIndex, voiceEnabled, isEs, customTurn, availableVoices]);
 
   if (!open) return null;
 

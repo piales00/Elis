@@ -356,7 +356,7 @@ export default {
   "chat.autopilot": "Autopiloto de {seconds}s",
   "hud.title": "Elis HUD",
   "hud.open": "Abrir Centro de Control Elis HUD",
-  "hud.quickTour": "⚡ Tour Rápido 40s (Elis)",
+  "hud.quickTour": "Tour Rápido 40s (Elis)",
   "hud.customPrompt": "Escribir mi propia consulta",
   "hud.details": "Evidencia Científica y Método",
   "hud.takeaway": "Titular Clave",
