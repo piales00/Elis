@@ -26,6 +26,7 @@ const ES = {
   appT: "Abrir la app",
   appS: "Mapa, gráficos, pronóstico y Pregúntale a Elis. Sin registro.",
   rPaper: "Informe técnico", rPaperS: "Artículo de 20 páginas: método, 18 ecuaciones, 10 figuras y 193 cifras verificadas en PDF.",
+  rDeck: "Presentación", rDeckS: "Siete diapositivas: el problema, cómo funciona Elis, resultados, validación y qué viene después de MODIS.",
   rNotes: "Notas de método (01–08)", rNotesS: "Ocho notas técnicas, incluido el asistente Ask Elis y el HUD de 40 s; cada cifra apunta a su archivo.",
   rRepo: "Código fuente", rRepoS: "Python, DuckDB, FastAPI, la app web y el video en Remotion, todo abierto.",
   rLive: "Registro en vivo", rLiveS: "Una predicción sellada cada día, evaluada cuando llegan los datos del satélite.",
