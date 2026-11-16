@@ -208,7 +208,6 @@ export default function App() {
       }
       setView(v);
       setPanelOpen(true);
-      if (v === "ask") setSpotlightMinimized(true);
       if (v === "outlook" && !deptFeature) setUnit(region);
       if (v === "year" && period.year !== LAST_YEAR && lastObserved >= 0) setPeriod(fromIndex(lastObserved));
       requestAnimationFrame(() => panelRef.current?.scrollTo?.({ top: 0 }));

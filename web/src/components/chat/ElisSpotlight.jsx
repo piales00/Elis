@@ -307,58 +307,26 @@ export default function ElisSpotlight({
 
   if (minimized) {
     return (
-      <div className="fc-elis-spotlight pointer-events-none absolute inset-x-0 z-30 flex items-end justify-center px-3">
-        <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-1.5 rounded-full border border-line-strong bg-surface/90 px-3 py-1.5 shadow-xl backdrop-blur-xl">
-          <span className="inline-flex items-center gap-1.5 pr-1 text-xs font-extrabold text-forecast">
-            <ElisMark size={16} />
-            <span className="hidden sm:inline">Elis Dock</span>
-          </span>
-          {ELIS_MISSIONS.map((m) => {
-            const active = !customTurn && m.id === mission.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => onSelectMission(m)}
-                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
-                  active
-                    ? "border-est bg-est/20 text-est"
-                    : "border-line bg-bg/70 text-muted hover:text-fg"
-                }`}
-              >
-                {isEs ? m.chipEs : m.chipEn}
-              </button>
-            );
-          })}
-          <span className="hidden rounded-full border border-forecast/30 bg-forecast/10 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-forecast md:inline-block">
-            {isEs ? mission.kpiPillEs : mission.kpiPillEn}
-          </span>
-          <button
-            type="button"
-            onClick={onToggleAutopilot}
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold cursor-pointer ${
-              autopilot ? "border-forecast bg-forecast text-bg" : "border-line bg-bg text-fg"
-            }`}
-          >
-            {autopilot ? "⏸" : "▶"} {AUTOPILOT_SECONDS}s
-          </button>
-          <button
-            type="button"
-            onClick={() => setVoiceEnabled((v) => !v)}
-            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-pointer transition ${
-              voiceEnabled ? "border-emerald-500/70 bg-emerald-500/20 text-emerald-400" : "border-line bg-bg text-muted hover:text-fg"
-            }`}
-            title={voiceEnabled ? t("hud.voiceMute") : t("hud.voice")}
-          >
-            {voiceEnabled ? (isSpeaking ? "🔊 〰" : "🔊") : "🔇"}
-          </button>
+      <div className="fc-elis-dock pointer-events-none absolute z-30 flex">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-line-strong bg-surface/90 py-1 pl-2 pr-1 shadow-lg backdrop-blur-xl">
           <button
             type="button"
             onClick={() => onToggleMinimized?.(false)}
-            className="rounded-full border border-line bg-bg px-2.5 py-0.5 text-[11px] font-bold text-fg hover:border-est cursor-pointer"
-            title={isEs ? "Expandir tarjeta" : "Expand card"}
+            className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-0.5 text-xs font-extrabold text-forecast hover:text-fg cursor-pointer"
+            title={isEs ? "Abrir Elis HUD" : "Open Elis HUD"}
           >
-            ▴ {isEs ? "Abrir" : "Expand"}
+            <ElisMark size={16} />
+            <span>Elis</span>
+          </button>
+          <button
+            type="button"
+            onClick={onToggleAutopilot}
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold cursor-pointer ${
+              autopilot ? "border-forecast bg-forecast text-bg" : "border-line bg-bg text-fg"
+            }`}
+            title={isEs ? "Autopiloto" : "Autopilot"}
+          >
+            {autopilot ? "⏸" : "▶"} {AUTOPILOT_SECONDS}s
           </button>
           <button
             type="button"
