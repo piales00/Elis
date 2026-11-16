@@ -2056,6 +2056,16 @@ th.text-right .fc-th-btn {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
 }
+.fc-elis-dock {
+  right: 3.75rem;
+  bottom: 116px;
+}
+@media (max-width: 639px) {
+  .fc-elis-dock {
+    right: 0.75rem;
+    bottom: 100px;
+  }
+}
 .fc-elis-spotlight {
   top: var(--elis-top, 144px);
   bottom: 112px;
