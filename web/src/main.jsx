@@ -3,9 +3,6 @@ import { createRoot } from "react-dom/client";
 import { I18nProvider } from "./i18n/I18nProvider.jsx";
 import App from "./App.jsx";
 import "./index.css";
-import { initSpeechVoices } from "./utils/speech.js";
-
-initSpeechVoices();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
