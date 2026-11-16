@@ -488,90 +488,54 @@ export default function ChatPanel({
                 </div>
               </div>
             )}
-            {onLaunchMission && (
-              <div className="rounded-xl border border-forecast/40 bg-forecast/10 p-3.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-forecast">
-                    {locale === "es" ? "HUD EN EL MAPA" : "MAP MISSION HUD"}
+            {turns.length === 0 && (
+              <div className="rounded-xl border border-line bg-surface/70 p-3">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                    {locale === "es" ? "OTRAS CONSULTAS FRECUENTES" : "EXPLORE SPECIFIC TOPICS"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onLaunchMission("artifact", true)}
-                    className="rounded-md bg-forecast px-2.5 py-1 text-[11px] font-bold text-bg shadow-sm transition hover:opacity-90 cursor-pointer"
-                  >
-                    ▶ {t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
-                  </button>
+                  {onLaunchMission && (
+                    <button
+                      type="button"
+                      onClick={() => onLaunchMission("artifact", true)}
+                      className="flex items-center gap-1 rounded-md border border-forecast/40 bg-forecast/10 px-2 py-0.5 font-mono text-[10px] font-bold text-forecast transition hover:bg-forecast hover:text-bg cursor-pointer"
+                      title={t("chat.autopilot", { seconds: AUTOPILOT_SECONDS })}
+                    >
+                      ▶ {locale === "es" ? "Autopiloto 40s" : "40s Autopilot"}
+                    </button>
+                  )}
                 </div>
-                <p className="m-0 mb-2.5 text-xs text-muted">
-                  {locale === "es"
-                    ? "Explora cuatro misiones del reto con gráficos, rangos de incertidumbre y navegación 3D:"
-                    : "Explore four challenge briefings with charts, uncertainty ranges and 3D navigation:"}
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => onLaunchMission("artifact", false)}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
+                    disabled={streaming || snapshot}
+                    onClick={() =>
+                      runLiveQuestion(
+                        locale === "es"
+                          ? "¿Cuál es el pronóstico de temporada de 2027 para Cusco, con su rango y método?"
+                          : "What is the 2027 seasonal outlook for Cusco, including its range and method?",
+                      )
+                    }
+                    className="w-full rounded-lg border border-forecast/40 bg-forecast/10 px-3 py-2 text-left text-xs font-semibold text-forecast transition hover:border-forecast hover:bg-forecast/20 disabled:opacity-50 cursor-pointer"
                   >
-                    🚨 {locale === "es" ? "Salto Falso 9× (2012)" : "2012 False 9× Jump"}
+                    🏛️ {locale === "es" ? "¿Pronóstico 2027 para Cusco con rango de incertidumbre?" : "What is the 2027 Cusco outlook and uncertainty range?"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onLaunchMission("amazon3d", false)}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
-                  >
-                    🛰️ {locale === "es" ? "Amazonía 3D (2010)" : "Amazon 3D (2010)"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onLaunchMission("disagreement", false)}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
-                  >
-                    {locale === "es" ? "Continuidad tras MODIS" : "Continuity after MODIS"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onLaunchMission("earlywarning", false)}
-                    className="rounded-lg border border-line bg-bg px-2.5 py-1.5 text-left text-[11px] font-semibold text-fg transition hover:border-forecast cursor-pointer"
-                  >
-                    🛡️ {locale === "es" ? "Pronóstico de temporada" : "Seasonal outlook"}
-                  </button>
+                  {PRESET_QUESTIONS.filter(
+                    (preset) => !["compare_naive", "jump_2012", "forecast_next"].includes(preset.id),
+                  ).map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      disabled={streaming}
+                      onClick={() => handlePresetClick(preset)}
+                      className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-left text-xs font-medium text-fg transition hover:border-forecast/60 hover:bg-surface disabled:opacity-50 cursor-pointer"
+                    >
+                      {t(preset.key)}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
-
-            <div className="rounded-xl border border-line bg-surface p-3.5">
-              <p className="m-0 mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted">
-                {t("chat.presets.heading")}
-              </p>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  disabled={streaming || snapshot}
-                  onClick={() =>
-                    runLiveQuestion(
-                      locale === "es"
-                        ? "¿Cuál es el pronóstico de temporada de 2027 para Cusco, con su rango y método?"
-                        : "What is the 2027 seasonal outlook for Cusco, including its range and method?",
-                    )
-                  }
-                  className="w-full rounded-lg border border-forecast/40 bg-forecast/10 px-3 py-2 text-left text-xs font-semibold text-forecast transition hover:border-forecast disabled:opacity-50 cursor-pointer"
-                >
-                  🏛️ {locale === "es" ? "¿Pronóstico 2027 para Cusco con incertidumbre?" : "What is the 2027 Cusco outlook and uncertainty?"}
-                </button>
-                {PRESET_QUESTIONS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    disabled={streaming}
-                    onClick={() => handlePresetClick(preset)}
-                    className="w-full rounded-lg border border-line bg-bg px-3 py-2 text-left text-xs font-medium text-fg transition hover:border-est hover:bg-surface disabled:opacity-50 cursor-pointer"
-                  >
-                    {t(preset.key)}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {snapshot && (
               <div role="status" className="rounded-xl border border-line bg-warn-bg px-3 py-2 text-xs font-medium text-warn-fg">
