@@ -143,7 +143,7 @@ def test_get_methodology_topics(topic):
 
 @pytest.mark.parametrize(
     "chart_type",
-    ["series", "raw_vs_corrected", "year_vs_history", "forecast"],
+    ["series", "raw_vs_corrected", "year_vs_history", "forecast", "multi_region"],
 )
 def test_show_chart_builds_chart_event(chart_type):
     res, is_err, chart_event = execute_tool(
@@ -162,6 +162,28 @@ def test_show_chart_builds_chart_event(chart_type):
     assert chart_event["chart"] == chart_type
     assert chart_event["unit"] == UNIT
     assert len(chart_event["series"]) > 0
+
+
+def test_show_chart_multi_region_with_explicit_regions():
+    res, is_err, chart_event = execute_tool(
+        "show_chart",
+        {
+            "chart": "multi_region",
+            "region": "amazonia",
+            "regions": ["amazonia", "sierra"],
+            "from_year": 2003,
+            "to_year": 2026,
+            "highlight_year": 2024,
+        },
+    )
+    assert not is_err
+    assert chart_event["chart"] == "multi_region"
+    assert "series_by_region" in chart_event
+    assert "amazonia" in chart_event["series_by_region"]
+    assert "sierra" in chart_event["series_by_region"]
+    assert len(chart_event["series_by_region"]["amazonia"]) > 0
+    assert len(chart_event["series_by_region"]["sierra"]) > 0
+
 
 
 @pytest.mark.parametrize(

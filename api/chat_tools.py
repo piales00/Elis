@@ -162,7 +162,7 @@ TOOLS: list[dict[str, Any]] = [
         "name": "show_chart",
         "description": (
             "Request the server to render a chart in the chat panel using verified processed data. "
-            "Charts: 'series', 'raw_vs_corrected', 'year_vs_history', or 'forecast'."
+            "Charts: 'series', 'raw_vs_corrected', 'year_vs_history', 'forecast', or 'multi_region'."
         ),
         "strict": True,
         "input_schema": {
@@ -170,11 +170,19 @@ TOOLS: list[dict[str, Any]] = [
             "properties": {
                 "chart": {
                     "type": "string",
-                    "enum": ["series", "raw_vs_corrected", "year_vs_history", "forecast"],
+                    "enum": ["series", "raw_vs_corrected", "year_vs_history", "forecast", "multi_region"],
                 },
                 "region": {
                     "type": "string",
                     "enum": list(VALID_REGIONS),
+                },
+                "regions": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "type": "string",
+                        "enum": list(VALID_REGIONS),
+                    },
+                    "description": "Optional list of 2 to 3 regions to compare simultaneously when chart is 'multi_region'.",
                 },
                 "from_year": {
                     "type": "integer",
@@ -186,7 +194,7 @@ TOOLS: list[dict[str, Any]] = [
                     "type": ["integer", "null"],
                 },
             },
-            "required": ["chart", "region", "from_year", "to_year", "highlight_year"],
+            "required": ["chart", "region", "regions", "from_year", "to_year", "highlight_year"],
             "additionalProperties": False,
         },
     },
@@ -884,10 +892,16 @@ def build_chart_event(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bool]
     to_year = tool_input.get("to_year")
     highlight_year = tool_input.get("highlight_year")
 
+    if (not region or region not in VALID_REGIONS) and isinstance(tool_input.get("regions"), list):
+        for cand in tool_input["regions"]:
+            if cand in VALID_REGIONS:
+                region = cand
+                break
+
     err = _validate_region_and_years(region, from_year, to_year)
     if err:
         return {"error": err, "unit": UNIT}, True
-    if chart not in ("series", "raw_vs_corrected", "year_vs_history", "forecast"):
+    if chart not in ("series", "raw_vs_corrected", "year_vs_history", "forecast", "multi_region"):
         return {"error": "Invalid chart type.", "unit": UNIT}, True
     if highlight_year is not None:
         if isinstance(highlight_year, str) and highlight_year.isdigit():
@@ -899,6 +913,82 @@ def build_chart_event(tool_input: dict[str, Any]) -> tuple[dict[str, Any], bool]
     methodology = _load_json("methodology.json")
     periods = methodology.get("periods", [])
     region_label = REGION_LABELS[region]
+
+    if chart == "multi_region":
+        raw_regions = tool_input.get("regions")
+        candidate_regions = []
+        if isinstance(raw_regions, list):
+            candidate_regions.extend([r for r in raw_regions if isinstance(r, str) and r in VALID_REGIONS])
+        if region in VALID_REGIONS and region not in candidate_regions:
+            candidate_regions.insert(0, region)
+
+        target_regions = []
+        for r in candidate_regions:
+            if r not in target_regions:
+                target_regions.append(r)
+
+        if len(target_regions) < 2:
+            fallback_partner = "sierra" if target_regions and target_regions[0] == "amazonia" else "amazonia"
+            if fallback_partner not in target_regions:
+                target_regions.append(fallback_partner)
+        target_regions = target_regions[:3]
+
+        region_labels_map = {r: REGION_LABELS[r] for r in target_regions}
+        is_monthly = (from_year == to_year) or (highlight_year is not None and from_year == highlight_year)
+        series_by_region: dict[str, list[dict[str, Any]]] = {}
+
+        if is_monthly:
+            target_year = highlight_year if highlight_year is not None else to_year
+            for r in target_regions:
+                r_rows = [row for row in rows if row["region"] == r and row["year"] == target_year]
+                r_rows.sort(key=lambda x: x["month"])
+                series_by_region[r] = [
+                    {
+                        "year": row["year"],
+                        "month": row["month"],
+                        "estimated": row["estimated"],
+                        "est_low": row["est_low"],
+                        "est_high": row["est_high"],
+                        "hist_median": row.get("hist_median"),
+                        "anomaly_class": row.get("anomaly_class"),
+                    }
+                    for row in r_rows
+                ]
+            names_title = " vs. ".join(region_labels_map[r] for r in target_regions)
+            title = f"{names_title}: {target_year} monthly activity comparison"
+            granularity = "month"
+        else:
+            for r in target_regions:
+                agg_rows, _ = _aggregate_years_or_seasons(rows, r, from_year, to_year, "year", periods)
+                series_by_region[r] = [
+                    {
+                        "year": row["year"],
+                        "estimated": row["estimated"],
+                        "est_low": row["est_low"],
+                        "est_high": row["est_high"],
+                        "anomaly_class": row.get("anomaly_class"),
+                    }
+                    for row in agg_rows
+                ]
+            names_title = " vs. ".join(region_labels_map[r] for r in target_regions)
+            title = f"{names_title}: Harmonized fire activity ({from_year}–{to_year})"
+            granularity = "year"
+
+        primary_reg = target_regions[0]
+        return {
+            "chart": "multi_region",
+            "title": title,
+            "unit": UNIT,
+            "region": primary_reg,
+            "regions": target_regions,
+            "region_labels": region_labels_map,
+            "from_year": from_year,
+            "to_year": to_year,
+            "highlight_year": highlight_year,
+            "granularity": granularity,
+            "series": series_by_region[primary_reg],
+            "series_by_region": series_by_region,
+        }, False
 
     if chart in ("series", "raw_vs_corrected"):
         agg_rows, _ = _aggregate_years_or_seasons(rows, region, from_year, to_year, "year", periods)

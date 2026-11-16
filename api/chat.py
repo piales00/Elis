@@ -110,6 +110,40 @@ def _build_auto_chart(
     if any(name == "show_chart" for name, _, _ in tool_calls_made):
         return None
 
+    queried_regions: list[str] = []
+    for _, inp, _ in tool_calls_made:
+        if isinstance(inp, dict):
+            r = inp.get("region")
+            if r in VALID_REGIONS and r not in queried_regions:
+                queried_regions.append(r)
+            for item in inp.get("regions") or []:
+                if item in VALID_REGIONS and item not in queried_regions:
+                    queried_regions.append(item)
+
+    if len(queried_regions) >= 2:
+        is_monthly = any(
+            isinstance(inp, dict) and inp.get("aggregate") == "month" and inp.get("from_year") == inp.get("to_year")
+            for _, inp, _ in tool_calls_made
+        )
+        sample_y = 2024
+        for _, inp, _ in tool_calls_made:
+            if isinstance(inp, dict) and inp.get("from_year"):
+                sample_y = int(inp.get("to_year") or inp.get("from_year") or 2024)
+                break
+        chart_ev = execute_tool(
+            "show_chart",
+            {
+                "chart": "multi_region",
+                "region": queried_regions[0],
+                "regions": queried_regions[:3],
+                "from_year": sample_y if is_monthly else 2003,
+                "to_year": sample_y if is_monthly else 2026,
+                "highlight_year": sample_y,
+            },
+        )[2]
+        if chart_ev:
+            return chart_ev
+
     reg = default_region if default_region in VALID_REGIONS else "peru"
     for name, inp, res in tool_calls_made:
         if isinstance(inp, dict) and inp.get("region") in VALID_REGIONS:
@@ -338,12 +372,21 @@ def _build_gemini_tools() -> list[Any]:
         input_props = t["input_schema"].get("properties", {})
         for k, v in input_props.items():
             prop_type = types.Type.STRING
-            if v.get("type") == "integer":
+            v_type = v.get("type")
+            if v_type == "integer":
                 prop_type = types.Type.INTEGER
-            elif v.get("type") == "number":
+            elif v_type == "number":
                 prop_type = types.Type.NUMBER
-            elif v.get("type") == "boolean":
+            elif v_type == "boolean":
                 prop_type = types.Type.BOOLEAN
+            elif v_type == "array" or (isinstance(v_type, list) and "array" in v_type):
+                item_enum = v.get("items", {}).get("enum")
+                schema_props[k] = types.Schema(
+                    type=types.Type.ARRAY,
+                    description=v.get("description"),
+                    items=types.Schema(type=types.Type.STRING, enum=item_enum),
+                )
+                continue
             enum_vals = v.get("enum")
             schema_props[k] = types.Schema(
                 type=prop_type,
